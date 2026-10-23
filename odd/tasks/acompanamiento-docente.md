@@ -52,8 +52,9 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
 - [ ] T3.1 Review follow-ups (advisory, from T1.2+T3 review, commits 07096e0..b3397fc, approved
   and acknowledged): section swap on re-seed can collide on names (R3-001); finish() conditional
   update skips Eloquent events — fire them explicitly or document (R3-002); organizationAdmin()
-  factory fallback (R3-003); PRODUCT DECISION pending: should ex-observers keep access to
-  teacher reports 6.4 after losing the flag or changing school? (R3-004).
+  factory fallback (R3-003); R3-004 DECIDED by user: ex-observers LOSE access to teacher
+  reports 6.4 once they lose the observer flag or change school (privacy); school admins keep
+  the full history.
 - [ ] T4 School setup + staff bulk import from Excel.
 - [ ] T5 School rubric configuration + PDF export.
 - [ ] T6 Observer → teacher assignments.
