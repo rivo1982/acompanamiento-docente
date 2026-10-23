@@ -2,19 +2,23 @@
 
 namespace App\Providers;
 
-use App\Policies\ReportPolicy;
+use App\Support\EstablecimientoActual;
+use App\Support\RolesDelUsuario;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
+     *
+     * Same scoped bindings as Vinkured's AppServiceProvider: one instance per request (or job),
+     * so the state fixed by EstablecimientoActual::paraTrabajo() is shared by every resolution.
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(EstablecimientoActual::class);
+        $this->app->scoped(RolesDelUsuario::class);
     }
 
     /**
@@ -23,8 +27,5 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DB::prohibitDestructiveCommands(! $this->app->environment('testing'));
-
-        Gate::define('viewSchoolReports', [ReportPolicy::class, 'viewSchoolReports']);
-        Gate::define('viewTeacherReport', [ReportPolicy::class, 'viewTeacherReport']);
     }
 }

@@ -2,103 +2,102 @@
 
 namespace Database\Seeders;
 
-use App\Models\Indicator;
-use App\Models\RubricSection;
-use App\Models\RubricTemplate;
+use App\Models\Ambito;
+use App\Models\Indicador;
+use App\Models\PautaBase;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use JsonException;
 
 /**
- * Loads the platform rubric catalog (templates, sections, indicators) from catalog.json.
+ * Carga el catálogo GLOBAL de pautas (pautas base, ámbitos, indicadores) desde catalog.json.
  *
- * Idempotent: templates are keyed by number, sections by (template, position) and indicators by
- * number. Sections of a seeded template that no longer appear in the catalog are deleted once
- * they have no indicators left.
+ * Idempotente: las pautas base se identifican por número, los ámbitos por (pauta base, posición)
+ * y los indicadores por número. Los ámbitos de una pauta base sembrada que ya no aparecen en el
+ * catálogo se borran cuando no les quedan indicadores. El archivo conserva sus claves en inglés
+ * (templates, sections, levels...); aquí se mapean a las columnas en español.
  */
 class CatalogSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
-     *
      * @throws JsonException
      */
     public function run(): void
     {
-        $catalog = json_decode(
+        $catalogo = json_decode(
             file_get_contents(database_path('seeders/data/catalog.json')),
             true,
             flags: JSON_THROW_ON_ERROR,
         );
 
-        $this->seedCatalog($catalog);
+        $this->seedCatalog($catalogo);
     }
 
     /**
-     * Seed the given catalog data in one transaction.
+     * Siembra el catálogo dado en una sola transacción.
      *
-     * @param  array{templates: list<array<string, mixed>>}  $catalog
+     * @param  array{templates: list<array<string, mixed>>}  $catalogo
      */
-    public function seedCatalog(array $catalog): void
+    public function seedCatalog(array $catalogo): void
     {
-        DB::transaction(function () use ($catalog): void {
-            foreach ($catalog['templates'] as $templateData) {
-                $this->seedTemplate($templateData);
+        DB::transaction(function () use ($catalogo): void {
+            foreach ($catalogo['templates'] as $datosPauta) {
+                $this->sembrarPautaBase($datosPauta);
             }
         });
     }
 
     /**
-     * @param  array{number: int, name: string, evidence: ?string, standards: ?string, protocol: ?string, usage_warning: ?string, sections: list<array<string, mixed>>}  $templateData
+     * @param  array{number: int, name: string, evidence: ?string, standards: ?string, protocol: ?string, usage_warning: ?string, sections: list<array<string, mixed>>}  $datosPauta
      */
-    private function seedTemplate(array $templateData): void
+    private function sembrarPautaBase(array $datosPauta): void
     {
-        $template = RubricTemplate::updateOrCreate(
-            ['number' => $templateData['number']],
+        $pautaBase = PautaBase::updateOrCreate(
+            ['numero' => $datosPauta['number']],
             [
-                'name' => $templateData['name'],
-                'evidence' => $templateData['evidence'],
-                'standards' => $templateData['standards'],
-                'protocol' => $templateData['protocol'],
-                'usage_warning' => $templateData['usage_warning'],
+                'nombre' => $datosPauta['name'],
+                'evidencia' => $datosPauta['evidence'],
+                'estandares' => $datosPauta['standards'],
+                'protocolo' => $datosPauta['protocol'],
+                'advertencia_uso' => $datosPauta['usage_warning'],
             ],
         );
 
-        foreach ($templateData['sections'] as $index => $sectionData) {
-            $section = RubricSection::updateOrCreate(
-                ['rubric_template_id' => $template->id, 'position' => $index + 1],
-                ['name' => $sectionData['name']],
+        foreach ($datosPauta['sections'] as $indice => $datosAmbito) {
+            $ambito = Ambito::updateOrCreate(
+                ['pauta_base_id' => $pautaBase->id, 'posicion' => $indice + 1],
+                ['nombre' => $datosAmbito['name']],
             );
 
-            foreach ($sectionData['indicators'] as $indicatorData) {
-                $this->seedIndicator($section, $indicatorData);
+            foreach ($datosAmbito['indicators'] as $datosIndicador) {
+                $this->sembrarIndicador($ambito, $datosIndicador);
             }
         }
 
-        $template->sections()
-            ->where('position', '>', count($templateData['sections']))
-            ->whereDoesntHave('indicators')
+        $pautaBase->ambitos()
+            ->where('posicion', '>', count($datosPauta['sections']))
+            ->whereDoesntHave('indicadores')
             ->delete();
     }
 
     /**
-     * @param  array{number: int, name: string, levels: array{0: string, 1: string, 2: string, 3: string}, meaning: string, to_achieved: string, to_outstanding: ?string, sources: string}  $indicatorData
+     * @param  array{number: int, name: string, levels: array{0: string, 1: string, 2: string, 3: string}, meaning: string, to_achieved: string, to_outstanding: ?string, sources: string}  $datosIndicador
      */
-    private function seedIndicator(RubricSection $section, array $indicatorData): void
+    private function sembrarIndicador(Ambito $ambito, array $datosIndicador): void
     {
-        Indicator::updateOrCreate(
-            ['number' => $indicatorData['number']],
+        Indicador::updateOrCreate(
+            ['numero' => $datosIndicador['number']],
             [
-                'rubric_section_id' => $section->id,
-                'name' => $indicatorData['name'],
-                'level_beginning' => $indicatorData['levels'][0],
-                'level_developing' => $indicatorData['levels'][1],
-                'level_achieved' => $indicatorData['levels'][2],
-                'level_outstanding' => $indicatorData['levels'][3],
-                'feedback_meaning' => $indicatorData['meaning'],
-                'feedback_to_achieved' => $indicatorData['to_achieved'],
-                'feedback_to_outstanding' => $indicatorData['to_outstanding'],
-                'sources' => $indicatorData['sources'],
+                'ambito_id' => $ambito->id,
+                'nombre' => $datosIndicador['name'],
+                'nivel_en_inicio' => $datosIndicador['levels'][0],
+                'nivel_en_desarrollo' => $datosIndicador['levels'][1],
+                'nivel_logrado' => $datosIndicador['levels'][2],
+                'nivel_destacado' => $datosIndicador['levels'][3],
+                'retro_que_significa' => $datosIndicador['meaning'],
+                'retro_para_logrado' => $datosIndicador['to_achieved'],
+                'retro_para_destacado' => $datosIndicador['to_outstanding'],
+                'fuentes' => $datosIndicador['sources'],
             ],
         );
     }

@@ -42,11 +42,11 @@ would make integration costly and risky.
   with Vinkured schema-only snapshot, prohibit destructive commands, Pest 4 installed with
   existing PHPUnit tests still passing.
 - [x] A2a Host schema loader + host model layer.
-- [ ] A2b Re-base module domain in Spanish on host tables (Establecimiento, Funcionario,
+- [x] A2b Re-base module domain in Spanish on host tables (Establecimiento, Funcionario,
   Usuario...) with tenancy pattern; drop module copies of host tables (users, organizations,
   schools); register EstablecimientoActual/RolesDelUsuario as scoped and the middleware.
-- [ ] A2.1 Review follow-ups (A1+A2a review base c424e2b, approved + acknowledged): scoped
-  binding so paraTrabajo() state is shared (fold into A2b); tenancy tests for updating hook,
+- [ ] A2.1 Review follow-ups (A1+A2a review base c424e2b, approved + acknowledged): ~~scoped
+  binding so paraTrabajo() state is shared~~ (done in A2b); tenancy tests for updating hook,
   tampered/foreign/suspended session establecimiento (refrescar → null); HostSchemaLoader:
   track tagged dollar quotes ($_$, $tag$), fail closed on empty/headerless snapshot; prove the
   setUpTraits guard wiring runs before RefreshDatabase and covers non-default connections.
@@ -120,5 +120,58 @@ would make integration costly and risky.
     provider model Usuario. Usuario references Database\Factories\UsuarioFactory only in its
     docblock; `Usuario::factory()` is unavailable until the factory is added.
 
+- A2b route: delegated writer (trigger: 2+ non-trivial files).
+- A2b evidence:
+  - Deleted (spec kept in git history, b3397fc): models Organization, School, User,
+    RubricTemplate, RubricSection, Indicator, TeachingTip, Rubric, CoachingAssignment,
+    Observation, ObservationScore; enums AchievementLevel, ObservationStatus, OrganizationType,
+    StaffRole, TeachingTipTarget; exceptions IndicatorNotInSnapshot, InvalidCoachingAssignment,
+    ObservationAlreadyFinished; all app/Policies + Gate registration; all old factories; the
+    Laravel `users` migration and the 12 T1 migrations; tests Feature/Models, Feature/Policies,
+    Feature/Seeders, Unit/AchievementLevelTest.
+  - Global catalog tables: pautas_base, ambitos (unique pauta_base_id+posicion), indicadores
+    (numero unique), apoyos_pedagogicos (nivel_objetivo CHECK logrado/destacado).
+  - Tenant tables (establecimiento_id + UNIQUE(establecimiento_id,id) + composite RESTRICT FKs):
+    pautas (softDeletes), indicador_pauta, observadores, asignaciones_acompanamiento (CHECK
+    observador_id <> docente_id), acompanamientos (estado CHECK, pauta_snapshot jsonb,
+    asignatura_id simple FK to global asignaturas), respuestas_acompanamiento (nivel CHECK).
+  - Models PautaBase, Ambito, Indicador, ApoyoPedagogico, Pauta, IndicadorPauta (custom Pivot
+    with PerteneceAEstablecimiento so attach() gets the active establecimiento), Observador,
+    AsignacionAcompanamiento, Acompanamiento, RespuestaAcompanamiento; enums NivelLogro,
+    EstadoAcompanamiento, NivelObjetivoApoyo; exceptions AcompanamientoYaFinalizado,
+    IndicadorFueraDelSnapshot. Preserved: Pauta::toSnapshot(), creating hook (iniciado_en +
+    snapshot only when missing), finalizar() conditional UPDATE WHERE estado=en_curso + refresh,
+    retroalimentacionAutomatica() from snapshot only + missing/incomplete exceptions, Felicitaciones.
+  - Nivel de enseñanza derived by Acompanamiento::nivelEnsenanza() (curso → grado →
+    niveles_ensenanza, query builder; host has no NivelEnsenanza model), not stored.
+  - CatalogSeeder ported (Spanish columns, idempotent, sections by position, seedCatalog(array),
+    one transaction); DatabaseSeeder only calls it.
+  - Factories for all module models; tenant factories use the active establecimiento and
+    database/factories/Concerns/CreaFilasDelAnfitrion (DB::table host rows) for funcionarios,
+    cursos, asignaturas.
+  - A2.1 item 1: EstablecimientoActual and RolesDelUsuario registered scoped; alias
+    `establecimiento.activo` in bootstrap/app.php; auth provider model env('AUTH_MODEL',
+    Usuario::class). DB::prohibitDestructiveCommands kept.
+  - Tests: tests/Unit/NivelLogroTest.php, tests/Feature/Modulo/{CatalogoSeeder,Pauta,
+    Acompanamiento,AsignacionAcompanamiento,AislamientoDelModulo}Test.php (port of Vinkured
+    TenantIsolationGuardTest for module tables + enum/CHECK parity),
+    tests/Feature/Configuracion/IntegracionConAnfitrionTest.php.
+  - RED: 100 tests, 47 passed, 10 failed, 43 errors (missing classes/tables, unscoped bindings,
+    no alias, auth model User). GREEN: `vendor/bin/pest --compact` 100 passed, 341 assertions.
+  - `vendor/bin/pint --dirty --format agent`: passed (fixed 6 migrations first).
+  - acompanamiento_test tables: 64 (53 host + migrations + 10 module).
+  - Grep for School/Organization/RubricTemplate/Observation: only 2 hits inside
+    database/seeders/data/catalog.json bibliography text (read-only, justified).
+  - public table count before/after: 54 / 54.
+  - Deviations: indicadores.numero has no CHECK 1..60 (factories use 1000+ so they never collide
+    with the catalog); catalog child FKs are RESTRICT (were CASCADE); no Asignatura model (host has
+    none), asignatura_id only. Old CoachingAssignment saving validation (flagged observer, same
+    school) is not ported: the DB enforces same establecimiento and distinct pair; observer
+    eligibility moves to A3.
+  - Open for A3: observer eligibility (directivo/UTP derived from funciones + observadores flag)
+    and its validation on asignaciones/acompanamientos; rebuild policies/gates on RolesDelUsuario;
+    OPEN QUESTION: sostenedor-level access (old OrganizationAdmin) is not modeled by Vinkured
+    membresias (per establecimiento only) — needs a product/host decision.
+
 ## Next step
-A2b — re-base the module domain in Spanish on the host tables.
+A3 — roles derived from funciones/membresias (directivo, UTP, observador) and policies.
