@@ -20,6 +20,13 @@ class ObservationScore extends Model
     use HasFactory;
 
     /**
+     * Snapshot keys that automatic feedback cannot be built without.
+     *
+     * @var list<string>
+     */
+    private const REQUIRED_SNAPSHOT_KEYS = ['feedback_meaning', 'feedback_to_achieved', 'sources'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -40,6 +47,12 @@ class ObservationScore extends Model
     {
         $indicator = $this->observation->snapshotIndicator($this->indicator_id)
             ?? throw IndicatorNotInSnapshotException::for($this->observation, $this->indicator_id);
+
+        $missingKeys = array_values(array_diff(self::REQUIRED_SNAPSHOT_KEYS, array_keys($indicator)));
+
+        if ($missingKeys !== []) {
+            throw IndicatorNotInSnapshotException::incomplete($this->observation, $this->indicator_id, $missingKeys);
+        }
 
         return [
             'meaning' => $indicator['feedback_meaning'],

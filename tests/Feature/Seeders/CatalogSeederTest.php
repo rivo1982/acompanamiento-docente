@@ -99,6 +99,64 @@ class CatalogSeederTest extends TestCase
         $this->assertSame(120, Indicator::count());
     }
 
+    public function test_reseeding_a_renamed_section_updates_it_in_place_without_orphans(): void
+    {
+        $this->seed(CatalogSeeder::class);
+        $section = RubricTemplate::where('number', 1)->firstOrFail()->sections()->firstOrFail();
+        $indicatorIds = $section->indicators()->pluck('id')->all();
+        $sectionCount = RubricSection::count();
+        $catalog = $this->catalog();
+        $catalog['templates'][0]['sections'][0]['name'] = 'Ámbito renombrado';
+
+        (new CatalogSeeder)->seedCatalog($catalog);
+
+        $this->assertSame($sectionCount, RubricSection::count());
+        $this->assertSame('Ámbito renombrado', $section->fresh()->name);
+        $this->assertSame($indicatorIds, $section->indicators()->pluck('id')->all());
+        $this->assertFalse(RubricSection::where('name', 'Ambiente propicio para el aprendizaje')->exists());
+    }
+
+    public function test_reseeding_deletes_sections_left_empty_after_their_indicators_move(): void
+    {
+        $this->seed(CatalogSeeder::class);
+        $template = RubricTemplate::where('number', 1)->firstOrFail();
+        $lastSection = $template->sections()->get()->last();
+        $movedIds = $lastSection->indicators()->pluck('id')->all();
+        $catalog = $this->catalog();
+        $removed = array_pop($catalog['templates'][0]['sections']);
+        array_push($catalog['templates'][0]['sections'][2]['indicators'], ...$removed['indicators']);
+
+        (new CatalogSeeder)->seedCatalog($catalog);
+
+        $this->assertNull($lastSection->fresh());
+        $this->assertSame([1, 2, 3], $template->sections()->pluck('position')->all());
+        $this->assertSame(60, Indicator::count());
+        $thirdSection = $template->sections()->where('position', 3)->firstOrFail();
+        $this->assertEmpty(array_diff($movedIds, $thirdSection->indicators()->pluck('id')->all()));
+    }
+
+    public function test_reseeding_keeps_a_removed_section_that_still_has_indicators(): void
+    {
+        $this->seed(CatalogSeeder::class);
+        $template = RubricTemplate::where('number', 1)->firstOrFail();
+        $lastSection = $template->sections()->get()->last();
+        $catalog = $this->catalog();
+        array_pop($catalog['templates'][0]['sections']);
+
+        (new CatalogSeeder)->seedCatalog($catalog);
+
+        $this->assertNotNull($lastSection->fresh());
+        $this->assertSame(60, Indicator::count());
+    }
+
+    /**
+     * @return array{templates: list<array<string, mixed>>}
+     */
+    private function catalog(): array
+    {
+        return json_decode(file_get_contents(database_path('seeders/data/catalog.json')), true);
+    }
+
     /**
      * @return array<string, mixed>
      */

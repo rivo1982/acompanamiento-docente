@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\StaffRole;
+use App\Models\Organization;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -62,6 +63,18 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user administers an organization (sostenedor), without a school.
+     */
+    public function organizationAdmin(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'role' => StaffRole::OrganizationAdmin,
+            'school_id' => null,
+            'organization_id' => $attributes['organization_id'] ?? Organization::factory(),
+        ]);
+    }
+
+    /**
      * Indicate that the user is flagged as an observer.
      */
     public function observer(): static
@@ -73,12 +86,14 @@ class UserFactory extends Factory
 
     /**
      * Staff member of a school, inheriting the school's organization.
+     *
+     * Keeps a school already set by `for($school)`, which Laravel applies before states.
      */
     protected function atSchoolWithRole(StaffRole $role): static
     {
         return $this->state(fn (array $attributes): array => [
             'role' => $role,
-            'school_id' => School::factory(),
+            'school_id' => $attributes['school_id'] ?? School::factory(),
             'organization_id' => fn (array $attributes): ?int => School::find($attributes['school_id'])?->organization_id,
         ]);
     }

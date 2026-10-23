@@ -62,21 +62,29 @@ class Observation extends Model
     /**
      * Close the observation, recording its end time and whole-minute duration.
      *
+     * The transition is a conditional update on the stored status, so a stale in-memory
+     * copy can never finish an observation twice.
+     *
      * @throws ObservationAlreadyFinishedException
      */
     public function finish(): void
     {
-        if ($this->status === ObservationStatus::Finished) {
+        $finishedAt = now();
+
+        $affected = static::query()
+            ->whereKey($this->getKey())
+            ->where('status', ObservationStatus::InProgress->value)
+            ->update([
+                'finished_at' => $finishedAt,
+                'duration_minutes' => (int) floor($this->started_at->diffInMinutes($finishedAt, true)),
+                'status' => ObservationStatus::Finished->value,
+            ]);
+
+        if ($affected === 0) {
             throw ObservationAlreadyFinishedException::for($this);
         }
 
-        $finishedAt = now();
-
-        $this->forceFill([
-            'finished_at' => $finishedAt,
-            'duration_minutes' => (int) floor($this->started_at->diffInMinutes($finishedAt, true)),
-            'status' => ObservationStatus::Finished,
-        ])->save();
+        $this->refresh();
     }
 
     /**

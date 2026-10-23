@@ -77,14 +77,24 @@ class UserObserverTest extends TestCase
         $this->assertTrue($curriculumHead->fresh()->is_observer);
     }
 
-    public function test_demoting_unflagged_school_admin_keeps_explicit_observer_flag(): void
+    public function test_demotion_clears_observer_flag_even_when_flag_is_sent_in_the_same_save(): void
     {
         $principal = User::factory()->principal()->create();
-        User::whereKey($principal->id)->update(['is_observer' => false]);
-        $principal->refresh();
 
         $principal->update(['role' => StaffRole::Teacher, 'is_observer' => true]);
 
+        $this->assertFalse($principal->fresh()->is_observer);
+    }
+
+    public function test_demoted_admin_reflagged_in_a_later_save_keeps_observer_flag_on_further_updates(): void
+    {
+        $principal = User::factory()->principal()->create();
+        $principal->update(['role' => StaffRole::Teacher]);
+        $principal->update(['is_observer' => true]);
+
+        $principal->update(['name' => 'Nuevo nombre']);
+
+        $this->assertFalse($principal->wasChanged('is_observer'));
         $this->assertTrue($principal->fresh()->is_observer);
     }
 

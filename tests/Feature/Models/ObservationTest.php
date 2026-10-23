@@ -138,4 +138,58 @@ class ObservationTest extends TestCase
 
         $score->automaticFeedback();
     }
+
+    public function test_finishing_from_a_stale_copy_is_rejected_and_keeps_the_first_finish(): void
+    {
+        $this->travelTo(now()->setTime(10, 0));
+        $observation = Observation::factory()->create(['started_at' => now()]);
+        $firstCopy = Observation::findOrFail($observation->id);
+        $staleCopy = Observation::findOrFail($observation->id);
+        $this->travel(30)->minutes();
+        $firstCopy->finish();
+        $this->travel(20)->minutes();
+
+        try {
+            $staleCopy->finish();
+            $this->fail('Expected ObservationAlreadyFinishedException.');
+        } catch (ObservationAlreadyFinishedException) {
+            $stored = $observation->fresh();
+            $this->assertSame(30, $stored->duration_minutes);
+            $this->assertTrue($stored->finished_at->equalTo($firstCopy->finished_at));
+        }
+    }
+
+    public function test_finish_refreshes_the_model_with_the_stored_values(): void
+    {
+        $this->travelTo(now()->setTime(10, 0));
+        $observation = Observation::factory()->create(['started_at' => now()]);
+        $this->travel(12)->minutes();
+
+        $observation->finish();
+
+        $this->assertSame(ObservationStatus::Finished, $observation->status);
+        $this->assertSame(12, $observation->duration_minutes);
+        $this->assertFalse($observation->isDirty());
+    }
+
+    public function test_automatic_feedback_fails_when_snapshot_entry_lacks_feedback_keys(): void
+    {
+        $indicator = Indicator::factory()->create();
+        $observation = Observation::factory()->create([
+            'rubric_snapshot' => [
+                'id' => 0,
+                'name' => 'Incompleta',
+                'indicators' => [['id' => $indicator->id, 'number' => $indicator->number, 'name' => $indicator->name]],
+            ],
+        ]);
+        $score = ObservationScore::factory()->for($observation)->create([
+            'indicator_id' => $indicator->id,
+            'level' => AchievementLevel::Achieved,
+        ]);
+
+        $this->expectException(IndicatorNotInSnapshotException::class);
+        $this->expectExceptionMessage('missing [feedback_meaning, feedback_to_achieved, sources]');
+
+        $score->automaticFeedback();
+    }
 }

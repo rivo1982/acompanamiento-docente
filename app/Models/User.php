@@ -49,8 +49,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Principals and curriculum heads are always observers; losing that role drops the
-     * automatic flag unless it is explicitly kept in the same save.
+     * Principals and curriculum heads are always observers. Leaving that role always drops
+     * the flag; an admin may flag the user as an observer again in a separate save.
      */
     protected static function booted(): void
     {
@@ -61,7 +61,7 @@ class User extends Authenticatable
                 return;
             }
 
-            if ($user->wasDemotedFromSchoolAdmin() && ! ($user->isDirty('is_observer') && $user->is_observer)) {
+            if ($user->wasDemotedFromSchoolAdmin()) {
                 $user->is_observer = false;
             }
         });
@@ -78,6 +78,77 @@ class User extends Authenticatable
             && $this->isDirty('role')
             && $originalRole instanceof StaffRole
             && $originalRole->isSchoolAdmin();
+    }
+
+    /**
+     * Whether the user belongs to the given school's staff, in any role.
+     */
+    public function isStaffOf(School $school): bool
+    {
+        return self::sameKey($this->school_id, $school->getKey());
+    }
+
+    /**
+     * Whether the user is a principal or curriculum head of the given school.
+     */
+    public function isSchoolAdminOf(School $school): bool
+    {
+        return $this->role->isSchoolAdmin() && $this->isStaffOf($school);
+    }
+
+    /**
+     * Whether the user administers the organization that owns the given school.
+     */
+    public function isOrganizationAdminOf(School $school): bool
+    {
+        return $this->administersOrganization($school->organization_id);
+    }
+
+    /**
+     * Whether the user administers the organization the given staff member belongs to.
+     */
+    public function isOrganizationAdminOfStaff(User $staff): bool
+    {
+        return $this->administersOrganization($staff->organization_id);
+    }
+
+    /**
+     * Whether the user is a school admin of the staff member's school.
+     */
+    public function isSchoolAdminOfStaff(User $staff): bool
+    {
+        return $this->role->isSchoolAdmin() && self::sameKey($this->school_id, $staff->school_id);
+    }
+
+    /**
+     * Whether the user may observe the given teacher: flagged observer, same school and assigned.
+     */
+    public function canObserve(User $teacher): bool
+    {
+        return $this->is_observer
+            && self::sameKey($this->school_id, $teacher->school_id)
+            && CoachingAssignment::query()
+                ->where('observer_id', $this->getKey())
+                ->where('teacher_id', $teacher->getKey())
+                ->where('school_id', $teacher->school_id)
+                ->exists();
+    }
+
+    /**
+     * Whether the user is an organization admin of the given organization id.
+     */
+    protected function administersOrganization(int|string|null $organizationId): bool
+    {
+        return $this->role === StaffRole::OrganizationAdmin
+            && self::sameKey($this->organization_id, $organizationId);
+    }
+
+    /**
+     * Compare two foreign keys, treating null as never matching.
+     */
+    protected static function sameKey(int|string|null $first, int|string|null $second): bool
+    {
+        return $first !== null && $second !== null && (string) $first === (string) $second;
     }
 
     /**

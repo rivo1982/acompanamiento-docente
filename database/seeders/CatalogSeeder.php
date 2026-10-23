@@ -12,7 +12,9 @@ use JsonException;
 /**
  * Loads the platform rubric catalog (templates, sections, indicators) from catalog.json.
  *
- * Idempotent: templates are keyed by number, sections by (template, name) and indicators by number.
+ * Idempotent: templates are keyed by number, sections by (template, position) and indicators by
+ * number. Sections of a seeded template that no longer appear in the catalog are deleted once
+ * they have no indicators left.
  */
 class CatalogSeeder extends Seeder
 {
@@ -29,6 +31,16 @@ class CatalogSeeder extends Seeder
             flags: JSON_THROW_ON_ERROR,
         );
 
+        $this->seedCatalog($catalog);
+    }
+
+    /**
+     * Seed the given catalog data in one transaction.
+     *
+     * @param  array{templates: list<array<string, mixed>>}  $catalog
+     */
+    public function seedCatalog(array $catalog): void
+    {
         DB::transaction(function () use ($catalog): void {
             foreach ($catalog['templates'] as $templateData) {
                 $this->seedTemplate($templateData);
@@ -54,14 +66,19 @@ class CatalogSeeder extends Seeder
 
         foreach ($templateData['sections'] as $index => $sectionData) {
             $section = RubricSection::updateOrCreate(
-                ['rubric_template_id' => $template->id, 'name' => $sectionData['name']],
-                ['position' => $index + 1],
+                ['rubric_template_id' => $template->id, 'position' => $index + 1],
+                ['name' => $sectionData['name']],
             );
 
             foreach ($sectionData['indicators'] as $indicatorData) {
                 $this->seedIndicator($section, $indicatorData);
             }
         }
+
+        $template->sections()
+            ->where('position', '>', count($templateData['sections']))
+            ->whereDoesntHave('indicators')
+            ->delete();
     }
 
     /**
