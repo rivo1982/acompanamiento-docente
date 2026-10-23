@@ -68,6 +68,10 @@ would make integration costly and risky.
     TABLE, 0 COPY/INSERT lines). Objects are `public.`-qualified; A2 must rewrite or load it
     accordingly. Not auto-loaded (not named pgsql-schema.sql).
   - public table count before/after all test runs: 54 / 54.
+  - Commits: c424e2b (generated: composer.lock + schema snapshot), 1c2c5cd (A1 code).
+    Native review: full range since 08f1888 exceeded lens budget (generated files); code-only
+    range assessed medium / under_budget (163 lines) → pending in slice until a later commit
+    reaches the delivery budget. Last reviewed boundary stays 08f1888.
 
 ## Next step
 A2 — load the host schema snapshot into acompanamiento_test and re-base module domain.
