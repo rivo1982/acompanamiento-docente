@@ -34,13 +34,17 @@ would make integration costly and risky.
 - Privacy: roberto_dev may contain real personal data (personas, estudiantes, casos). Do not
   read or print row contents; only structure and counts. User advised to confirm anonymization.
 - Commits: Conventional Commits, no AI attribution (Vinkured CLAUDE.md + user rule).
+- Dev environment will use search_path 'acompanamiento,public' (module tables + own migrations
+  table in schema acompanamiento, host tables read from public); not configured yet.
 
 ## Tasks
 - [x] A1 Infrastructure: PostgreSQL connection to roberto_dev, test schema acompanamiento_test
   with Vinkured schema-only snapshot, prohibit destructive commands, Pest 4 installed with
   existing PHPUnit tests still passing.
-- [ ] A2 Rename module domain to Spanish and re-base on host tables (Establecimiento,
-  Funcionario, Usuario...) with tenancy pattern; drop module copies of host tables.
+- [x] A2a Host schema loader + host model layer.
+- [ ] A2b Re-base module domain in Spanish on host tables (Establecimiento, Funcionario,
+  Usuario...) with tenancy pattern; drop module copies of host tables (users, organizations,
+  schools); register EstablecimientoActual/RolesDelUsuario as scoped and the middleware.
 - [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
@@ -73,5 +77,43 @@ would make integration costly and risky.
     range assessed medium / under_budget (163 lines) → pending in slice until a later commit
     reaches the delivery budget. Last reviewed boundary stays 08f1888.
 
+- A2a route: delegated writer (trigger: 2+ non-trivial files).
+- A2a evidence:
+  - `database/migrations/0000_00_00_000000_load_vinkured_host_schema.php` runs first and calls
+    `App\Support\HostSchemaLoader`: no-op when `to_regclass('establecimientos')` resolves in the
+    search_path; otherwise refuses if the search_path includes public (empty = public); otherwise
+    splits the dump by pg_dump TOC entries, drops preamble/SET/psql meta lines, SCHEMA and
+    COMMENT ON SCHEMA entries and every entry touching `migrations`/`migrations_id_seq`, uses
+    CREATE OR REPLACE FUNCTION, strips `public.` qualifiers (also inside `nextval('...')`), and
+    rejects unsupported entry types (TYPE, VIEW, EXTENSION, TABLE DATA...). down() is a no-op.
+  - Default Laravel migrations trimmed: users migration keeps only `users`; cache and jobs
+    migrations deleted (host owns cache, cache_locks, jobs, job_batches, failed_jobs,
+    sessions, password_reset_tokens). No module migration collides with a host table.
+  - Host classes copied verbatim from /srv/vinkured/app with a `@host-owned` PHPDoc tag:
+    Usuario, Membresia, Establecimiento, Persona, Funcionario, Funcion, FuncionarioFuncion,
+    AsignacionDocente, Curso, AnioEscolar, Grado, Matricula, Estudiante (closure of
+    Curso::matriculas), Concerns/PerteneceAEstablecimiento, Scopes/EstablecimientoActivoScope,
+    Support/EstablecimientoActual, Support/RolesDelUsuario, Exceptions/EstablecimientoAjeno,
+    Exceptions/SinEstablecimientoActivo, Http/Middleware/EstablecimientoActivo. Vinkured has no
+    NivelEnsenanza model.
+  - Host helpers ported into tests/Pest.php (same names). Deviation: newUsuario builds the
+    UsuarioFactory attributes with forceFill (factory not copied; database/factories outside
+    A2a surface).
+  - Tests: tests/Feature/Infra/HostSchemaLoaderTest.php (transform on a sample dump + real
+    snapshot, refusal with a mocked connection, no-op), HostSchemaLoadedTest.php (53 host
+    tables, 15 functions, 19 triggers, trigger enforced), tests/Feature/Host/HostHelpersTest.php,
+    tests/Feature/Host/AislamientoPorEstablecimientoTest.php (ported from Vinkured
+    tests/Feature/Modelos/AislamientoPorEstablecimientoTest.php: fail closed reading/creating,
+    explicit ajeno rejected, Funcion global; dataset reduced to copied models).
+  - RED: 34 new tests, 8 failed + 26 errors (loader class and helpers missing). GREEN: 43 passed.
+  - `vendor/bin/pest --compact`: 127 passed, 433 assertions. Pint: passed (fixed 2 test files).
+  - acompanamiento_test table count after suite: 66 (53 host + migrations + 12 module).
+  - public table count before/after: 54 / 54.
+  - Deviations: Not registered yet (outside surface, for A2b/A3): scoped bindings of
+    EstablecimientoActual/RolesDelUsuario in AppServiceProvider, the `establecimiento.activo`
+    middleware alias and routes `login`/`establecimientos.seleccionar` it redirects to, auth
+    provider model Usuario. Usuario references Database\Factories\UsuarioFactory only in its
+    docblock; `Usuario::factory()` is unavailable until the factory is added.
+
 ## Next step
-A2 — load the host schema snapshot into acompanamiento_test and re-base module domain.
+A2b — re-base the module domain in Spanish on the host tables.
