@@ -45,6 +45,11 @@ would make integration costly and risky.
 - [ ] A2b Re-base module domain in Spanish on host tables (Establecimiento, Funcionario,
   Usuario...) with tenancy pattern; drop module copies of host tables (users, organizations,
   schools); register EstablecimientoActual/RolesDelUsuario as scoped and the middleware.
+- [ ] A2.1 Review follow-ups (A1+A2a review base c424e2b, approved + acknowledged): scoped
+  binding so paraTrabajo() state is shared (fold into A2b); tenancy tests for updating hook,
+  tampered/foreign/suspended session establecimiento (refrescar → null); HostSchemaLoader:
+  track tagged dollar quotes ($_$, $tag$), fail closed on empty/headerless snapshot; prove the
+  setUpTraits guard wiring runs before RefreshDatabase and covers non-default connections.
 - [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
