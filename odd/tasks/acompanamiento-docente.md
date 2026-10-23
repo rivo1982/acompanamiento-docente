@@ -42,6 +42,11 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
   from admin roles (R3-003); fail loudly when a score's indicator is missing from the snapshot
   (R3-004); review R3-005 (Observation.php:54-56).
 - [x] T2 Catalog seeder: 10 rubric templates, sections, 60 indicators from the source PDF.
+- [ ] T1.2 Review follow-ups (advisory, from T1.1+T2 review): demotion must always clear
+  is_observer — the "keep if re-flagged in same save" branch is unreachable for real admins;
+  fix docblock and replace the raw-query test (R3-001/R3-002); make finish() guard
+  concurrency-safe via conditional update (R3-003); domain exception for snapshot entries with
+  missing keys (R3-004); handle renamed sections on re-seed (R3-005).
 - [ ] T3 Roles and authorization policies (admin, observer, teacher, organization).
 - [ ] T4 School setup + staff bulk import from Excel.
 - [ ] T5 School rubric configuration + PDF export.
@@ -72,6 +77,8 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
   indicator number; one DB transaction) called from DatabaseSeeder; 7 seeder tests RED (class missing)
   then GREEN. `migrate:fresh --seed` OK → 10 templates / 13 sections / 60 indicators, re-seed keeps
   counts. `php artisan test --compact` 40 tests / 84 assertions passing; `pint --dirty --test` passed.
+- Commits 8a772c5 (T1.1), cf0eeb0 (T2). Native review base f97e40e, risk medium, consent granted,
+  lens review-reliability → approved with 5 advisory findings (tracked as T1.2), acknowledged.
 
 ## Next step
 T3 — roles and authorization policies (admin, observer, teacher, organization).
