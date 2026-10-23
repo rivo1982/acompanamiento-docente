@@ -49,15 +49,35 @@ class User extends Authenticatable
     }
 
     /**
-     * Principals and curriculum heads are always observers.
+     * Principals and curriculum heads are always observers; losing that role drops the
+     * automatic flag unless it is explicitly kept in the same save.
      */
     protected static function booted(): void
     {
         static::saving(function (User $user): void {
             if ($user->role->isSchoolAdmin()) {
                 $user->is_observer = true;
+
+                return;
+            }
+
+            if ($user->wasDemotedFromSchoolAdmin() && ! ($user->isDirty('is_observer') && $user->is_observer)) {
+                $user->is_observer = false;
             }
         });
+    }
+
+    /**
+     * Whether the pending save moves this user out of a school admin role.
+     */
+    protected function wasDemotedFromSchoolAdmin(): bool
+    {
+        $originalRole = $this->getOriginal('role');
+
+        return $this->exists
+            && $this->isDirty('role')
+            && $originalRole instanceof StaffRole
+            && $originalRole->isSchoolAdmin();
     }
 
     /**

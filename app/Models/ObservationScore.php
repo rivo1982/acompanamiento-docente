@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AchievementLevel;
+use App\Exceptions\IndicatorNotInSnapshotException;
 use Database\Factories\ObservationScoreFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,16 +33,19 @@ class ObservationScore extends Model
      * Automatic feedback read from the observation's frozen rubric snapshot.
      *
      * @return array{meaning: string, to_achieved: string, to_outstanding: ?string, sources: string, congratulations: ?string}
+     *
+     * @throws IndicatorNotInSnapshotException
      */
     public function automaticFeedback(): array
     {
-        $indicator = $this->observation->snapshotIndicator($this->indicator_id) ?? [];
+        $indicator = $this->observation->snapshotIndicator($this->indicator_id)
+            ?? throw IndicatorNotInSnapshotException::for($this->observation, $this->indicator_id);
 
         return [
-            'meaning' => $indicator['feedback_meaning'] ?? '',
-            'to_achieved' => $indicator['feedback_to_achieved'] ?? '',
+            'meaning' => $indicator['feedback_meaning'],
+            'to_achieved' => $indicator['feedback_to_achieved'],
             'to_outstanding' => $indicator['feedback_to_outstanding'] ?? null,
-            'sources' => $indicator['sources'] ?? '',
+            'sources' => $indicator['sources'],
             'congratulations' => $this->level->congratulationMessage(),
         ];
     }

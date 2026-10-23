@@ -20,7 +20,7 @@ class IndicatorFactory extends Factory
     {
         return [
             'rubric_section_id' => RubricSection::factory(),
-            'number' => fake()->unique()->numberBetween(1, 60),
+            'number' => fake()->unique()->numberBetween(1000, 999999),
             'name' => fake()->sentence(4),
             'level_beginning' => fake()->sentence(),
             'level_developing' => fake()->sentence(),

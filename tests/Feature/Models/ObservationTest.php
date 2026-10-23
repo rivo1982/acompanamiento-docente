@@ -4,6 +4,8 @@ namespace Tests\Feature\Models;
 
 use App\Enums\AchievementLevel;
 use App\Enums\ObservationStatus;
+use App\Exceptions\IndicatorNotInSnapshotException;
+use App\Exceptions\ObservationAlreadyFinishedException;
 use App\Models\Indicator;
 use App\Models\Observation;
 use App\Models\ObservationScore;
@@ -86,5 +88,54 @@ class ObservationTest extends TestCase
         $this->assertSame(ObservationStatus::Finished, $observation->status);
         $this->assertSame(47, $observation->duration_minutes);
         $this->assertTrue($observation->finished_at->equalTo(now()));
+    }
+
+    public function test_finishing_twice_is_rejected_and_keeps_the_original_record(): void
+    {
+        $this->travelTo(now()->setTime(10, 0));
+        $observation = Observation::factory()->create(['started_at' => now()]);
+        $this->travel(30)->minutes();
+        $observation->finish();
+        $finishedAt = $observation->fresh()->finished_at;
+
+        $this->travel(20)->minutes();
+
+        try {
+            $observation->finish();
+            $this->fail('Expected ObservationAlreadyFinishedException.');
+        } catch (ObservationAlreadyFinishedException) {
+            $observation->refresh();
+            $this->assertSame(30, $observation->duration_minutes);
+            $this->assertTrue($observation->finished_at->equalTo($finishedAt));
+        }
+    }
+
+    public function test_provided_snapshot_and_start_time_are_not_overwritten(): void
+    {
+        $startedAt = now()->subHour()->startOfMinute();
+        $snapshot = ['id' => 0, 'name' => 'Provista', 'indicators' => []];
+
+        $observation = Observation::factory()->create([
+            'started_at' => $startedAt,
+            'rubric_snapshot' => $snapshot,
+        ]);
+
+        $observation->refresh();
+        $this->assertSame($snapshot, $observation->rubric_snapshot);
+        $this->assertTrue($observation->started_at->equalTo($startedAt));
+    }
+
+    public function test_automatic_feedback_fails_when_indicator_is_missing_from_snapshot(): void
+    {
+        $observation = Observation::factory()->create();
+        $foreignIndicator = Indicator::factory()->create();
+        $score = ObservationScore::factory()->for($observation)->create([
+            'indicator_id' => $foreignIndicator->id,
+            'level' => AchievementLevel::Achieved,
+        ]);
+
+        $this->expectException(IndicatorNotInSnapshotException::class);
+
+        $score->automaticFeedback();
     }
 }

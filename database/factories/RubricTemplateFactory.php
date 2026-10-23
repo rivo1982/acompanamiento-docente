@@ -18,7 +18,7 @@ class RubricTemplateFactory extends Factory
     public function definition(): array
     {
         return [
-            'number' => fake()->unique()->numberBetween(1, 10),
+            'number' => fake()->unique()->numberBetween(1000, 999999),
             'name' => 'Pauta '.fake()->words(3, true),
             'evidence' => fake()->paragraph(),
             'standards' => fake()->paragraph(),

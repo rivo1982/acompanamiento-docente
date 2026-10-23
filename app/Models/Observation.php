@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ObservationStatus;
+use App\Exceptions\ObservationAlreadyFinishedException;
 use Database\Factories\ObservationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -60,9 +61,15 @@ class Observation extends Model
 
     /**
      * Close the observation, recording its end time and whole-minute duration.
+     *
+     * @throws ObservationAlreadyFinishedException
      */
     public function finish(): void
     {
+        if ($this->status === ObservationStatus::Finished) {
+            throw ObservationAlreadyFinishedException::for($this);
+        }
+
         $finishedAt = now();
 
         $this->forceFill([
