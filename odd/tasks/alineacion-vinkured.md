@@ -36,7 +36,7 @@ would make integration costly and risky.
 - Commits: Conventional Commits, no AI attribution (Vinkured CLAUDE.md + user rule).
 
 ## Tasks
-- [ ] A1 Infrastructure: PostgreSQL connection to roberto_dev, test schema acompanamiento_test
+- [x] A1 Infrastructure: PostgreSQL connection to roberto_dev, test schema acompanamiento_test
   with Vinkured schema-only snapshot, prohibit destructive commands, Pest 4 installed with
   existing PHPUnit tests still passing.
 - [ ] A2 Rename module domain to Spanish and re-base on host tables (Establecimiento,
@@ -47,6 +47,27 @@ would make integration costly and risky.
 
 ## Progress / Evidence
 - Branch feat/vinkured-alignment created from feat/data-model @ 08f1888.
+- A1 route: delegated writer (trigger: 2+ non-trivial files).
+- A1 evidence:
+  - Schema `acompanamiento_test` created in roberto_dev (additive `CREATE SCHEMA IF NOT EXISTS`).
+  - pgsql `search_path` = `env('DB_SEARCH_PATH', 'public')`; phpunit.xml points tests at
+    roberto_dev with `DB_SEARCH_PATH=acompanamiento_test`. Laravel's PostgresBuilder
+    dropAllTables/Views/Types only touch `getCurrentSchemaListing()` (parsed search_path).
+  - Guard in `Tests\TestCase::setUpTraits()` (not `beforeRefreshingDatabase()`, which the
+    RefreshDatabase trait would override with its empty hook) throws unless default connection
+    is pgsql with search_path exactly `acompanamiento_test`, for RefreshDatabase,
+    DatabaseMigrations and DatabaseTruncation.
+  - `DB::prohibitDestructiveCommands(! testing)` in AppServiceProvider::boot().
+  - RED observed: 8 failed + 1 error in tests/Feature/Infra before implementation; GREEN after.
+  - Pest v4.7.8 + pest-plugin-laravel installed (phpunit 12.5.33); tests/Pest.php extends
+    Tests\TestCase in Feature without global RefreshDatabase.
+  - `php artisan test --compact` and `vendor/bin/pest --compact`: 93 passed, 269 assertions
+    (all T1–T3 tests pass on PostgreSQL in acompanamiento_test).
+  - `vendor/bin/pint --dirty --format agent`: passed.
+  - `database/schema/vinkured-host-schema.sql`: pg_dump schema-only of public (54 CREATE
+    TABLE, 0 COPY/INSERT lines). Objects are `public.`-qualified; A2 must rewrite or load it
+    accordingly. Not auto-loaded (not named pgsql-schema.sql).
+  - public table count before/after all test runs: 54 / 54.
 
 ## Next step
-A1 — route: delegated writer (2+ non-trivial files: config, phpunit.xml, provider, composer).
+A2 — load the host schema snapshot into acompanamiento_test and re-base module domain.
