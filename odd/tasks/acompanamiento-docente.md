@@ -36,6 +36,11 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
 
 ## Tasks
 - [x] T1 Data model: migrations, enums, Eloquent models, relationships, factories, tests.
+- [ ] T1.1 Review follow-ups (advisory, from T1 review): guard Observation::finish() against
+  re-run (R3-001); remove fake()->unique() 1..60 / 1..10 collisions in Indicator and
+  RubricTemplate factories before T2 seeds real numbers (R3-002); clear is_observer on demotion
+  from admin roles (R3-003); fail loudly when a score's indicator is missing from the snapshot
+  (R3-004); review R3-005 (Observation.php:54-56).
 - [ ] T2 Catalog seeder: 10 rubric templates, sections, 60 indicators from the source PDF.
 - [ ] T3 Roles and authorization policies (admin, observer, teacher, organization).
 - [ ] T4 School setup + staff bulk import from Excel.
@@ -53,6 +58,9 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
 - T1 evidence: RED observed (23/25 failing before implementation); GREEN `php artisan test --compact`
   25 tests / 51 assertions passing; `migrate:fresh` OK (12 new migrations, up/down verified);
   `pint --dirty --test` passed. Enum case renamed InProgressStart -> Beginning (value `en_inicio` kept).
+- T1 commit f97e40e. Native review: full branch range exceeded lens budget (mostly Boost
+  vendor skills); reviewed data-model commit only (base ee59f4b), risk medium, consent granted,
+  lens review-reliability → approved with 5 advisory findings, acknowledged (authority burned).
 
 ## Next step
 T2 — catalog seeder (10 templates, sections, 60 indicators).
