@@ -35,7 +35,7 @@ Coaching is done on paper; data is lost and teachers get no structured, actionab
 ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (chained).
 
 ## Tasks
-- [ ] T1 Data model: migrations, enums, Eloquent models, relationships, factories, tests.
+- [x] T1 Data model: migrations, enums, Eloquent models, relationships, factories, tests.
 - [ ] T2 Catalog seeder: 10 rubric templates, sections, 60 indicators from the source PDF.
 - [ ] T3 Roles and authorization policies (admin, observer, teacher, organization).
 - [ ] T4 School setup + staff bulk import from Excel.
@@ -49,6 +49,10 @@ ask-on-risk. Forecast > 400 authored lines overall → one PR per work unit (cha
 ## Progress / Evidence
 - Setup: Laravel 13.38 project created, pushed to github.com/rivo1982/acompanamiento-docente
   (main @ af3a390). Branch feat/data-model created for T1.
+- T1 route: delegated writer (trigger: 2+ non-trivial files).
+- T1 evidence: RED observed (23/25 failing before implementation); GREEN `php artisan test --compact`
+  25 tests / 51 assertions passing; `migrate:fresh` OK (12 new migrations, up/down verified);
+  `pint --dirty --test` passed. Enum case renamed InProgressStart -> Beginning (value `en_inicio` kept).
 
 ## Next step
-T1 — route: delegated writer (2+ non-trivial files: migrations, models, enums, tests).
+T2 — catalog seeder (10 templates, sections, 60 indicators).
