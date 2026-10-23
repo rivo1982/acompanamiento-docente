@@ -1,0 +1,1011 @@
+{
+  "source": "ACOMPAÑAMIENTO_DOCENTE_CON_RETROALIMENTACIÓN.pdf",
+  "format": "levels = [en_inicio, en_desarrollo, logrado, destacado]",
+  "templates": [
+    {
+      "number": 1,
+      "name": "Observación de aula",
+      "evidence": null,
+      "standards": "5 (ambiente respetuoso y organizado), 6 (desarrollo personal y social), 7 (estrategias de enseñanza), 8 (habilidades del pensamiento) y 9 (evaluación y retroalimentación).",
+      "protocol": "1. Conversación previa (10 a 15 minutos). El docente explica el objetivo de la clase y en qué aspecto quiere recibir apoyo.\n2. Observación (30 a 45 minutos). El observador toma registro literal de lo que ocurre (qué dice el docente, qué hacen los estudiantes). No califica durante la clase.\n3. Asignación de nivel. Después de la clase, el observador asigna un nivel por indicador, citando al menos una evidencia del registro.\n4. Conversación reflexiva (30 minutos). Se parte por lo que el docente vio, luego se comparten las evidencias y se acuerdan una o dos prácticas a trabajar.\nRegla de oro: sin evidencia registrada no se asigna nivel.",
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Ambiente propicio para el aprendizaje",
+          "indicators": [
+            {
+              "number": 1,
+              "name": "Trato respetuoso e inclusivo",
+              "levels": [
+                "Hay interacciones irrespetuosas o discriminatorias que el docente no aborda, o el trato es distante.",
+                "El trato es mayormente respetuoso, pero interviene solo en algunas faltas de respeto o no considera la diversidad del grupo.",
+                "Trata con respeto a todos, usa ejemplos y lenguaje inclusivos e interviene de inmediato y con sentido formativo ante faltas de respeto o estereotipos.",
+                "Además de lo logrado, los estudiantes se tratan con respeto por iniciativa propia y el docente usa los incidentes para reflexionar con el grupo sobre diversidad y prejuicios."
+              ],
+              "meaning": "Un clima donde todos se sienten valorados es condición previa del aprendizaje (MBE 2021, Dominio B). Importa no solo que el docente trate bien, sino que intervenga cuando hay burlas, estereotipos o exclusión: lo que se tolera se vuelve norma.",
+              "to_achieved": "Intervenir siempre, de inmediato y con sentido formativo (nombrar la conducta, no humillar), y revisar ejemplos y lenguaje para que representen a todo el grupo.",
+              "to_outstanding": "Usar los incidentes como oportunidad de reflexión sobre diversidad y prejuicios.",
+              "sources": "MBE 2021, Est. 5; Ley 21.430 (garantías de la niñez); Ladson-Billings (1995), pedagogía culturalmente relevante."
+            },
+            {
+              "number": 2,
+              "name": "Normas, rutinas y uso del tiempo",
+              "levels": [
+                "No hay normas ni rutinas visibles; se pierde gran parte del tiempo en organizarse o controlar conductas.",
+                "Hay normas y rutinas, pero se aplican de modo irregular; las transiciones consumen tiempo y algunos estudiantes se distraen sin que el docente intervenga.",
+                "Las normas y rutinas son claras y conocidas, las transiciones son ágiles y la mayor parte del tiempo se dedica al aprendizaje.",
+                "Además de lo logrado, los estudiantes gestionan las rutinas por sí mismos y el docente anticipa y corrige factores que distraen (espacio, materiales, tiempos)."
+              ],
+              "meaning": "Las rutinas claras reducen la carga cognitiva y liberan tiempo para aprender. Se asocia con el 'tiempo efectivo de aprendizaje': el tiempo que realmente se dedica a tareas de aprendizaje, y no solo a organizarse.",
+              "to_achieved": "Enseñar explícitamente 2 o 3 rutinas (entrada, reparto de materiales, trabajo en grupo) y practicarlas hasta que sean automáticas.",
+              "to_outstanding": "Traspasar roles de gestión a los estudiantes (encargados de materiales, tiempo) y anticipar distractores del espacio.",
+              "sources": "MBE 2021, Est. 5; Marzano, Marzano y Pickering (2003), Classroom Management That Works; Lemov (2015), Teach Like a Champion."
+            }
+          ]
+        },
+        {
+          "name": "Desarrollo personal y social",
+          "indicators": [
+            {
+              "number": 3,
+              "name": "Vínculo y desarrollo socioemocional",
+              "levels": [
+                "No atiende señales emocionales de los estudiantes; la interacción se limita a las tareas.",
+                "Atiende las situaciones emocionales evidentes, pero no promueve habilidades sociales durante la clase.",
+                "Reconoce el estado emocional del grupo y de estudiantes específicos, y organiza actividades donde practican escucha, empatía o regulación.",
+                "Además de lo logrado, enseña habilidades socioemocionales de forma explícita y los estudiantes las usan por iniciativa propia."
+              ],
+              "meaning": "Las emociones condicionan la atención, la memoria y la motivación. Este indicador mira dos cosas: si el docente percibe el estado emocional del grupo y si enseña, no solo contiene, habilidades como escuchar, empatizar y regularse.",
+              "to_achieved": "Incorporar actividades breves y planificadas donde se practique una habilidad (turnos de escucha, 'termómetro' emocional, resolver un desacuerdo).",
+              "to_outstanding": "Nombrar la habilidad que se trabaja y observar que los estudiantes la usan solos.",
+              "sources": "MBE 2021, Est. 6; CASEL (2020), marco de aprendizaje socioemocional; Mineduc, Orientaciones de Desarrollo Personal y Social; Bisquerra (2009)."
+            }
+          ]
+        },
+        {
+          "name": "Enseñanza para el aprendizaje de todos los estudiantes",
+          "indicators": [
+            {
+              "number": 4,
+              "name": "Objetivos e instrucciones",
+              "levels": [
+                "No comunica el objetivo o las instrucciones son confusas; los estudiantes no saben qué hacer.",
+                "Presenta el objetivo y las instrucciones, pero no verifica que se entiendan; varios estudiantes necesitan que se las repitan.",
+                "Comunica el objetivo con claridad, da instrucciones precisas, comprueba que las comprenden y apoya a quienes lo necesitan.",
+                "Además de lo logrado, los estudiantes explican con sus palabras el objetivo y lo relacionan con sus propias metas."
+              ],
+              "meaning": "Un estudiante que no sabe qué aprenderá ni qué debe hacer no puede autorregularse. Comunicar el objetivo da sentido a la clase y las instrucciones precisas evitan que el tiempo se pierda en repetir.",
+              "to_achieved": "Verificar la comprensión pidiendo que un estudiante parafrasee la instrucción, dar los pasos de a uno y apoyar visualmente.",
+              "to_outstanding": "Que los estudiantes expliquen el objetivo con sus palabras y lo conecten con sus metas.",
+              "sources": "MBE 2021, Est. 7; Hattie (2009), Visible Learning (claridad de la intención de aprendizaje); Wiliam (2011), Embedded Formative Assessment."
+            },
+            {
+              "number": 5,
+              "name": "Conocimientos previos y presentación del contenido",
+              "levels": [
+                "Entrega el contenido sin explorar lo que los estudiantes saben; usa un solo recurso o presenta errores disciplinares.",
+                "Explora conocimientos previos de manera general (por ejemplo, una pregunta al grupo) y presenta el contenido con pocos recursos o ejemplos.",
+                "Explora conocimientos previos, detecta ideas erróneas y presenta el contenido con lenguaje disciplinar correcto, ejemplos y modelamiento.",
+                "Además de lo logrado, vincula el contenido con la experiencia de los estudiantes y con otros saberes, y varía los recursos según sus necesidades."
+              ],
+              "meaning": "Aprendemos conectando lo nuevo con lo que ya sabemos, incluidas las ideas erróneas, que persisten si no se confrontan. La presentación del contenido, además, debe ser disciplinarmente correcta y variada para llegar a distintos estudiantes.",
+              "to_achieved": "Detectar ideas erróneas, usar ejemplos y modelar el proceso en voz alta ('pienso en voz alta').",
+              "to_outstanding": "Conectar con la experiencia de los estudiantes y variar recursos según sus necesidades.",
+              "sources": "MBE 2021, Est. 2 y 7; Ambrose et al. (2010), How Learning Works; Ausubel (1968), aprendizaje significativo; Shulman (1986), conocimiento didáctico del contenido."
+            },
+            {
+              "number": 6,
+              "name": "Altas expectativas y motivación",
+              "levels": [
+                "Comunica bajas expectativas o desinterés; solo participan siempre los mismos estudiantes.",
+                "Comunica expectativas positivas, pero las actividades son poco desafiantes o el reconocimiento de logros es genérico.",
+                "Plantea tareas desafiantes para todos, reconoce logros específicos y la mayoría del grupo se mantiene comprometida.",
+                "Además de lo logrado, los estudiantes persisten ante las dificultades y el docente los ayuda a conectar el esfuerzo con sus resultados."
+              ],
+              "meaning": "Las expectativas del docente influyen en el esfuerzo y el rendimiento de los estudiantes (efecto Pigmalión). Altas expectativas no significan exigir lo mismo a todos, sino creer que todos pueden lograr y apoyarlos con tareas desafiantes.",
+              "to_achieved": "Cambiar elogios genéricos ('muy bien') por reconocimiento específico ('ordenaste tus argumentos en tres pasos') y asegurar que las tareas exigentes lleguen a todos con apoyos graduados.",
+              "to_outstanding": "Ayudar a vincular esfuerzo con resultados.",
+              "sources": "MBE 2021, Est. 6 y 7; Rosenthal y Jacobson (1968); Dweck (2006), mentalidad de crecimiento; Brophy (1981), elogio efectivo."
+            },
+            {
+              "number": 7,
+              "name": "Participación y paso al trabajo autónomo",
+              "levels": [
+                "Los estudiantes escuchan o copian; hay poca oportunidad de usar lo aprendido.",
+                "Hay actividades de práctica, pero de baja exigencia o solo para algunos; el trabajo grupal no tiene roles claros.",
+                "Los estudiantes usan los conocimientos en tareas de distinto tipo, con equilibrio entre trabajo individual y colaborativo, y avanzan de lo guiado a lo autónomo.",
+                "Además de lo logrado, producen resultados propios (explicaciones, modelos, productos) y el docente ajusta los apoyos según el avance de cada uno."
+              ],
+              "meaning": "Se aprende haciendo: los estudiantes necesitan usar lo aprendido, primero con apoyo y luego solos, en tareas de distinto tipo. El trabajo grupal solo es efectivo si cada integrante tiene un rol y una responsabilidad.",
+              "to_achieved": "Equilibrar trabajo individual y colaborativo, con roles definidos y progresión gradual.",
+              "to_outstanding": "Que produzcan resultados propios (explicaciones, modelos) y ajustar los apoyos por estudiante.",
+              "sources": "MBE 2021, Est. 7; Vygotsky (1978), zona de desarrollo próximo; Rosenshine (2012), Principles of Instruction; Johnson y Johnson (1999), aprendizaje cooperativo."
+            },
+            {
+              "number": 8,
+              "name": "Preguntas y desafío cognitivo",
+              "levels": [
+                "Las preguntas piden solo recordar o repetir; los errores se corrigen sin analizarlos.",
+                "Hay algunas preguntas de análisis, pero se responden rápido o por pocos estudiantes; el error se aprovecha poco.",
+                "Formula preguntas que exigen explicar, argumentar o comparar, da tiempo para pensar y usa el error como oportunidad de aprendizaje.",
+                "Además de lo logrado, los estudiantes formulan preguntas, argumentan con evidencia y se cuestionan entre sí."
+              ],
+              "meaning": "Las preguntas que solo piden recordar dejan fuera el análisis, la argumentación y la comparación. El error, bien usado, es una de las mejores fuentes de aprendizaje.",
+              "to_achieved": "Dar al menos 3 a 5 segundos de silencio, pedir justificación ('¿cómo lo sabes?') y analizar errores en vez de corregirlos rápido.",
+              "to_outstanding": "Que los estudiantes formulen preguntas y se cuestionen entre sí.",
+              "sources": "MBE 2021, Est. 8; Anderson y Krathwohl (2001), taxonomía de Bloom revisada; Rowe (1986), tiempo de espera; Boaler (2016), Mathematical Mindsets (errores como oportunidad)."
+            }
+          ]
+        },
+        {
+          "name": "Evaluación y retroalimentación en el aula",
+          "indicators": [
+            {
+              "number": 9,
+              "name": "Monitoreo de la comprensión y ajuste",
+              "levels": [
+                "No verifica si los estudiantes comprenden; continúa con lo planificado aunque haya dificultades visibles.",
+                "Verifica la comprensión de forma general (\"¿entendieron?\") o con pocos estudiantes; ajusta solo si se lo piden.",
+                "Recoge evidencia de varios estudiantes durante la clase (preguntas, trabajo, observación) y ajusta de inmediato la explicación o los apoyos.",
+                "Además de lo logrado, usa la evidencia para diferenciar actividades y grupos dentro de la misma clase."
+              ],
+              "meaning": "Monitorear es recoger evidencia de lo que los estudiantes entienden mientras ocurre la clase y decidir en consecuencia. Preguntar '¿entendieron?' no es evidencia: los estudiantes suelen decir que sí.",
+              "to_achieved": "Recoger evidencia de varios estudiantes y ajustar de inmediato.",
+              "to_outstanding": "Usar esa evidencia para agrupar o diferenciar actividades.",
+              "sources": "MBE 2021, Est. 9; Black y Wiliam (1998), Inside the Black Box; Wiliam (2011); Decreto 67/2018 (evaluación formativa)."
+            },
+            {
+              "number": 10,
+              "name": "Retroalimentación",
+              "levels": [
+                "No entrega retroalimentación o solo indica si está bien o mal.",
+                "Dice qué está correcto, pero no orienta cómo mejorar, o llega a pocos estudiantes.",
+                "Entrega retroalimentación descriptiva, basada en criterios, que señala logros y pasos concretos para mejorar, cuidando la motivación del estudiante.",
+                "Además de lo logrado, los estudiantes usan la retroalimentación durante la clase para mejorar su trabajo y se retroalimentan entre pares."
+              ],
+              "meaning": "La retroalimentación es una de las prácticas con mayor impacto en el aprendizaje, pero solo cuando responde a tres preguntas: ¿hacia dónde voy?, ¿cómo voy? y ¿qué sigue? Decir 'está bien' o 'está mal' no orienta la mejora.",
+              "to_achieved": "Describir logros, señalar un paso concreto de mejora y cuidar la motivación.",
+              "to_outstanding": "Dar espacio para usarla en clase y promover retroalimentación entre pares.",
+              "sources": "MBE 2021, Est. 9; Hattie y Timperley (2007), The Power of Feedback; Brookhart (2008), How to Give Effective Feedback; Sadler (1989)."
+            },
+            {
+              "number": 11,
+              "name": "Criterios y autoevaluación",
+              "levels": [
+                "No hay criterios de éxito explícitos; los estudiantes no saben cómo se evaluará su trabajo.",
+                "Menciona criterios de evaluación, pero sin ejemplos ni uso por parte de los estudiantes.",
+                "Explica los criterios con ejemplos de desempeños esperados e invita a los estudiantes a revisar su trabajo con ellos.",
+                "Además de lo logrado, los estudiantes aplican los criterios para autoevaluarse o evaluar a sus pares y participan en definirlos."
+              ],
+              "meaning": "Los estudiantes aprenden mejor cuando saben qué se espera de ellos y pueden juzgar su propio trabajo. Mostrar ejemplos de desempeños (buenos y mejorables) hace visibles los criterios.",
+              "to_achieved": "Explicar criterios con ejemplos reales e invitar a revisar.",
+              "to_outstanding": "Que los estudiantes participen en definirlos y se autoevalúen o evalúen a pares con ellos.",
+              "sources": "MBE 2021, Est. 9; Andrade y Valtcheva (2009), rúbricas y autoevaluación; Panadero y Jonsson (2013); Decreto 67/2018."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Planificación y evaluación",
+      "evidence": "Planificación de una unidad o de una secuencia de clases, con los instrumentos de evaluación asociados.",
+      "standards": "2 (aplicación en el diseño), 3 (planificación de la enseñanza) y 4 (planificación de la evaluación).",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Planificación y evaluación",
+          "indicators": [
+            {
+              "number": 12,
+              "name": "Objetivos de aprendizaje",
+              "levels": [
+                "Los objetivos no corresponden al currículo vigente o describen actividades en vez de aprendizajes.",
+                "Usa objetivos del currículo, pero los copia sin precisarlos para su grupo o la secuencia entre clases no es clara.",
+                "Selecciona y precisa objetivos del currículo vigente (conocimientos, habilidades y actitudes), pertinentes para su grupo y secuenciados. Se declara en su planificación.",
+                "Además de lo logrado, los relaciona con objetivos de otras áreas y con aprendizajes previos y futuros (3.2)."
+              ],
+              "meaning": "El objetivo de aprendizaje es la brújula de la planificación. Debe provenir del currículo vigente, expresar un aprendizaje (no una actividad) y estar secuenciado con lo anterior y lo posterior.",
+              "to_achieved": "Precisar el OA (conocimiento, habilidad, actitud) según el grupo.",
+              "to_outstanding": "Relacionar con otras áreas y con aprendizajes previos y futuros (estándar 3.2).",
+              "sources": "MBE 2021, Est. 3; Bases Curriculares vigentes (Mineduc); Wiggins y McTighe (2005), Understanding by Design."
+            },
+            {
+              "number": 13,
+              "name": "Conocimientos previos y diversidad",
+              "levels": [
+                "No considera conocimientos previos ni diferencias entre estudiantes.",
+                "Menciona la diversidad, pero las actividades son iguales para todos o los apoyos no se especifican.",
+                "Parte de los conocimientos previos e intereses de sus estudiantes e incluye adecuaciones concretas para quienes requieren apoyos.",
+                "Además de lo logrado, usa la evidencia de evaluaciones anteriores para decidir qué enseñar primero y a quiénes apoyar."
+              ],
+              "meaning": "Planificar para un 'estudiante promedio' deja fuera a muchos. Considerar saberes previos, intereses y necesidades de apoyo es la base de una enseñanza inclusiva.",
+              "to_achieved": "Incluir al menos un apoyo específico por necesidad identificada.",
+              "to_outstanding": "Decidir con evidencia de evaluaciones previas qué enseñar primero y a quién apoyar.",
+              "sources": "MBE 2021, Est. 2 y 3; Decreto 83/2015 (diversificación de la enseñanza); Tomlinson (2001), enseñanza diferenciada; CAST (2018), Diseño Universal para el Aprendizaje."
+            },
+            {
+              "number": 14,
+              "name": "Estrategias y experiencias de aprendizaje",
+              "levels": [
+                "Se limita a explicar y hacer ejercicios, sin relación con lo que se quiere lograr.",
+                "Incluye varias actividades, pero no se justifica su elección o son de baja exigencia.",
+                "Selecciona estrategias adecuadas al contenido y al grupo, con actividades desafiantes y recursos variados, incluidos los digitales cuando aportan.",
+                "Además de lo logrado, anticipa dificultades y concepciones erróneas frecuentes del contenido y las aborda en el diseño."
+              ],
+              "meaning": "Las estrategias deben elegirse por su aporte al objetivo, no por costumbre. Explicar y hacer ejercicios no basta: se requieren experiencias desafiantes y recursos variados (incluidos los digitales cuando agregan valor).",
+              "to_achieved": "Justificar la elección y subir el nivel de exigencia.",
+              "to_outstanding": "Prever las dificultades y concepciones erróneas típicas del contenido y diseñar actividades para abordarlas.",
+              "sources": "MBE 2021, Est. 3; Shulman (1986); Hattie (2009); Puentedura (2006), modelo SAMR para tecnología."
+            },
+            {
+              "number": 15,
+              "name": "Secuencia y uso del tiempo",
+              "levels": [
+                "Las actividades no tienen orden ni tiempos definidos.",
+                "Hay inicio, desarrollo y cierre, pero los tiempos no son realistas o el cierre no retoma el objetivo.",
+                "Organiza los momentos de la clase con tiempos realistas y una secuencia progresiva que conduce al objetivo.",
+                "Además de lo logrado, prevé alternativas si el tiempo o la comprensión no son los esperados."
+              ],
+              "meaning": "La secuencia y el tiempo son decisiones pedagógicas: una clase con inicio, desarrollo y cierre que retoma el objetivo ayuda a consolidar lo aprendido. Los tiempos poco realistas son una causa frecuente de clases que no llegan al cierre.",
+              "to_achieved": "Tiempos realistas basados en experiencia previa.",
+              "to_outstanding": "Prever alternativas ('si en 20 minutos no lo logran, entonces...').",
+              "sources": "MBE 2021, Est. 3; Rosenshine (2012); Mineduc, Orientaciones para la planificación de clases."
+            },
+            {
+              "number": 16,
+              "name": "Coherencia entre objetivo y evaluación",
+              "levels": [
+                "La evaluación no se relaciona con los objetivos.",
+                "Evalúa parte de los objetivos o usa un solo tipo de instrumento.",
+                "Evalúa lo que enseña, en distintos momentos y con distintas técnicas, formativas y sumativas.",
+                "Además de lo logrado, ofrece evidencias variadas para que todos los estudiantes puedan demostrar lo que aprendieron."
+              ],
+              "meaning": "La evaluación debe medir lo que se enseñó, de la forma en que se enseñó. Si hay desalineación, las notas no informan sobre el aprendizaje real.",
+              "to_achieved": "Evaluar todos los objetivos importantes, en distintos momentos y con técnicas formativas y sumativas.",
+              "to_outstanding": "Ofrecer varias formas de demostrar lo aprendido (producto, exposición, prueba) para que cada estudiante tenga oportunidad.",
+              "sources": "MBE 2021, Est. 4; Decreto 67/2018; Biggs (1996), alineamiento constructivo; Stiggins (2005)."
+            },
+            {
+              "number": 17,
+              "name": "Criterios, indicadores y calificación",
+              "levels": [
+                "No hay criterios; la calificación se explica solo con un puntaje.",
+                "Hay criterios, pero son generales o poco comprensibles para los estudiantes.",
+                "Define criterios e indicadores claros, alineados al objetivo, y un procedimiento de calificación justo y transparente.",
+                "Además de lo logrado, los criterios se construyen o revisan con los estudiantes."
+              ],
+              "meaning": "Los criterios hacen justa y comprensible la evaluación. Cuando solo hay un puntaje, el estudiante no sabe qué mejorar y la nota pierde valor formativo.",
+              "to_achieved": "Indicadores alineados al objetivo y un procedimiento de nota transparente.",
+              "to_outstanding": "Construir o revisar los criterios con los estudiantes.",
+              "sources": "MBE 2021, Est. 4; Decreto 67/2018; Brookhart (2013), How to Create and Use Rubrics; Reddy y Andrade (2010)."
+            },
+            {
+              "number": 18,
+              "name": "Uso de evidencias y retroalimentación",
+              "levels": [
+                "No analiza resultados ni planifica retroalimentación.",
+                "Revisa resultados generales (por ejemplo, promedios) y planifica retroalimentación puntual.",
+                "Analiza las evidencias para identificar brechas entre lo esperado y lo logrado y planifica instancias sistemáticas de retroalimentación.",
+                "Además de lo logrado, compara con evaluaciones anteriores y ajusta su planificación y sus instrumentos según lo que encuentra."
+              ],
+              "meaning": "Evaluar no sirve si los datos no cambian la enseñanza. El promedio esconde brechas: lo útil es ver qué objetivos o estudiantes no lograron lo esperado y planificar cómo cerrarlas.",
+              "to_achieved": "Identificar brechas por objetivo y planificar retroalimentación sistemática.",
+              "to_outstanding": "Comparar con evaluaciones anteriores y ajustar la planificación e instrumentos.",
+              "sources": "MBE 2021, Est. 4 y 9; Earl (2013), Assessment as Learning; Black y Wiliam (2009); Mineduc, Orientaciones de evaluación formativa."
+            },
+            {
+              "number": 19,
+              "name": "Inclusión y ausencia de sesgos",
+              "levels": [
+                "Materiales, ejemplos o instrumentos contienen estereotipos o barreras para algunos estudiantes.",
+                "Evita sesgos evidentes, pero no adapta la evaluación para quienes requieren apoyos.",
+                "Selecciona materiales y ejemplos sin sesgos y adecua la evaluación para estudiantes que requieren apoyos específicos, en colaboración con otros profesionales.",
+                "Además de lo logrado, revisa si los resultados reflejan desigualdades de oportunidades de aprendizaje y las corrige."
+              ],
+              "meaning": "Los instrumentos y materiales pueden contener barreras (lenguaje, contexto cultural, formato) o estereotipos que perjudican a ciertos estudiantes sin que el docente lo note. Eliminarlas es una exigencia de equidad y de validez de la evaluación.",
+              "to_achieved": "Adecuar con otros profesionales (educadora diferencial, PIE).",
+              "to_outstanding": "Revisar si los resultados reflejan desigualdades de oportunidad y corregirlas.",
+              "sources": "MBE 2021, Est. 2, 4 y 5; Decreto 83/2015; Decreto 67/2018; CAST (2018); Popham (2011), sesgo en evaluación."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Calificación y comunicación de resultados",
+      "evidence": "Una muestra de 5 a 8 instrumentos corregidos de estudiantes con distintos niveles de logro, el registro de calificaciones y una conversación breve en que el docente explica cómo decidió las notas.",
+      "standards": "4 (planificación de la evaluación) y 9 (evaluación y retroalimentación).",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Calificación y comunicación de resultados",
+          "indicators": [
+            {
+              "number": 20,
+              "name": "Corrección y comentarios en los instrumentos",
+              "levels": [
+                "Los trabajos tienen solo marcas de correcto o incorrecto, o no están corregidos.",
+                "Corrige todos los trabajos y escribe comentarios, pero son generales (\"bien\", \"mejorar\") o no se relacionan con los criterios.",
+                "Los comentarios se relacionan con los criterios, indican qué se logró y qué falta, y sugieren cómo seguir.",
+                "Además de lo logrado, los comentarios se ajustan al nivel de cada estudiante y se pide a los estudiantes que los usen para corregir su trabajo."
+              ],
+              "meaning": "Corregir es una oportunidad de enseñar. Un tick o un 'bien' no orienta; el comentario debe relacionarse con los criterios, indicar qué se logró y qué falta, y sugerir cómo seguir.",
+              "to_achieved": "Cada comentario referido a un criterio, con un paso siguiente claro.",
+              "to_outstanding": "Ajustar el comentario al nivel de cada estudiante y pedirles que lo usen para corregir su trabajo.",
+              "sources": "MBE 2021, Est. 9; Hattie y Timperley (2007); Brookhart (2008); Wiliam (2011)."
+            },
+            {
+              "number": 21,
+              "name": "Aplicación consistente de los criterios",
+              "levels": [
+                "Trabajos de calidad similar reciben puntajes muy distintos, o no puede explicar cómo llegó a la nota.",
+                "Aplica los criterios en la mayoría de los casos, pero con inconsistencias o sin considerar todos los criterios definidos.",
+                "Aplica los criterios de forma consistente y justifica cada nota con evidencia del trabajo.",
+                "Además de lo logrado, contrasta su corrección con la de un colega o con ejemplos de referencia para asegurar el rigor."
+              ],
+              "meaning": "La calificación es un juicio profesional y debe ser replicable: trabajos de calidad similar deben recibir resultados similares, y el docente debe poder explicar cómo llegó a cada nota.",
+              "to_achieved": "Aplicar todos los criterios de forma pareja y justificar con evidencia del trabajo.",
+              "to_outstanding": "Contrastar la corrección con un colega o con ejemplos de referencia (moderación) para asegurar el rigor.",
+              "sources": "MBE 2021, Est. 4 y 9; Decreto 67/2018; Sadler (2013), moderación y juicio de calidad; Brookhart (2013)."
+            },
+            {
+              "number": 22,
+              "name": "Procedimiento de calificación justo y transparente",
+              "levels": [
+                "No se sabe cómo se calcula la nota o no se comunica a los estudiantes.",
+                "El procedimiento existe, pero los estudiantes lo conocen solo en parte o mezcla aspectos ajenos al aprendizaje (orden, conducta) sin distinguirlos.",
+                "El procedimiento es conocido por los estudiantes, se ajusta al reglamento de evaluación del establecimiento y se basa en el logro de los objetivos.",
+                "Además de lo logrado, ofrece oportunidades de mejora (reevaluar, recuperar) para que la nota refleje lo aprendido al final del proceso."
+              ],
+              "meaning": "Una nota justa y transparente refleja el logro de los objetivos y no mezcla conducta, orden o asistencia con aprendizaje. Los estudiantes deben conocer de antemano cómo se calcula.",
+              "to_achieved": "Procedimiento conocido, alineado con el reglamento y basado en logro.",
+              "to_outstanding": "Ofrecer oportunidades de mejora (reevaluar, recuperar) para que la nota refleje lo aprendido al final.",
+              "sources": "MBE 2021, Est. 4 y 9; Decreto 67/2018 y reglamento de evaluación del establecimiento; Guskey (2011), calificación y aprendizaje; O'Connor (2009), How to Grade for Learning."
+            },
+            {
+              "number": 23,
+              "name": "Comunicación de las calificaciones",
+              "levels": [
+                "Entrega o publica las notas sin explicación.",
+                "Explica la nota en general, pero los estudiantes no entienden qué nivel de logro representa.",
+                "Comunica la nota explicando qué representa, y los estudiantes pueden decir qué lograron y qué les falta.",
+                "Además de lo logrado, los estudiantes fijan metas de mejora a partir de su resultado y se comprometen con la siguiente etapa."
+              ],
+              "meaning": "Entregar una nota sin explicarla es una oportunidad perdida: el estudiante necesita entender qué nivel de logro representa y qué le falta.",
+              "to_achieved": "Explicar qué representa la nota y lograr que cada estudiante diga qué logró y qué le falta.",
+              "to_outstanding": "Que fijen metas de mejora a partir de su resultado y se comprometan con la siguiente etapa.",
+              "sources": "MBE 2021, Est. 9; Hattie y Timperley (2007); Decreto 67/2018 (comunicación de resultados); Brookhart (2017)."
+            },
+            {
+              "number": 24,
+              "name": "Cuidado de la motivación y la autoestima académica",
+              "levels": [
+                "Expone los resultados de forma pública o comparativa, o hace comentarios que desmotivan.",
+                "Evita la exposición, pero no aborda el efecto emocional de las notas bajas.",
+                "Entrega los resultados con respeto, reconoce el esfuerzo y ayuda a quienes obtuvieron resultados bajos a ver cómo avanzar.",
+                "Además de lo logrado, trabaja con el grupo la idea de que el error y la calificación son información para mejorar."
+              ],
+              "meaning": "Las notas bajas pueden dañar la autoestima académica y la motivación si se exponen o se comentan sin cuidado. La evaluación debe orientar la mejora, no clasificar a las personas.",
+              "to_achieved": "Entregar resultados con respeto, reconocer el esfuerzo y mostrar caminos de mejora.",
+              "to_outstanding": "Enseñar al grupo que el error y la nota son información para mejorar.",
+              "sources": "MBE 2021, Est. 6 y 9; Dweck (2006); Black y Wiliam (1998) (efectos de la comparación y de la calificación sin comentario); Butler (1988)."
+            },
+            {
+              "number": 25,
+              "name": "Análisis ético de los resultados",
+              "levels": [
+                "No analiza los resultados ni revisa si algún grupo de estudiantes resulta perjudicado.",
+                "Revisa resultados generales (promedio, porcentaje de aprobación) sin examinar diferencias entre estudiantes o grupos.",
+                "Identifica brechas entre lo esperado y lo logrado y revisa si ciertos estudiantes o grupos obtienen resultados sistemáticamente más bajos por barreras de la evaluación.",
+                "Además de lo logrado, modifica instrumentos o procedimientos para eliminar los sesgos que encuentra y verifica el efecto en la siguiente evaluación."
+              ],
+              "meaning": "Un análisis ético de resultados pregunta quién resulta perjudicado y por qué, más allá del promedio. Si un grupo sistemáticamente obtiene resultados más bajos, puede haber barreras en el instrumento o en la enseñanza.",
+              "to_achieved": "Identificar brechas y revisar si hay barreras.",
+              "to_outstanding": "Modificar instrumentos o procedimientos y verificar el efecto en la siguiente evaluación.",
+              "sources": "MBE 2021, Est. 4, 9 y 10; Decreto 83/2015; Decreto 67/2018; Popham (2011); AERA, APA y NCME (2014), Standards for Educational and Psychological Testing (equidad)."
+            },
+            {
+              "number": 26,
+              "name": "Participación de los estudiantes en definir criterios",
+              "levels": [
+                "Los estudiantes no participan en definir cómo se evalúa su trabajo.",
+                "Los consulta de manera ocasional, pero sus aportes no cambian los criterios.",
+                "En trabajos grupales, los estudiantes proponen parte de los criterios o indicadores y el docente los incorpora.",
+                "Además de lo logrado, los estudiantes definen criterios completos, los aplican a su trabajo y reconocen lo que les falta para lograrlos."
+              ],
+              "meaning": "Cuando los estudiantes participan en definir criterios, comprenden mejor lo que se espera y se apropian de su aprendizaje. No se trata de delegar la evaluación, sino de dialogar los criterios.",
+              "to_achieved": "En trabajos grupales, que propongan parte de los criterios y el docente los incorpore.",
+              "to_outstanding": "Que definan criterios completos, los apliquen y reconozcan lo que les falta para lograrlos.",
+              "sources": "MBE 2021, Est. 9; Andrade (2019), autoevaluación y rúbricas; Panadero, Jonsson y Botella (2017), efectos de la autoevaluación; Decreto 67/2018."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Conocimiento de los estudiantes y de la disciplina",
+      "evidence": null,
+      "standards": null,
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Conocimiento de los estudiantes y de la disciplina",
+          "indicators": [
+            {
+              "number": 27,
+              "name": "Aprendizaje y desarrollo según la etapa",
+              "levels": [
+                "Describe a los estudiantes de manera general (\"son inquietos\", \"no se concentran\") sin relacionar su conducta con su etapa de desarrollo ni con cómo aprenden.",
+                "Reconoce algunas características de la etapa, pero no las usa para explicar por qué una actividad funcionó o no.",
+                "Explica el aprendizaje de su grupo según la etapa (cognitiva, lingüística, social, emocional y física) y ajusta la enseñanza a ello.",
+                "Además de lo logrado, relaciona distintos enfoques de aprendizaje con la naturaleza de su disciplina y justifica con ellos sus decisiones."
+              ],
+              "meaning": "Conocer cómo aprenden niños y jóvenes en cada etapa (cognitiva, lingüística, social, emocional y física) permite interpretar su conducta y ajustar la enseñanza, en vez de etiquetarlos ('son inquietos').",
+              "to_achieved": "Explicar el aprendizaje según la etapa y ajustar la enseñanza.",
+              "to_outstanding": "Relacionar distintos enfoques de aprendizaje con la naturaleza de su disciplina y justificar con ellos sus decisiones.",
+              "sources": "MBE 2021, Est. 1; Piaget (1970) y Vygotsky (1978); Bransford, Brown y Cocking (2000), How People Learn; Mineduc, Bases Curriculares."
+            },
+            {
+              "number": 28,
+              "name": "Motivación y autorregulación",
+              "levels": [
+                "Atribuye la falta de interés a factores externos (familia, nivel del curso) sin identificar qué puede hacer él o ella.",
+                "Conoce estrategias de motivación, pero las aplica de manera general y no distingue qué motiva a cada grupo.",
+                "Explica cómo promover el interés, la persistencia y la autoeficacia, y cómo desarrollar la autoevaluación y las habilidades socioemocionales apropiadas a la edad del grupo.",
+                "Además de lo logrado, da ejemplos de cómo adaptó estas estrategias después de comprobar que no funcionaban."
+              ],
+              "meaning": "La motivación no depende solo del estudiante o su familia: el docente puede influir en el interés, la persistencia y la autoeficacia. Atribuir la desmotivación a causas externas cierra la posibilidad de actuar.",
+              "to_achieved": "Explicar cómo promover interés, persistencia y autoeficacia, y desarrollar autoevaluación y habilidades socioemocionales apropiadas a la edad.",
+              "to_outstanding": "Contar cómo ajustó una estrategia al comprobar que no funcionaba.",
+              "sources": "MBE 2021, Est. 1; Deci y Ryan (2000), teoría de la autodeterminación; Bandura (1997), autoeficacia; Zimmerman (2002), aprendizaje autorregulado."
+            },
+            {
+              "number": 29,
+              "name": "Necesidades educativas y barreras",
+              "levels": [
+                "Atribuye las dificultades de aprendizaje solo a características del estudiante.",
+                "Identifica necesidades educativas, pero no las barreras que ofrecen el contexto o la enseñanza.",
+                "Identifica barreras frecuentes a la participación y al aprendizaje (incluidas las necesidades educativas especiales) y describe cómo modificar la enseñanza para reducirlas.",
+                "Además de lo logrado, trabaja con otros profesionales (educadora diferencial, psicólogo, UTP) para planificar apoyos y revisa su efecto."
+              ],
+              "meaning": "Las dificultades de aprendizaje son una interacción entre el estudiante y su contexto. Hablar de 'barreras' desplaza el foco: ¿qué en la enseñanza, el aula o el material impide participar y aprender?",
+              "to_achieved": "Identificar barreras frecuentes (incluidas NEE) y describir cómo modificar la enseñanza.",
+              "to_outstanding": "Trabajar con educadora diferencial, psicólogo o UTP, y revisar el efecto de los apoyos.",
+              "sources": "MBE 2021, Est. 1 y 2; Decreto 83/2015; Decreto 170/2009 (PIE); Booth y Ainscow (2011), Index for Inclusion; CAST (2018)."
+            },
+            {
+              "number": 30,
+              "name": "Conocimiento del contexto de los estudiantes",
+              "levels": [
+                "Conoce poco de la realidad familiar, cultural o social de sus estudiantes.",
+                "Conoce datos generales (por ejemplo, de una ficha), pero no los obtiene por observación ni conversación propia.",
+                "Usa observación, entrevistas y otras fuentes para conocer las características individuales y el contexto de sus estudiantes, y da ejemplos de cómo influyen en su enseñanza.",
+                "Además de lo logrado, mantiene un registro actualizado que comparte con los colegas que trabajan con el mismo grupo."
+              ],
+              "meaning": "Conocer el contexto familiar, cultural y social no es recopilar datos de una ficha: es comprender las experiencias de las que los estudiantes parten y usarlas para enseñar mejor.",
+              "to_achieved": "Usar observación, entrevistas y otras fuentes, y dar ejemplos de cómo influyen en su enseñanza.",
+              "to_outstanding": "Mantener un registro actualizado y compartirlo con colegas del mismo grupo (cuidando la confidencialidad).",
+              "sources": "MBE 2021, Est. 1; Moll et al. (1992), fondos de conocimiento; Ladson-Billings (1995); Epstein (2001), School, Family and Community Partnerships."
+            },
+            {
+              "number": 31,
+              "name": "Dominio de la disciplina",
+              "levels": [
+                "Presenta errores en conceptos centrales de la disciplina o no explica por qué son importantes.",
+                "Domina los conceptos que enseña, pero no explica las relaciones entre ellos ni cómo se desarrolla la disciplina.",
+                "Explica con precisión los conocimientos fundamentales de la disciplina y sus relaciones, y muestra habilidades como investigar, argumentar y razonar con rigor.",
+                "Además de lo logrado, establece conexiones con otras disciplinas y las usa para hacer el contenido significativo."
+              ],
+              "meaning": "El dominio disciplinar es el fundamento de toda la enseñanza: no basta con 'saber el contenido', se requiere comprender las relaciones entre conceptos, por qué son importantes y cómo se produce el conocimiento en la disciplina.",
+              "to_achieved": "Explicar con precisión los conocimientos fundamentales y sus relaciones, y mostrar habilidades propias de la disciplina (investigar, argumentar).",
+              "to_outstanding": "Conectar con otras disciplinas para dar sentido al contenido.",
+              "sources": "MBE 2021, Est. 2; Shulman (1986, 1987); Ball, Thames y Phelps (2008), conocimiento matemático para la enseñanza; Estándares disciplinarios CPEIP 2021."
+            },
+            {
+              "number": 32,
+              "name": "Repertorio didáctico y herramientas digitales",
+              "levels": [
+                "Enseña el contenido de una sola manera.",
+                "Conoce varias estrategias, pero usa solo algunas y no explica cuándo conviene cada una.",
+                "Describe un repertorio de estrategias y recursos para representar, modelar, explicar e investigar su disciplina, incluidas herramientas digitales, y para que los estudiantes ejerciten habilidades generales como comunicación e investigación.",
+                "Además de lo logrado, ajusta el repertorio con evidencia de qué funciona mejor con su grupo."
+              ],
+              "meaning": "Un repertorio amplio permite elegir la mejor manera de representar un contenido para cada grupo. Enseñar siempre de la misma forma deja sin acceso a quienes no aprenden así.",
+              "to_achieved": "Describir un repertorio variado (representar, modelar, explicar, investigar), incluyendo herramientas digitales con propósito.",
+              "to_outstanding": "Ajustarlo con evidencia de qué funciona mejor con su grupo.",
+              "sources": "MBE 2021, Est. 2 y 3; Shulman (1987); Mishra y Koehler (2006), modelo TPACK; Ball et al. (2008)."
+            },
+            {
+              "number": 33,
+              "name": "Dificultades y concepciones erróneas",
+              "levels": [
+                "No identifica errores frecuentes de sus estudiantes en el contenido.",
+                "Reconoce errores frecuentes, pero no explica por qué ocurren ni cómo abordarlos.",
+                "Identifica dificultades y concepciones erróneas frecuentes, explica cómo interfieren en el aprendizaje y propone estrategias concretas para anticiparlas y abordarlas.",
+                "Además de lo logrado, usa los errores de sus estudiantes como información para rediseñar sus actividades y las comparte con colegas."
+              ],
+              "meaning": "Los errores frecuentes y las concepciones erróneas son información valiosa: muestran cómo piensan los estudiantes. Quien los conoce puede anticiparlos y diseñar enseñanza que los aborde.",
+              "to_achieved": "Identificarlos, explicar cómo interfieren y proponer estrategias concretas para anticiparlos.",
+              "to_outstanding": "Usarlos para rediseñar actividades y compartirlos con colegas.",
+              "sources": "MBE 2021, Est. 2; Shulman (1986); Driver et al. (1994), Making Sense of Secondary Science; Ambrose et al. (2010); Black y Wiliam (1998)."
+            },
+            {
+              "number": 34,
+              "name": "Conocimiento y análisis del currículo",
+              "levels": [
+                "Conoce solo la lista de contenidos del programa o el índice del texto escolar.",
+                "Conoce los objetivos de su nivel, pero no cómo progresan entre cursos ni cómo se relacionan conocimientos, habilidades y actitudes.",
+                "Explica la estructura y la progresión del currículo de su disciplina y analiza programas de estudio, textos escolares y estándares de aprendizaje según las necesidades de su grupo y el proyecto educativo.",
+                "Además de lo logrado, orienta a sus colegas en la lectura y el uso de los documentos curriculares."
+              ],
+              "meaning": "Conocer el currículo implica ver su estructura y progresión: cómo conocimientos, habilidades y actitudes se desarrollan entre cursos, y cómo se ajusta al proyecto educativo y al grupo.",
+              "to_achieved": "Explicar estructura y progresión, y analizar programas, textos y estándares.",
+              "to_outstanding": "Orientar a sus colegas en el uso de los documentos curriculares.",
+              "sources": "MBE 2021, Est. 2 y 3; Bases Curriculares y Programas de Estudio (Mineduc); Priorización curricular (Mineduc); Wiggins y McTighe (2005)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Práctica reflexiva y aprendizaje profesional",
+      "evidence": "La conversación posterior a la observación (pauta 1), la autoevaluación del docente, sus registros de práctica (bitácora, videos, muestras de trabajos) y su plan de desarrollo profesional individual.",
+      "standards": "11.",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Práctica reflexiva y aprendizaje profesional",
+          "indicators": [
+            {
+              "number": 35,
+              "name": "Observación y registro de la propia práctica",
+              "levels": [
+                "No registra lo que ocurre en su aula; sus apreciaciones se basan en impresiones generales.",
+                "Registra de manera ocasional (por ejemplo, anota incidentes), sin un método que permita analizar el efecto de su enseñanza.",
+                "Usa técnicas de observación y registro (videos, listas de cotejo, muestras de trabajos, notas) para analizar el efecto de su enseñanza en el aprendizaje.",
+                "Además de lo logrado, elige qué registrar según una pregunta que quiere responder sobre su práctica."
+              ],
+              "meaning": "Lo que no se registra tiende a recordarse de manera sesgada. Registrar la propia práctica (video, listas de cotejo, muestras de trabajos, bitácora) permite analizar el efecto real de la enseñanza.",
+              "to_achieved": "Usar técnicas de registro variadas y analizar su efecto en el aprendizaje.",
+              "to_outstanding": "Elegir qué registrar según una pregunta de mejora propia.",
+              "sources": "MBE 2021, Est. 11; Schön (1983), The Reflective Practitioner; Brookfield (1995), Becoming a Critically Reflective Teacher."
+            },
+            {
+              "number": 36,
+              "name": "Reflexión sobre la práctica",
+              "levels": [
+                "Explica los resultados con causas externas y no revisa su práctica.",
+                "Reconoce aspectos a mejorar, pero no propone cambios concretos o no los pone a prueba.",
+                "Analiza su práctica a partir de evidencias, revisa sus creencias y define y prueba cambios para mejorar las oportunidades de aprendizaje de sus estudiantes.",
+                "Además de lo logrado, reflexiona con sus pares, contrasta su análisis con otros puntos de vista y comparte lo que aprendió."
+              ],
+              "meaning": "La reflexión útil se basa en evidencia, revisa las propias creencias y conduce a un cambio concreto que se prueba. Explicar los resultados solo por factores externos impide la mejora.",
+              "to_achieved": "Analizar con evidencia, revisar creencias, definir y probar cambios.",
+              "to_outstanding": "Reflexionar con pares, contrastar puntos de vista y compartir lo aprendido.",
+              "sources": "MBE 2021, Est. 11; Schön (1983); Timperley et al. (2007), Teacher Professional Learning and Development; Darling-Hammond y Bransford (2005)."
+            },
+            {
+              "number": 37,
+              "name": "Autoevaluación con referencia a estándares",
+              "levels": [
+                "Su autoevaluación es general (\"hago bien mi trabajo\") o no usa un referente.",
+                "Usa los estándares del MBE, pero sin evidencia; su valoración coincide poco con lo observado.",
+                "Se autoevalúa con el MBE como referencia, apoya su valoración con evidencias (observación de clases, evaluaciones externas, opiniones de sus estudiantes) y fija metas profesionales.",
+                "Además de lo logrado, su autoevaluación coincide con la del observador y la usa para priorizar su plan de desarrollo."
+              ],
+              "meaning": "Autoevaluarse con un referente común (el MBE) y con evidencia permite que la valoración sea precisa. Si la autoevaluación coincide poco con lo observado, hay un punto ciego a trabajar.",
+              "to_achieved": "Usar el MBE como referente y respaldarse con evidencias (clases, evaluaciones externas, opinión de estudiantes).",
+              "to_outstanding": "Lograr coincidencia con el observador y usarla para priorizar su plan.",
+              "sources": "MBE 2021 (Estándares de la Profesión Docente); Kruger y Dunning (1999); Panadero et al. (2017); Danielson (2013), Framework for Teaching."
+            },
+            {
+              "number": 38,
+              "name": "Actualización de conocimientos",
+              "levels": [
+                "No actualiza sus conocimientos disciplinares, didácticos ni curriculares.",
+                "Participa en capacitaciones obligatorias, pero no las relaciona con necesidades de su aula.",
+                "Elige formas de actualizarse (cursos, lecturas, redes) según necesidades detectadas en su práctica y las aplica en su aula.",
+                "Además de lo logrado, profundiza en un área (disciplina, didáctica o herramientas digitales) y comparte lo aprendido."
+              ],
+              "meaning": "La actualización profesional es más efectiva cuando responde a una necesidad detectada en el aula y se aplica de inmediato. Las capacitaciones obligatorias sin relación con la práctica tienen poco impacto.",
+              "to_achieved": "Elegir formas de actualizarse según necesidades detectadas y aplicarlas.",
+              "to_outstanding": "Profundizar en un área y compartir lo aprendido.",
+              "sources": "MBE 2021, Est. 11; Desimone (2009), características de un desarrollo profesional eficaz; Darling-Hammond et al. (2017), Effective Teacher Professional Development."
+            },
+            {
+              "number": 39,
+              "name": "Compromiso con el plan de desarrollo profesional",
+              "levels": [
+                "No conoce o no participa en el plan de desarrollo profesional del establecimiento.",
+                "Participa en las actividades del plan, pero sin metas propias asociadas.",
+                "Conoce el plan individual y colectivo, cumple sus compromisos y define metas propias alineadas con él.",
+                "Además de lo logrado, propone ajustes al plan a partir de lo que aprende en su práctica."
+              ],
+              "meaning": "El plan de desarrollo profesional es el vínculo entre las metas individuales y las del establecimiento. Su valor aparece cuando el docente tiene metas propias y se hace responsable de ellas.",
+              "to_achieved": "Conocer el plan individual y colectivo, cumplir compromisos y definir metas alineadas.",
+              "to_outstanding": "Proponer ajustes al plan a partir de lo que aprende en su práctica.",
+              "sources": "MBE 2021, Est. 11; Ley 20.903 (Sistema de Desarrollo Profesional Docente); Mineduc/CPEIP, planes locales de desarrollo profesional; Timperley et al. (2007)."
+            },
+            {
+              "number": 40,
+              "name": "Disposición a innovar",
+              "levels": [
+                "Mantiene sus prácticas aunque no den resultado.",
+                "Prueba nuevas estrategias solo si se le solicita.",
+                "Prueba nuevas prácticas para enfrentar problemas concretos de su aula y revisa su efecto.",
+                "Además de lo logrado, documenta lo que probó y lo comparte para que otros lo usen."
+              ],
+              "meaning": "Innovar no es hacer cosas nuevas por novedad: es probar prácticas para resolver un problema concreto y revisar su efecto. Mantener prácticas que no funcionan frena la mejora.",
+              "to_achieved": "Probar prácticas para enfrentar problemas concretos y revisar su efecto.",
+              "to_outstanding": "Documentar lo probado y compartirlo con otros.",
+              "sources": "MBE 2021, Est. 11; Hargreaves y Fullan (2012), Professional Capital; Bryk et al. (2015), Learning to Improve (ciclos de mejora)."
+            },
+            {
+              "number": 41,
+              "name": "Colaboración y aprendizaje con pares",
+              "levels": [
+                "Trabaja de manera aislada y no participa en instancias colectivas.",
+                "Participa en reuniones con colegas, pero aporta poco o no aplica lo acordado.",
+                "Colabora con pares de su disciplina y de otras áreas para diversificar estrategias de enseñanza y evaluación, y participa en redes presenciales o virtuales.",
+                "Además de lo logrado, apoya a docentes principiantes o en formación y su aporte mejora la práctica de otros."
+              ],
+              "meaning": "El trabajo con pares es una de las vías más potentes de mejora docente: permite diversificar estrategias, contrastar prácticas y sostener cambios. Participar en reuniones sin aportar ni aplicar lo acordado no genera aprendizaje.",
+              "to_achieved": "Colaborar con pares de su disciplina y de otras áreas para diversificar estrategias de enseñanza y evaluación.",
+              "to_outstanding": "Apoyar a docentes principiantes o en formación.",
+              "sources": "MBE 2021, Est. 11; Hargreaves y Fullan (2012); Vescio, Ross y Adams (2008), comunidades profesionales de aprendizaje; Mineduc, Orientaciones de comunidades de aprendizaje."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Ética profesional y trabajo con la comunidad",
+      "evidence": "Autoevaluación del docente, informe del jefe de UTP o del director sobre un período (idealmente un semestre), revisión de documentos (registros de convivencia, comunicaciones con apoderados, actas de reuniones) y una conversación con el docente.",
+      "standards": "10 y 12, más los descriptores de convivencia del estándar 5 que una sola clase no permite observar.",
+      "protocol": null,
+      "usage_warning": "Esta pauta es formativa. Si la evidencia muestra un incumplimiento del deber legal de denunciar hechos que afecten a niños, niñas o adolescentes, o una vulneración de derechos, se debe derivar al protocolo institucional y a quien corresponda, y no tratarlo solo como un nivel de la pauta.",
+      "sections": [
+        {
+          "name": "Ética profesional (estándar 10)",
+          "indicators": [
+            {
+              "number": 42,
+              "name": "Decisiones éticas y límites del rol",
+              "levels": [
+                "Toma decisiones sin considerar los derechos o el interés de los estudiantes, o traspasa los límites de su rol.",
+                "Respeta los límites de su rol en general, pero tiene dificultad para decidir cuando enfrenta dilemas.",
+                "Fundamenta sus decisiones en el mejor interés del estudiante y en los consensos éticos de la profesión, y mantiene límites profesionales claros con estudiantes, familias y colegas.",
+                "Además de lo logrado, orienta a colegas frente a dilemas éticos y propone mejoras a las prácticas del establecimiento."
+              ],
+              "meaning": "La ética docente se juega en decisiones cotidianas: priorizar el interés superior del estudiante y sostener límites de rol claros con estudiantes, familias y colegas (por ejemplo, evitar vínculos que confundan el rol profesional).",
+              "to_achieved": "Fundamentar decisiones en el interés superior del estudiante y en los consensos éticos de la profesión.",
+              "to_outstanding": "Orientar a colegas y proponer mejoras a prácticas del establecimiento. Si hay vulneración de derechos, derive al protocolo y no lo trate solo como nivel de la pauta.",
+              "sources": "MBE 2021, Est. 10; Convención sobre los Derechos del Niño (interés superior); Ley 21.430; Campbell (2003), The Ethical Teacher; Código de ética docente (Colegio de Profesores)."
+            },
+            {
+              "number": 43,
+              "name": "Inclusión y compromiso con el aprendizaje de todos",
+              "levels": [
+                "Actúa desde prejuicios o supone que algunos estudiantes no pueden aprender.",
+                "Declara valorar la diversidad, pero sus acciones no lo reflejan o sus expectativas varían según el estudiante.",
+                "Muestra respeto por la diversidad de estudiantes, familias y pares, y actúa con la convicción de que todos pueden alcanzar altos niveles de aprendizaje.",
+                "Además de lo logrado, interviene cuando observa prácticas que reducen las oportunidades de aprendizaje de algunos estudiantes."
+              ],
+              "meaning": "Las creencias sobre quién puede aprender determinan lo que el docente ofrece. Un compromiso real con el aprendizaje de todos se ve en acciones y expectativas, no solo en declaraciones.",
+              "to_achieved": "Respeto por la diversidad y convicción de que todos pueden alcanzar altos niveles.",
+              "to_outstanding": "Intervenir cuando observa prácticas que reducen oportunidades de algunos estudiantes.",
+              "sources": "MBE 2021, Est. 10 y 6; Rosenthal y Jacobson (1968); Ley 20.845 (Inclusión escolar); Decreto 83/2015; Ladson-Billings (1995)."
+            },
+            {
+              "number": 44,
+              "name": "Cumplimiento y participación ética en evaluaciones",
+              "levels": [
+                "Incumple tareas y plazos institucionales o presenta evidencias que no corresponden a su trabajo.",
+                "Cumple las tareas básicas con retrasos o necesita recordatorios.",
+                "Cumple las normas y responsabilidades del establecimiento y participa de forma honesta en las evaluaciones de su desempeño, con evidencia propia.",
+                "Además de lo logrado, usa los resultados de esos procesos para mejorar y orienta a colegas en su preparación sin reemplazar su trabajo."
+              ],
+              "meaning": "El cumplimiento honesto de plazos y la integridad en procesos evaluativos (como la Evaluación Docente) son parte de la responsabilidad profesional. Presentar evidencias que no corresponden a su trabajo vulnera la confianza.",
+              "to_achieved": "Cumplir normas y responsabilidades y participar honestamente con evidencia propia.",
+              "to_outstanding": "Usar resultados de esos procesos para mejorar y orientar a colegas en su preparación sin reemplazar su trabajo.",
+              "sources": "MBE 2021, Est. 10; Ley 20.903 (Evaluación Docente y Carrera Docente); Estatuto Docente (Ley 19.070); CPEIP, Manuales de Evaluación Docente."
+            },
+            {
+              "number": 45,
+              "name": "Normativa, protección de estudiantes y tecnologías",
+              "levels": [
+                "Desconoce el proyecto educativo, las normas del establecimiento o el protocolo para denunciar maltrato u otros delitos contra niños, niñas y adolescentes.",
+                "Conoce las normas, pero las aplica de manera irregular o no sabe cómo actuar ante una situación de riesgo.",
+                "Actúa conforme al proyecto educativo y a la normativa, denuncia oportunamente hechos con características de maltrato infantil o delito, y vela por el uso seguro, ético y legal de las tecnologías digitales por parte de sus estudiantes.",
+                "Además de lo logrado, orienta a estudiantes y familias sobre estos temas y colabora en actualizar los protocolos."
+              ],
+              "meaning": "Proteger a niñas, niños y adolescentes es deber legal y ético. Los docentes están obligados a denunciar hechos con características de delito que afecten a estudiantes, y deben conocer el protocolo del establecimiento. También incluye orientar el uso seguro y ético de tecnologías.",
+              "to_achieved": "Actuar conforme al proyecto educativo y la normativa, denunciar oportunamente y velar por el uso seguro y legal de tecnologías.",
+              "to_outstanding": "Orientar a estudiantes y familias y colaborar en actualizar protocolos. Si hay incumplimiento del deber de denunciar, derive a quien corresponda.",
+              "sources": "MBE 2021, Est. 10; Código Procesal Penal, arts. 175 y 176 (deber de denunciar); Ley 21.430; Ley 20.536 (violencia escolar); Mineduc (2017), Orientaciones para elaborar un protocolo de actuación frente a abuso sexual infantil."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Convivencia escolar",
+      "evidence": null,
+      "standards": "5 (complemento de la pauta 1).",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Convivencia escolar",
+          "indicators": [
+            {
+              "number": 46,
+              "name": "Promoción de la convivencia y resolución dialogada",
+              "levels": [
+                "Los conflictos se resuelven solo con sanciones o derivaciones; no trabaja habilidades de convivencia.",
+                "Aplica normas y a veces dialoga, pero no enseña ni modela cómo resolver conflictos.",
+                "Modela y enseña la resolución dialogada y pacífica de conflictos (presenciales y virtuales) y construye con sus estudiantes una visión compartida de la convivencia que quieren.",
+                "Además de lo logrado, los estudiantes resuelven conflictos de manera autónoma y asumen corresponsabilidad por la convivencia del curso."
+              ],
+              "meaning": "Convivencia escolar se enseña: resolver conflictos de manera dialogada requiere habilidades que se modelan y practican. Las sanciones o derivaciones por sí solas no desarrollan esas habilidades.",
+              "to_achieved": "Modelar y enseñar la resolución dialogada y construir con el curso una visión de la convivencia que quieren (presencial y virtual).",
+              "to_outstanding": "Que los estudiantes resuelvan conflictos solos y asuman corresponsabilidad.",
+              "sources": "MBE 2021, Est. 5 y 6; Ley 20.536; Mineduc, Política Nacional de Convivencia Escolar (2019); Cohen (2006), clima escolar y educación socioemocional."
+            },
+            {
+              "number": 47,
+              "name": "Monitoreo de la convivencia y trabajo con apoderados",
+              "levels": [
+                "Informa los problemas de convivencia solo cuando ya son graves y no involucra a las familias.",
+                "Registra incidentes y cita a apoderados, pero sin analizar si sus estrategias funcionan.",
+                "Monitorea la convivencia, analiza la efectividad de sus estrategias e involucra a las familias en una reflexión sobre el rol del hogar y del establecimiento.",
+                "Además de lo logrado, ajusta sus estrategias a partir de ese análisis y comparte buenas prácticas con el equipo."
+              ],
+              "meaning": "Monitorear la convivencia significa mirarla antes de que se agrave y evaluar si lo que se hace funciona. Las familias son parte de la solución cuando se las involucra en una reflexión, no solo se las cita por problemas.",
+              "to_achieved": "Monitorear, analizar la efectividad de las estrategias e involucrar a las familias.",
+              "to_outstanding": "Ajustar estrategias según el análisis y compartir buenas prácticas con el equipo.",
+              "sources": "MBE 2021, Est. 5; Ley 20.536; Mineduc, Política Nacional de Convivencia Escolar (2019); Epstein (2001)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Compromiso con la comunidad escolar",
+      "evidence": null,
+      "standards": "12.",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Compromiso con la comunidad escolar",
+          "indicators": [
+            {
+              "number": 48,
+              "name": "Relaciones profesionales",
+              "levels": [
+                "Mantiene relaciones conflictivas con integrantes de la comunidad educativa o no resguarda la discreción.",
+                "Las relaciones son cordiales, pero evita los desacuerdos o los resuelve con dificultad.",
+                "Establece relaciones basadas en la confianza y la discreción, y previene y resuelve conflictos de manera constructiva.",
+                "Además de lo logrado, contribuye al buen clima de trabajo y facilita la colaboración entre colegas."
+              ],
+              "meaning": "Las relaciones profesionales basadas en confianza, discreción y manejo constructivo de desacuerdos sostienen el trabajo colaborativo y protegen el clima del establecimiento.",
+              "to_achieved": "Relaciones de confianza y discreción, previniendo y resolviendo conflictos de manera constructiva.",
+              "to_outstanding": "Contribuir al buen clima de trabajo y facilitar la colaboración.",
+              "sources": "MBE 2021, Est. 12; Bryk y Schneider (2002), Trust in Schools; Hargreaves y Fullan (2012)."
+            },
+            {
+              "number": 49,
+              "name": "Participación en el proyecto educativo y en el PME",
+              "levels": [
+                "Desconoce el PEI y el PME o no participa en su elaboración.",
+                "Conoce los documentos y asiste a las instancias, pero con participación pasiva.",
+                "Adhiere al proyecto educativo, participa en la elaboración de los instrumentos de mejora (PEI, PME, plan de formación ciudadana) y cumple las acciones del PME que le corresponden.",
+                "Además de lo logrado, aporta evidencia de su aula para evaluar el PME y propone ajustes."
+              ],
+              "meaning": "El docente es actor de la mejora institucional: conocer y participar en el PEI y el PME hace que las decisiones del aula respondan a metas compartidas.",
+              "to_achieved": "Participar en elaborar instrumentos de mejora y cumplir las acciones asignadas.",
+              "to_outstanding": "Aportar evidencia de su aula para evaluar el PME y proponer ajustes.",
+              "sources": "MBE 2021, Est. 12; Ley 20.529 (Sistema de Aseguramiento de la Calidad); Ley 20.248 (SEP); Ley 20.911 (plan de formación ciudadana); Mineduc, Orientaciones PME."
+            },
+            {
+              "number": 50,
+              "name": "Análisis de evidencias externas con pares",
+              "levels": [
+                "No conoce ni revisa los resultados de las evaluaciones externas.",
+                "Conoce los resultados, pero los analiza de manera general (puntajes) y sin sus pares.",
+                "Analiza con sus pares las evidencias de las evaluaciones externas para completar la visión de lo que aprenden sus estudiantes e identificar oportunidades de mejora.",
+                "Además de lo logrado, vincula ese análisis con acciones concretas en su planificación y las evalúa."
+              ],
+              "meaning": "Los resultados de evaluaciones externas (Simce, otras) son una fuente complementaria. Su valor está en analizarlos con pares para entender qué aprenden los estudiantes y qué hacer distinto, no en mirar solo puntajes.",
+              "to_achieved": "Analizar con pares las evidencias para completar la visión del aprendizaje e identificar mejoras.",
+              "to_outstanding": "Vincular el análisis con acciones concretas en la planificación y evaluarlas.",
+              "sources": "MBE 2021, Est. 12; Agencia de Calidad de la Educación, Informes de resultados y orientaciones de uso; Earl (2013); Datnow y Hubbard (2016), uso de datos por docentes."
+            },
+            {
+              "number": 51,
+              "name": "Comunicación con familias y apoderados",
+              "levels": [
+                "Se comunica con las familias solo por problemas, o la comunicación es poco respetuosa.",
+                "Informa de notas y conducta, pero la comunicación es en un solo sentido.",
+                "Diseña instancias de comunicación respetuosa y culturalmente pertinente, escucha las inquietudes de las familias, informa el progreso académico y el comportamiento y promueve su participación.",
+                "Además de lo logrado, articula redes de apoyo y las familias aportan sus saberes al trabajo en aula."
+              ],
+              "meaning": "La comunicación con las familias es bidireccional y debe informar progreso, no solo problemas. Las familias pueden aportar saberes que enriquecen el trabajo en aula si se las escucha y respeta su cultura.",
+              "to_achieved": "Diseñar instancias respetuosas y culturalmente pertinentes, escuchar inquietudes e informar progreso académico y comportamiento.",
+              "to_outstanding": "Articular redes de apoyo y recoger los saberes de las familias para el aula.",
+              "sources": "MBE 2021, Est. 12; Ley 20.370 (LGE), art. 10; Epstein (2001); Henderson y Mapp (2002), A New Wave of Evidence."
+            },
+            {
+              "number": 52,
+              "name": "Expectativas similares para niñas y niños",
+              "levels": [
+                "No aborda con las familias las expectativas diferenciadas según género.",
+                "Reconoce el tema, pero no lo conversa con las familias.",
+                "Conversa con las familias sobre la importancia de tener expectativas similares para niñas y niños frente a las opciones académicas del currículo.",
+                "Además de lo logrado, usa evidencia de su curso (participación, resultados) para mostrar y cambiar expectativas diferenciadas."
+              ],
+              "meaning": "Las expectativas diferenciadas según género influyen en las elecciones académicas y laborales de niñas y niños. Conversarlo con las familias ayuda a que el hogar y la escuela se refuercen mutuamente.",
+              "to_achieved": "Conversar con las familias sobre la importancia de tener expectativas similares frente a las opciones académicas.",
+              "to_outstanding": "Usar evidencia de su curso (participación, resultados) para mostrar y cambiar expectativas diferenciadas.",
+              "sources": "MBE 2021, Est. 12 y 6; Mineduc, Política de Equidad de Género en Educación (2015); UNESCO (2019), Behind the Numbers; OCDE (2015), The ABC of Gender Equality in Education."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Observación de aula complementaria",
+      "evidence": "Una segunda observación, idealmente en otra unidad o curso, con foco en actividades que exigen creatividad y reflexión sobre el propio aprendizaje, y en la equidad de la participación. Complementa la pauta 1 y se aplica con el mismo protocolo.",
+      "standards": "7 y 8.",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Observación de aula complementaria",
+          "indicators": [
+            {
+              "number": 53,
+              "name": "Pensamiento creativo",
+              "levels": [
+                "Las actividades piden reproducir o copiar modelos; no hay espacio para ideas propias.",
+                "Hay tareas con alguna opción de elegir, pero la producción sigue modelos definidos por el docente.",
+                "Incluye actividades que piden imitar, variar, combinar o transformar, y propone tareas de creación original (proyectos, preguntas abiertas, producciones artísticas o literarias) según el nivel de los estudiantes.",
+                "Además de lo logrado, los estudiantes generan ideas o soluciones originales y las valoran con criterios acordados."
+              ],
+              "meaning": "El pensamiento creativo requiere tareas que no tengan una única respuesta o modelo. Si solo se copia o reproduce, los estudiantes no practican generar ideas propias.",
+              "to_achieved": "Actividades que piden imitar, variar, combinar o transformar, y tareas de creación original según el nivel.",
+              "to_outstanding": "Los estudiantes generan ideas originales y las valoran con criterios acordados.",
+              "sources": "MBE 2021, Est. 8; Beghetto y Kaufman (2007), creatividad en el aula; Robinson (2011), Out of Our Minds; Anderson y Krathwohl (2001) (nivel 'crear')."
+            },
+            {
+              "number": 54,
+              "name": "Metacognición y estrategias de aprendizaje",
+              "levels": [
+                "No se habla de cómo aprenden o resuelven los problemas; el foco está solo en la respuesta correcta.",
+                "Pregunta ocasionalmente cómo llegaron a una respuesta, pero sin sistematizar las estrategias.",
+                "Hace visible cómo se aproxima a los problemas y guía a los estudiantes para conocer y practicar distintas estrategias de aprendizaje, elegir las adecuadas y resolver problemas de comprensión.",
+                "Además de lo logrado, los estudiantes explican qué estrategia usaron y por qué, y la ajustan por iniciativa propia."
+              ],
+              "meaning": "La metacognición, pensar sobre cómo se piensa y aprende, es una de las estrategias con mejor evidencia de impacto. Hacer visible el proceso (no solo el resultado) enseña a los estudiantes a elegir estrategias y resolver sus problemas de comprensión.",
+              "to_achieved": "Hacer visible cómo aborda un problema y guiar a practicar y elegir estrategias.",
+              "to_outstanding": "Los estudiantes explican qué estrategia usaron y por qué, y la ajustan solos.",
+              "sources": "MBE 2021, Est. 8; Flavell (1979); Zimmerman (2002); EEF (2018), Metacognition and Self-regulated Learning; Schraw y Dennison (1994)."
+            },
+            {
+              "number": 55,
+              "name": "Equidad de género en expectativas y participación",
+              "levels": [
+                "Reproduce o refuerza estereotipos de género en ejemplos, asignación de tareas o trato, y no nota que niñas y niños participan de manera desigual.",
+                "Evita estereotipos explícitos, pero no observa quién participa ni cómo distribuye las oportunidades.",
+                "Observa la participación de niñas y niños, distribuye las oportunidades de forma equitativa y ayuda a identificar expectativas basadas en creencias de género que generan desigualdad.",
+                "Además de lo logrado, los estudiantes cuestionan por iniciativa propia ejemplos y expectativas con sesgo de género."
+              ],
+              "meaning": "La equidad de género en el aula se juega en detalles: a quién se pregunta, quién lidera, qué ejemplos se usan y qué se espera de cada uno. Sin observación sistemática, estos sesgos pasan inadvertidos.",
+              "to_achieved": "Observar la participación de niñas y niños, distribuir oportunidades de forma equitativa e identificar expectativas basadas en creencias de género.",
+              "to_outstanding": "Los estudiantes cuestionan por iniciativa propia ejemplos con sesgo.",
+              "sources": "MBE 2021, Est. 6 y 8; Mineduc, Política de Equidad de Género en Educación (2015); Sadker y Sadker (1994), Failing at Fairness; UNESCO (2019)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "name": "Planificación anual y proyectos formativos",
+      "evidence": "La planificación anual o semestral y la descripción de al menos un proyecto o experiencia fuera de la sala o de formación ciudadana. Complementa la pauta 2.",
+      "standards": "3 y 6.",
+      "protocol": null,
+      "usage_warning": null,
+      "sections": [
+        {
+          "name": "Planificación anual y proyectos formativos",
+          "indicators": [
+            {
+              "number": 56,
+              "name": "Vínculo con la comunidad y espacios de aprendizaje",
+              "levels": [
+                "La planificación se limita a clases en la sala y no considera el entorno de los estudiantes.",
+                "Incluye una actividad con el entorno, pero sin relación clara con los objetivos.",
+                "Diseña proyectos o experiencias (salidas, laboratorios, visitas, temáticas locales o globales relevantes) que desafían creativamente a los estudiantes y se relacionan con los objetivos de aprendizaje.",
+                "Además de lo logrado, los estudiantes eligen o proponen temáticas de su comunidad y presentan sus resultados a ella."
+              ],
+              "meaning": "El aprendizaje se fortalece cuando se vincula con el entorno y con problemas reales. Una salida o visita sin relación con los objetivos es una actividad aislada, no una experiencia de aprendizaje.",
+              "to_achieved": "Diseñar proyectos o experiencias que desafían y se relacionan con los objetivos.",
+              "to_outstanding": "Los estudiantes eligen o proponen temas de su comunidad y presentan sus resultados a ella.",
+              "sources": "MBE 2021, Est. 3 y 6; Bases Curriculares (Objetivos de Aprendizaje Transversales); Thomas (2000), A Review of Research on Project-Based Learning; Dewey (1938)."
+            },
+            {
+              "number": 57,
+              "name": "Diversidad cultural y convivencia en una sociedad multicultural",
+              "levels": [
+                "No hay oportunidades para valorar la diversidad cultural y étnica.",
+                "Hay una actividad puntual (por ejemplo, una conmemoración) sin continuidad.",
+                "Planifica oportunidades regulares para que los estudiantes se relacionen de manera constructiva con personas de distintos grupos culturales y étnicos.",
+                "Además de lo logrado, integra los saberes de las culturas presentes en el curso a las actividades de aprendizaje."
+              ],
+              "meaning": "Valorar la diversidad cultural requiere continuidad: una conmemoración puntual no basta. Se trata de que los estudiantes se relacionen de modo constructivo con personas de distintos grupos culturales y étnicos de forma regular.",
+              "to_achieved": "Planificar oportunidades regulares de interacción constructiva.",
+              "to_outstanding": "Integrar los saberes de las culturas presentes en el curso a las actividades de aprendizaje.",
+              "sources": "MBE 2021, Est. 6; Ley 20.845 (Inclusión escolar); Mineduc, Programa de Educación Intercultural Bilingüe; Banks (2008), educación para la ciudadanía en sociedades diversas."
+            },
+            {
+              "number": 58,
+              "name": "Vida democrática, derechos y responsabilidades",
+              "levels": [
+                "Los estudiantes no participan en decisiones ni conocen sus derechos y responsabilidades.",
+                "Trata estos temas en una actividad aislada y de forma expositiva.",
+                "Planifica experiencias formativas donde los estudiantes practican valores democráticos y el respeto por los derechos humanos, y conocen y ejercen sus derechos y responsabilidades en la comunidad escolar.",
+                "Además de lo logrado, los estudiantes lideran iniciativas de participación en la escuela."
+              ],
+              "meaning": "La formación ciudadana se aprende practicando: participar, decidir, conocer derechos y responsabilidades. Tratarla solo en una exposición no genera experiencia democrática.",
+              "to_achieved": "Planificar experiencias donde practican valores democráticos y derechos humanos y ejercen derechos y responsabilidades.",
+              "to_outstanding": "Lideran iniciativas de participación en la escuela.",
+              "sources": "MBE 2021, Est. 6; Ley 20.911 (Plan de Formación Ciudadana); Convención sobre los Derechos del Niño; Print (2007), educación cívica y participación."
+            },
+            {
+              "number": 59,
+              "name": "Cuidado del medio ambiente",
+              "levels": [
+                "No se trabaja el cuidado del medio ambiente.",
+                "Se aborda como contenido, sin acciones.",
+                "Planifica oportunidades para que los estudiantes desarrollen actitudes y conductas de responsabilidad personal y social con el medio ambiente y sus recursos.",
+                "Además de lo logrado, los estudiantes diseñan y evalúan acciones de mejora en su entorno."
+              ],
+              "meaning": "El cuidado del medio ambiente requiere actitudes y conductas, no solo información. El aprendizaje es más efectivo cuando los estudiantes actúan en su entorno.",
+              "to_achieved": "Oportunidades para desarrollar actitudes y conductas de responsabilidad personal y social con el medio ambiente.",
+              "to_outstanding": "Diseñar y evaluar acciones de mejora en su entorno.",
+              "sources": "MBE 2021, Est. 6; Bases Curriculares (OAT); UNESCO (2017), Educación para los Objetivos de Desarrollo Sostenible; Ley 20.370 (LGE)."
+            },
+            {
+              "number": 60,
+              "name": "Ciudadanía digital",
+              "levels": [
+                "No considera el uso responsable de internet ni de las tecnologías.",
+                "Entrega normas de uso, pero sin actividades que desarrollen criterio.",
+                "Planifica oportunidades para que los estudiantes resuelvan problemas de información, comunicación y conocimiento, y dilemas legales, sociales y éticos en ambiente virtual.",
+                "Además de lo logrado, los estudiantes evalúan la calidad de las fuentes y proponen reglas para el uso ético de las tecnologías."
+              ],
+              "meaning": "Las tecnologías exigen criterio: evaluar fuentes, resolver problemas de información y comunicación, y enfrentar dilemas legales, sociales y éticos en el entorno virtual. Dar solo normas de uso no desarrolla ese criterio.",
+              "to_achieved": "Planificar oportunidades para resolver problemas de información y dilemas éticos en ambiente virtual.",
+              "to_outstanding": "Los estudiantes evalúan la calidad de las fuentes y proponen reglas para el uso ético de las tecnologías.",
+              "sources": "MBE 2021, Est. 6; Mineduc-Enlaces, Habilidades TIC para el Aprendizaje; UNESCO (2018), marco de competencias digitales; Ley 21.430."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
