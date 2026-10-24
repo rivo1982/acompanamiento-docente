@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\NivelLogro;
+use App\Exceptions\AcompanamientoYaFinalizado;
+use App\Exceptions\EntradaDeSnapshotIncompleta;
 use App\Exceptions\IndicadorFueraDelSnapshot;
 use App\Models\Concerns\PerteneceAEstablecimiento;
 use Database\Factories\RespuestaAcompanamientoFactory;
@@ -31,11 +33,52 @@ class RespuestaAcompanamiento extends Model
     protected $fillable = ['acompanamiento_id', 'indicador_id', 'nivel', 'retroalimentacion_personal'];
 
     /**
+     * Guarda de escritura: una respuesta solo se crea, modifica o elimina mientras su
+     * acompañamiento sigue en curso, y solo para indicadores congelados en su snapshot.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (RespuestaAcompanamiento $respuesta): void {
+            if ($respuesta->exists && $respuesta->isDirty('acompanamiento_id')) {
+                self::acompanamientoEnCurso($respuesta->getOriginal('acompanamiento_id'));
+            }
+
+            $acompanamiento = self::acompanamientoEnCurso($respuesta->acompanamiento_id);
+
+            if ($acompanamiento->indicadorDelSnapshot((int) $respuesta->indicador_id) === null) {
+                throw IndicadorFueraDelSnapshot::para($acompanamiento, (int) $respuesta->indicador_id);
+            }
+        });
+
+        static::deleting(function (RespuestaAcompanamiento $respuesta): void {
+            self::acompanamientoEnCurso($respuesta->getOriginal('acompanamiento_id'));
+        });
+    }
+
+    /**
+     * Lee el acompañamiento desde la base (nunca una copia en memoria, que puede estar
+     * desactualizada) y exige que siga en curso.
+     *
+     * @throws AcompanamientoYaFinalizado
+     */
+    private static function acompanamientoEnCurso(mixed $acompanamientoId): Acompanamiento
+    {
+        $acompanamiento = Acompanamiento::query()->findOrFail($acompanamientoId);
+
+        if ($acompanamiento->estaFinalizado()) {
+            throw AcompanamientoYaFinalizado::paraRespuestas($acompanamiento);
+        }
+
+        return $acompanamiento;
+    }
+
+    /**
      * Retroalimentación automática leída SOLO del snapshot congelado del acompañamiento.
      *
      * @return array{que_significa: string, para_logrado: string, para_destacado: ?string, fuentes: string, felicitaciones: ?string}
      *
      * @throws IndicadorFueraDelSnapshot
+     * @throws EntradaDeSnapshotIncompleta
      */
     public function retroalimentacionAutomatica(): array
     {
@@ -45,7 +88,7 @@ class RespuestaAcompanamiento extends Model
         $faltantes = array_values(array_diff(self::CLAVES_REQUERIDAS, array_keys($indicador)));
 
         if ($faltantes !== []) {
-            throw IndicadorFueraDelSnapshot::incompleto($this->acompanamiento, $this->indicador_id, $faltantes);
+            throw EntradaDeSnapshotIncompleta::para($this->acompanamiento, $this->indicador_id, $faltantes);
         }
 
         return [

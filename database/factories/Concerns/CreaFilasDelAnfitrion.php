@@ -13,6 +13,13 @@ use RuntimeException;
  */
 trait CreaFilasDelAnfitrion
 {
+    /**
+     * Año escolar de los cursos de fábrica. Es el mismo que usa newCurso() en tests/Pest.php, así
+     * fábricas y ayudantes reutilizan la única fila de anios_escolares por establecimiento y año
+     * (UNIQUE establecimiento_id, anio) en vez de chocar al crearla dos veces.
+     */
+    public const ANIO_ESCOLAR_DE_FABRICA = 2026;
+
     protected static function establecimientoActivo(): int
     {
         return app(EstablecimientoActual::class)->id()
@@ -33,8 +40,8 @@ trait CreaFilasDelAnfitrion
     protected static function nuevoCurso(): int
     {
         $establecimientoId = self::establecimientoActivo();
-        $anioId = DB::table('anios_escolares')->where(['establecimiento_id' => $establecimientoId, 'anio' => 2026])->value('id')
-            ?? DB::table('anios_escolares')->insertGetId(['establecimiento_id' => $establecimientoId, 'anio' => 2026]);
+        $anio = ['establecimiento_id' => $establecimientoId, 'anio' => self::ANIO_ESCOLAR_DE_FABRICA];
+        $anioId = DB::table('anios_escolares')->where($anio)->value('id') ?? DB::table('anios_escolares')->insertGetId($anio);
         $nivelId = DB::table('niveles_ensenanza')->insertGetId(['nombre' => 'Basica', 'orden' => 1]);
         $gradoId = DB::table('grados')->insertGetId(['nivel_ensenanza_id' => $nivelId, 'nombre' => '1', 'orden' => 1]);
 

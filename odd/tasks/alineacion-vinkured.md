@@ -45,20 +45,24 @@ would make integration costly and risky.
 - [x] A2b Re-base module domain in Spanish on host tables (Establecimiento, Funcionario,
   Usuario...) with tenancy pattern; drop module copies of host tables (users, organizations,
   schools); register EstablecimientoActual/RolesDelUsuario as scoped and the middleware.
-- [ ] A2.1 Review follow-ups (A1+A2a review base c424e2b, approved + acknowledged): ~~scoped
+- [x] A2.1 Review follow-ups (A1+A2a review base c424e2b, approved + acknowledged): ~~scoped
   binding so paraTrabajo() state is shared~~ (done in A2b); tenancy tests for updating hook,
   tampered/foreign/suspended session establecimiento (refrescar → null); HostSchemaLoader:
   track tagged dollar quotes ($_$, $tag$), fail closed on empty/headerless snapshot; prove the
   setUpTraits guard wiring runs before RefreshDatabase and covers non-default connections.
-- [ ] A2.2 Review follow-ups (A2b review base 59b6e7a, 4 lenses, approved + acknowledged):
+- [x] A2.2 Review follow-ups (A2b review base 59b6e7a, 4 lenses, approved + acknowledged):
   RespuestaAcompanamiento write guard — reject indicador not in snapshot and writes after
   finalizado (R4/R3 WARNING); observer eligibility on AsignacionAcompanamiento (R1-001
   WARNING, fold into A3); remove estado/finalizado_en/duracion_minutos/pauta_snapshot from
   fillable (R1-002); single source for congratulation text in NivelLogro (R2-001); null-safe
   creating hook when pauta not visible (R4); default estado via enum (R2-002); named constant
   for factory school year (R2-003); distinct exception for incomplete snapshot entry (R2-004);
-  truncate iniciado_en to seconds before computing duration (R3).
+  truncate iniciado_en to seconds before computing duration (R3). R1-001 deferred to A3.
 - [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
+  DECIDED (user, 2026-10-24): module admin = any funcionario with a función of categoria
+  'directivo' (RolesDelUsuario::esDirectivo). Jefe de UTP will be added upstream in Vinkured's
+  FuncionesBaseSeeder as clave 'jefe_utp', categoria 'directivo' (proposal sent by user), so it
+  is covered automatically; the module adds no UTP data of its own.
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
 
@@ -180,6 +184,40 @@ would make integration costly and risky.
     and its validation on asignaciones/acompanamientos; rebuild policies/gates on RolesDelUsuario;
     OPEN QUESTION: sostenedor-level access (old OrganizationAdmin) is not modeled by Vinkured
     membresias (per establecimiento only) — needs a product/host decision.
+
+- A2.1+A2.2 route: delegated writer (trigger: 2+ non-trivial files).
+- A2.1 evidence:
+  - Tenancy (tests only, host-owned files untouched): tests/Feature/Host/
+    EstablecimientoActualFallaCerradoTest.php — updating hook rejects moving a Pauta to another
+    establecimiento (row unchanged); tampered session values (non-numeric, numeric prefix,
+    negative, zero, 19 digits, float, array), a foreign establecimiento and a membresia suspended
+    after selection resolve to null (refrescar, id, next request) and module reads throw
+    SinEstablecimientoActivo. 11 tests green on first run: no host-owned defect found.
+  - HostSchemaLoader tracks any dollar-quote tag ($$, $_$, $tag$; only the opening tag closes,
+    $1 is not a tag), throws on an unterminated body, an empty/whitespace dump, a headerless dump
+    and a dump with no host table (also only `migrations`). tests/Unit/HostSchemaLoaderTransformTest.php.
+    RED: 11 failed / 2 passed. GREEN: 13 passed; real snapshot still 53 tables / 15 functions /
+    19 triggers (the real snapshot has one $_$ body, exigir_padre_plantilla).
+  - Guard: Tests\TestCase::ensureSafeTestDatabase() checks the default connection plus every
+    connection in connectionsToTransact() / connectionsToTruncate() (null = default). Wiring
+    proven with an anonymous RefreshDatabase probe whose refreshDatabase() only records the call:
+    misconfigured search_path throws from setUpTraits() and refresh is never attempted; correct
+    config reaches refresh; an unsafe or unknown non-default connection throws. RED: 3 failed.
+- A2.2 evidence (R1-001 observer eligibility deferred to A3):
+  - RespuestaAcompanamiento saving/deleting guard reads the acompanamiento from the database:
+    indicador outside the snapshot -> IndicadorFueraDelSnapshot; any create/update/delete (also
+    moving into or out of) a finalizado acompanamiento -> AcompanamientoYaFinalizado::paraRespuestas.
+  - Acompanamiento: estado/finalizado_en/duracion_minutos/pauta_snapshot removed from $fillable;
+    default estado EstadoAcompanamiento::EnCurso->value; creating hook throws PautaNoDisponible for
+    a missing, foreign or soft-deleted pauta (was a null method call); iniciado_en and finalizado_en
+    truncated with startOfSecond(). The truncation test was already green (the datetime cast
+    stores Y-m-d H:i:s), the change makes it explicit.
+  - NivelLogro: significado() = description + mensajeFelicitacion(); Logrado felicitación is now
+    'Felicitaciones.' (exact spec texts kept). CreaFilasDelAnfitrion::ANIO_ESCOLAR_DE_FABRICA = 2026.
+    EntradaDeSnapshotIncompleta replaces IndicadorFueraDelSnapshot::incompleto().
+  - RespuestaAcompanamientoFactory default now attaches one indicador to the pauta and answers it.
+  - RED: 14 failed + 1 error (tests/Feature/Modulo), 2 failed (tests/Unit/NivelLogroTest.php).
+- `vendor/bin/pest --compact`: 149 passed, 463 assertions. Pint: passed. public tables 54 / 54.
 
 ## Next step
 A3 — roles derived from funciones/membresias (directivo, UTP, observador) and policies.

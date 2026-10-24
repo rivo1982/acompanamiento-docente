@@ -29,12 +29,12 @@ class AcompanamientoFactory extends Factory
             'curso_id' => fn (): int => self::nuevoCurso(),
             'asignatura_id' => fn (): int => self::nuevaAsignatura(),
             'iniciado_en' => now(),
-            'estado' => EstadoAcompanamiento::EnCurso,
         ];
     }
 
     /**
-     * Acompañamiento ya cerrado.
+     * Acompañamiento ya cerrado. Las fábricas no respetan $fillable; el código de la aplicación
+     * cierra con finalizar().
      */
     public function finalizado(int $duracionMinutos = 45): static
     {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EstadoAcompanamiento;
 use App\Exceptions\AcompanamientoYaFinalizado;
+use App\Exceptions\PautaNoDisponible;
 use App\Models\Concerns\PerteneceAEstablecimiento;
 use Database\Factories\AcompanamientoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,29 +24,44 @@ class Acompanamiento extends Model
 
     protected $table = 'acompanamientos';
 
-    /** @var list<string> */
+    /**
+     * `estado`, `finalizado_en`, `duracion_minutos` y `pauta_snapshot` no son asignables en masa:
+     * solo los fijan el hook de creación y finalizar().
+     *
+     * @var list<string>
+     */
     protected $fillable = [
-        'pauta_id', 'observador_id', 'docente_id', 'curso_id', 'asignatura_id',
-        'iniciado_en', 'finalizado_en', 'duracion_minutos', 'estado', 'pauta_snapshot',
+        'pauta_id', 'observador_id', 'docente_id', 'curso_id', 'asignatura_id', 'iniciado_en',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
-        'estado' => 'en_curso',
+        'estado' => EstadoAcompanamiento::EnCurso->value,
     ];
 
     /**
-     * Congela el contenido de la pauta y la hora de inicio al crear, solo si no vienen dados.
+     * Al crear: fija el inicio en segundos completos (lo que guarda la columna, así la duración
+     * se calcula sobre el valor guardado) y congela el contenido de la pauta si no viene dado.
+     *
+     * @throws PautaNoDisponible
      */
     protected static function booted(): void
     {
         static::creating(function (Acompanamiento $acompanamiento): void {
-            $acompanamiento->iniciado_en ??= now();
+            $acompanamiento->iniciado_en = ($acompanamiento->iniciado_en ?? now())->startOfSecond();
 
             if ($acompanamiento->pauta_snapshot === null) {
-                $acompanamiento->pauta_snapshot = $acompanamiento->pauta->toSnapshot();
+                $pauta = Pauta::query()->find($acompanamiento->pauta_id)
+                    ?? throw PautaNoDisponible::para($acompanamiento->pauta_id);
+
+                $acompanamiento->pauta_snapshot = $pauta->toSnapshot();
             }
         });
+    }
+
+    public function estaFinalizado(): bool
+    {
+        return $this->estado === EstadoAcompanamiento::Finalizado;
     }
 
     /**
@@ -58,7 +74,7 @@ class Acompanamiento extends Model
      */
     public function finalizar(): void
     {
-        $finalizadoEn = now();
+        $finalizadoEn = now()->startOfSecond();
 
         $afectadas = static::query()
             ->whereKey($this->getKey())

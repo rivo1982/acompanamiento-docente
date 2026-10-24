@@ -28,16 +28,21 @@ enum NivelLogro: string
     }
 
     /**
-     * Significado general del nivel, mostrado en toda pauta.
+     * Significado general del nivel, mostrado en toda pauta. En logrado y destacado termina con
+     * la misma felicitación de mensajeFelicitacion(), única fuente de ese texto.
      */
     public function significado(): string
     {
-        return match ($this) {
+        $descripcion = match ($this) {
             self::EnInicio => 'La práctica aparece de forma aislada o con efecto limitado en los estudiantes. El descriptor no aplica a la clase y no es posible observar.',
             self::EnDesarrollo => 'Aparece en parte de la clase o con parte del grupo, con vacíos que limitan su efecto.',
-            self::Logrado => 'Se da de manera consistente y los estudiantes responden como se espera. Felicitaciones.',
-            self::Destacado => 'Además de lo logrado, la práctica se adapta a la diversidad del grupo y los estudiantes la ejercen con autonomía. Felicitaciones por su labor y su exitoso desarrollo profesional.',
+            self::Logrado => 'Se da de manera consistente y los estudiantes responden como se espera.',
+            self::Destacado => 'Además de lo logrado, la práctica se adapta a la diversidad del grupo y los estudiantes la ejercen con autonomía.',
         };
+
+        $felicitacion = $this->mensajeFelicitacion();
+
+        return $felicitacion === null ? $descripcion : "{$descripcion} {$felicitacion}";
     }
 
     /**
@@ -46,7 +51,7 @@ enum NivelLogro: string
     public function mensajeFelicitacion(): ?string
     {
         return match ($this) {
-            self::Logrado => 'Felicitaciones',
+            self::Logrado => 'Felicitaciones.',
             self::Destacado => 'Felicitaciones por su labor y su exitoso desarrollo profesional.',
             default => null,
         };

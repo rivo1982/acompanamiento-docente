@@ -47,25 +47,52 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Refuse to continue unless the default connection is PostgreSQL limited
-     * to the isolated test schema, so the host `public` schema is never wiped.
+     * Refuse to continue unless every connection a database-resetting trait would touch (the
+     * default one, RefreshDatabase's $connectionsToTransact and DatabaseTruncation's
+     * $connectionsToTruncate) is PostgreSQL limited to the isolated test schema, so the host
+     * `public` schema is never wiped.
      *
      * @throws RuntimeException
      */
     protected function ensureSafeTestDatabase(): void
     {
-        $connection = config('database.default');
-        $driver = config("database.connections.{$connection}.driver");
-        $searchPath = config("database.connections.{$connection}.search_path");
+        foreach ($this->connectionsToGuard() as $connection) {
+            $driver = config("database.connections.{$connection}.driver");
+            $searchPath = config("database.connections.{$connection}.search_path");
 
-        if ($driver !== 'pgsql' || $searchPath !== self::TEST_SCHEMA) {
-            throw new RuntimeException(sprintf(
-                'Refusing to reset the database: tests must use a pgsql connection with search_path "%s" (got connection "%s", driver "%s", search_path "%s").',
-                self::TEST_SCHEMA,
-                (string) $connection,
-                (string) $driver,
-                is_scalar($searchPath) ? (string) $searchPath : json_encode($searchPath),
-            ));
+            if ($driver !== 'pgsql' || $searchPath !== self::TEST_SCHEMA) {
+                throw new RuntimeException(sprintf(
+                    'Refusing to reset the database: tests must use a pgsql connection with search_path "%s" (got connection "%s", driver "%s", search_path "%s").',
+                    self::TEST_SCHEMA,
+                    $connection,
+                    (string) $driver,
+                    is_scalar($searchPath) ? (string) $searchPath : json_encode($searchPath),
+                ));
+            }
         }
+    }
+
+    /**
+     * Connection names the database-resetting traits would use; null means the default one.
+     *
+     * @return list<string>
+     */
+    private function connectionsToGuard(): array
+    {
+        $default = (string) config('database.default');
+        $connections = [$default];
+
+        if (method_exists($this, 'connectionsToTransact')) {
+            $connections = [...$connections, ...$this->connectionsToTransact()];
+        }
+
+        if (method_exists($this, 'connectionsToTruncate')) {
+            $connections = [...$connections, ...$this->connectionsToTruncate()];
+        }
+
+        return array_values(array_unique(array_map(
+            fn (?string $connection): string => $connection ?? $default,
+            $connections,
+        )));
     }
 }

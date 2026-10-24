@@ -17,6 +17,8 @@ use RuntimeException;
  * - Otherwise loads the snapshot without `public.` qualifiers, without the schema statements and
  *   pg_dump session settings, with `CREATE OR REPLACE FUNCTION` (functions survive Laravel's
  *   dropAllTables) and without the `migrations` table, which Laravel owns.
+ * - Fails closed on an empty or headerless snapshot, one without any host table, and an
+ *   unterminated dollar-quoted body.
  */
 final class HostSchemaLoader
 {
@@ -78,7 +80,12 @@ final class HostSchemaLoader
      */
     public function transform(string $dump): string
     {
+        if (trim($dump) === '') {
+            throw new RuntimeException('The host schema snapshot is empty.');
+        }
+
         $statements = [];
+        $tables = 0;
 
         foreach ($this->entries($dump) as $entry) {
             if ($this->isDiscarded($entry)) {
@@ -87,11 +94,19 @@ final class HostSchemaLoader
 
             $sql = $entry['sql'];
 
+            if ($entry['type'] === 'TABLE') {
+                $tables++;
+            }
+
             if ($entry['type'] === 'FUNCTION') {
                 $sql = preg_replace('/^CREATE FUNCTION /m', 'CREATE OR REPLACE FUNCTION ', $sql);
             }
 
             $statements[] = trim(preg_replace('/(?<![\w."])public\./', '', $sql));
+        }
+
+        if ($tables === 0) {
+            throw new RuntimeException('The host schema snapshot contains no host table to load.');
         }
 
         return implode("\n\n", $statements)."\n";
@@ -110,6 +125,10 @@ final class HostSchemaLoader
         $dump = str_replace("\r\n", "\n", $dump);
         $chunks = preg_split('/^(?=--\n-- (?:Data for )?Name: )/m', $dump);
         array_shift($chunks);
+
+        if ($chunks === []) {
+            throw new RuntimeException('The host schema snapshot has no pg_dump entry header; it is not a pg_dump --schema-only dump.');
+        }
 
         $entries = [];
 
@@ -153,25 +172,49 @@ final class HostSchemaLoader
     /**
      * Drop, outside dollar-quoted bodies, full-line `--` comments, pg_dump session `SET` lines
      * and psql meta-commands (e.g. `\restrict`), which PDO cannot execute.
+     *
+     * Bodies may use any dollar-quote tag (`$$`, `$_$`, `$cuerpo$`); only the tag that opened a
+     * body closes it, so other dollar quotes inside it are ignored.
+     *
+     * @throws RuntimeException
      */
     private function withoutCommentsAndMetaCommands(string $chunk): string
     {
         $kept = [];
-        $insideBody = false;
+        $openTag = null;
 
         foreach (explode("\n", $chunk) as $line) {
-            if (! $insideBody && (str_starts_with($line, '--') || str_starts_with($line, 'SET ') || str_starts_with($line, '\\'))) {
+            if ($openTag === null && (str_starts_with($line, '--') || str_starts_with($line, 'SET ') || str_starts_with($line, '\\'))) {
                 continue;
             }
 
-            if (substr_count($line, '$$') % 2 === 1) {
-                $insideBody = ! $insideBody;
-            }
-
+            $openTag = $this->dollarQuoteStateAfter($line, $openTag);
             $kept[] = $line;
         }
 
+        if ($openTag !== null) {
+            throw new RuntimeException("Unterminated dollar-quoted body ({$openTag}) in the host schema snapshot.");
+        }
+
         return trim(implode("\n", $kept));
+    }
+
+    /**
+     * The dollar-quote tag still open after the given line, or null outside a body.
+     */
+    private function dollarQuoteStateAfter(string $line, ?string $openTag): ?string
+    {
+        preg_match_all('/\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/', $line, $tags);
+
+        foreach ($tags[0] as $tag) {
+            if ($openTag === null) {
+                $openTag = $tag;
+            } elseif ($tag === $openTag) {
+                $openTag = null;
+            }
+        }
+
+        return $openTag;
     }
 
     private function hostSchemaIsVisible(Connection $connection): bool

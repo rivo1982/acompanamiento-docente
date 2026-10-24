@@ -19,9 +19,13 @@ it('tiene los textos oficiales de significado', function () {
 it('felicita solo en logrado y destacado', function () {
     expect(NivelLogro::EnInicio->mensajeFelicitacion())->toBeNull()
         ->and(NivelLogro::EnDesarrollo->mensajeFelicitacion())->toBeNull()
-        ->and(NivelLogro::Logrado->mensajeFelicitacion())->toBe('Felicitaciones')
+        ->and(NivelLogro::Logrado->mensajeFelicitacion())->toBe('Felicitaciones.')
         ->and(NivelLogro::Destacado->mensajeFelicitacion())->toBe('Felicitaciones por su labor y su exitoso desarrollo profesional.');
 });
+
+it('termina el significado con la misma felicitación que la retroalimentación', function (NivelLogro $nivel) {
+    expect($nivel->significado())->toEndWith(' '.$nivel->mensajeFelicitacion());
+})->with([NivelLogro::Logrado, NivelLogro::Destacado]);
 
 it('lista la tabla de significados en orden ascendente', function () {
     $tabla = NivelLogro::tablaSignificados();
