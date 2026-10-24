@@ -74,7 +74,7 @@
             "Composer\\Config::disableProcessTimeout",
             "@demo:env",
             "@php artisan config:clear --no-interaction",
-            "@php artisan serve --host=127.0.0.1 --port=8765"
+            "cd public && php -S 127.0.0.1:8765 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

@@ -587,8 +587,15 @@ Local demo to see the screens in a browser with FICTITIOUS data only, in schema 
 - Setup (idempotent, re-run any time; recalculates invitation deadlines from the seeding moment): `composer demo:setup`
   = `CREATE SCHEMA IF NOT EXISTS acompanamiento_demo` (psql) + `php artisan migrate --force` (the 0000 migration loads
   the host schema snapshot into the demo schema) + `php artisan db:seed --class=DemoSeeder --force`.
-- Serve: `composer demo:serve` (`php artisan serve --host=127.0.0.1 --port=8765`), then http://127.0.0.1:8765.
+- Serve: `composer demo:serve` (`cd public && php -S 127.0.0.1:8765 ../vendor/.../Foundation/resources/server.php`),
+  then http://127.0.0.1:8765 (user: VSCode "Reenviar un puerto" 8765 → http://localhost:8765).
   Port 8000 is taken on this server by another, unrelated application — do not use it.
+  BUG FIXED (found by the user in the browser): `php artisan serve` only passes an allow-list of env
+  vars (ServeCommand::$passthroughVariables: APP_ENV, PATH, …) to the child server, so the @putenv
+  DB_* overrides were dropped and the app fell back to .env (sqlite) → "no such table: usuarios".
+  The PHP built-in server inherits the full environment; it must run from public/ (server.php uses
+  getcwd()). Verified: login 200, invalid-invitation page 200 rendered from acompanamiento_demo,
+  sessions written to acompanamiento_demo.sessions, admin password check OK, public 54/54.
 - Both scripts run `php artisan config:clear` first (review R3 WARNING, commits f91df72..4ef4191,
   approved + acknowledged): a cached config would ignore the @putenv overrides and point migrate at
   the cached connection. Pending advisory: test the full DemoSeeder::run path twice (catalog +
