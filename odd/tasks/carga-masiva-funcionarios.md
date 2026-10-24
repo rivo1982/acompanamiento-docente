@@ -36,7 +36,7 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
 - Safety: roberto_dev public schema is never modified; tests only in acompanamiento_test.
 
 ## Tasks
-- [ ] C1 RUT value object/validator (DV mod 11, normalization to Vinkured's '12345678-5' storage
+- [x] C1 RUT value object/validator (DV mod 11, normalization to Vinkured's '12345678-5' storage
   form) + spreadsheet row parser/validator (pure, no DB) + .xlsx reader behind an interface,
   with dependency choice and ADR draft for Vinkured.
 - [ ] C2 Unit invitation: invite one person (persona + funcionario + funcion + usuario +
@@ -50,6 +50,23 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
 
 ## Progress / Evidence
 - Feature doc created on branch feat/vinkured-alignment.
+- C1 route: delegated writer (trigger: 2+ non-trivial files).
+- C1 done: openspout/openspout v5.3.0 (MIT) added; App\Support\Rut (+ RutInvalido),
+  App\Support\Importacion\{LectorDePlanilla, LectorXlsx, FilaDePlanilla, ValidadorDePlanilla,
+  ResultadoDeValidacion} (+ PlanillaIlegible), LectorDePlanilla bound to LectorXlsx in
+  AppServiceProvider; ADR draft docs/adr/0007-lectura-de-planillas-con-openspout.md (Propuesta).
+  - Storage form "12345678-5" matches Vinkured personas.numero_documento fixture '1-9'
+    (/srv/vinkured tests/Pest.php newPersona).
+  - Correo: trimmed + FILTER_VALIDATE_EMAIL like ReglasDeRespuesta::correoParaEnviar, plus
+    lowercase (Vinkured's rule does not lowercase; ours does for duplicate detection).
+  - Header must be row 1, compared lowercase/ASCII/collapsed spaces; trailing empty header cells
+    ignored; extra non-empty columns rejected. Names/surnames max 100 chars (our choice).
+  - Reader preserves empty rows (SHOULD_PRESERVE_EMPTY_ROWS) so positions = Excel row numbers;
+    rejects non-.xlsx extension, OLE signature (encrypted/.xls), non-ZIP and corrupt files.
+    C3 must store uploads with a .xlsx extension (reader checks the extension).
+  - RED: 53 new tests, 0 passed (classes not found). GREEN: 54 new tests pass.
+  - vendor/bin/pest --compact: 271 passed (984 assertions); public tables 54 before / 54 after.
+  - vendor/bin/pint --dirty --format agent: passed.
 
 ## Next step
-C1 — route: delegated writer.
+C2 — unit invitation (route to be decided by the parent).

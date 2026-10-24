@@ -16,6 +16,8 @@ use App\Policies\PautaBasePolicy;
 use App\Policies\PautaPolicy;
 use App\Policies\ReportePolicy;
 use App\Support\EstablecimientoActual;
+use App\Support\Importacion\LectorDePlanilla;
+use App\Support\Importacion\LectorXlsx;
 use App\Support\RolesDelModulo;
 use App\Support\RolesDelUsuario;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(EstablecimientoActual::class);
         $this->app->scoped(RolesDelUsuario::class);
         $this->app->scoped(RolesDelModulo::class);
+
+        $this->app->bind(LectorDePlanilla::class, LectorXlsx::class);
     }
 
     /**
