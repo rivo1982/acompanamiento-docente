@@ -2,10 +2,12 @@
 
 use App\Actions\IniciarImportacion;
 use App\Enums\EstadoImportacion;
+use App\Exceptions\PlanillaIlegible;
 use App\Jobs\EnviarInvitacion;
 use App\Jobs\ProcesarImportacion;
 use App\Models\ImportacionUsuario;
 use App\Models\Membresia;
+use App\Support\Importacion\LectorDePlanilla;
 use App\Support\Importacion\ValidadorDePlanilla;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -356,4 +358,51 @@ it('el fallo definitivo del trabajo marca la carga como fallida, borra la planil
         'importacion_id' => $trabajo->importacionId,
         'excepcion' => RuntimeException::class,
     ]);
+});
+
+it('no pisa con completada una carga que otro intento ya dejó fallida mientras procesaba', function () {
+    iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION, filaDeFuncionario(30000100, 'tardio@example.com')]), administradorDe($this->a));
+    $trabajo = trabajoDeImportacion();
+    $mensajeDelOtroIntento = [['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Súbala nuevamente.']]];
+    Membresia::created(function () use ($trabajo, $mensajeDelOtroIntento): void {
+        DB::table('importaciones_usuarios')->where('id', $trabajo->importacionId)->update([
+            'estado' => EstadoImportacion::Fallida->value,
+            'errores' => json_encode($mensajeDelOtroIntento),
+        ]);
+    });
+
+    procesar($trabajo);
+
+    expect(ImportacionUsuario::query()->sole())
+        ->estado->toBe(EstadoImportacion::Fallida)
+        ->errores->toBe($mensajeDelOtroIntento)
+        ->creados->toBe(0)
+        ->and(planillasGuardadas())->toBe([]);
+});
+
+it('no pisa con fallida una carga que otro intento ya dejó completada mientras procesaba', function () {
+    iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION]), administradorDe($this->a));
+    $trabajo = trabajoDeImportacion();
+    app()->instance(LectorDePlanilla::class, new class($trabajo->importacionId) implements LectorDePlanilla
+    {
+        public function __construct(private int $importacionId) {}
+
+        public function filas(string $ruta): iterable
+        {
+            DB::table('importaciones_usuarios')->where('id', $this->importacionId)->update([
+                'estado' => EstadoImportacion::Completada->value,
+                'total' => 3,
+                'creados' => 3,
+            ]);
+
+            throw PlanillaIlegible::noSePuedeLeer();
+        }
+    });
+
+    procesar($trabajo);
+
+    expect(ImportacionUsuario::query()->sole())
+        ->estado->toBe(EstadoImportacion::Completada)
+        ->creados->toBe(3)
+        ->errores->toBeNull();
 });

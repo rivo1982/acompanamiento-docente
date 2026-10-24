@@ -41,6 +41,13 @@ use Throwable;
  * - Sin registro: InvitacionImposible, falla sin reintentos. Si el correo falla: EnvioDeInvitacionFallido (sin
  *   encadenar el original, que suele traer la dirección), 3 intentos con espera.
  * - `failed()` registra solo ids y la clase de la excepción.
+ * - Payloads anteriores al sello (encolados antes del despliegue de C2.1) llegan sin la propiedad: no se sabe si ya
+ *   fueron reemplazados o enviados, así que el trabajo NO envía ni rota; registra solo ids (warning) y termina.
+ *   Nota de despliegue para Vinkured: vaciar la cola de EnviarInvitacion antes de desplegar, o pedir al Administrador
+ *   que reenvíe las invitaciones pendientes cuyo envío se descartó.
+ * - Compromiso aceptado: Mail::send ocurre DENTRO de la transacción. Si el correo sale y luego falla la confirmación,
+ *   el hash guardado vuelve al anterior y el enlace enviado queda muerto; el reintento del trabajo (el sello sigue
+ *   coincidiendo) rota de nuevo y envía un enlace vigente. Se prefiere eso a un enlace guardado que nunca se envió.
  */
 class EnviarInvitacion implements ShouldQueueAfterCommit
 {
@@ -103,6 +110,15 @@ class EnviarInvitacion implements ShouldQueueAfterCommit
 
     public function handle(EstablecimientoActual $actual, EnlaceDeInvitacion $enlaces): void
     {
+        if (! isset($this->sello)) {
+            Log::warning('Se descartó un envío de invitación encolado sin sello; reenvíela.', [
+                'establecimiento_id' => $this->establecimientoId,
+                'membresia_id' => $this->membresiaId,
+            ]);
+
+            return;
+        }
+
         $actual->paraTrabajo($this->establecimientoId, fn () => $this->enviar($actual, $enlaces));
     }
 

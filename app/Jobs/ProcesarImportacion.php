@@ -42,6 +42,11 @@ use Throwable;
  * - SIEMPRE borra la planilla al terminar (minimización de datos personales), con éxito o no; también `failed()`.
  * - Un solo intento: reintentar a medias volvería a invitar filas ya procesadas. Si el trabajo muere, `failed()` deja
  *   la carga `fallida` y el Administrador la vuelve a subir (las filas ya invitadas aparecerán como pendientes).
+ * - El cierre (`completada` o `fallida`) es una sola sentencia condicionada a `estado = procesando`: un intento
+ *   reentregado o tardío nunca pisa el resultado que otro ya dejó.
+ * - Despliegue: el `retry_after` de la conexión de cola (config/queue.php, p. ej. DB_QUEUE_RETRY_AFTER, 90 s por
+ *   defecto) y el `--timeout` del worker deben superar el peor tiempo de proceso de una planilla de 2000 filas
+ *   (cada fila hace su transacción y encola un correo). Si no, la cola reentrega el trabajo mientras aún corre.
  */
 class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
 {
@@ -143,7 +148,7 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
         try {
             $administradores->exigir($administrador);
         } catch (AuthorizationException) {
-            $this->fallar($importacion, self::mensajeSinAdministrador());
+            $this->fallar(self::mensajeSinAdministrador());
 
             return;
         }
@@ -151,13 +156,13 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
         try {
             $resultado = $validador->validar($lector->filas(Storage::disk((string) config('importaciones.disco'))->path(self::rutaDe($this->archivoId))));
         } catch (PlanillaIlegible $e) {
-            $this->fallar($importacion, $e->getMessage());
+            $this->fallar($e->getMessage());
 
             return;
         }
 
         if ($resultado->erroresDelArchivo !== []) {
-            $this->fallar($importacion, ...$resultado->erroresDelArchivo);
+            $this->fallar(...$resultado->erroresDelArchivo);
 
             return;
         }
@@ -177,8 +182,7 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
 
         ksort($erroresPorFila);
 
-        $importacion->forceFill([
-            'estado' => EstadoImportacion::Completada,
+        $this->terminar(EstadoImportacion::Completada, [
             'total' => count($resultado->filasValidas) + count($resultado->erroresPorFila),
             'creados' => $creados,
             'con_error' => count($erroresPorFila),
@@ -187,7 +191,7 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
                 array_keys($erroresPorFila),
                 array_values($erroresPorFila),
             ),
-        ])->save();
+        ]);
     }
 
     /** @return string|null el mensaje de error de la fila, o null si quedó invitada */
@@ -214,12 +218,28 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
         }
     }
 
-    private function fallar(ImportacionUsuario $importacion, string ...$mensajes): void
+    private function fallar(string ...$mensajes): void
     {
-        $importacion->forceFill([
-            'estado' => EstadoImportacion::Fallida,
-            'errores' => [['fila' => null, 'mensajes' => array_values($mensajes)]],
-        ])->save();
+        $this->terminar(EstadoImportacion::Fallida, ['errores' => [['fila' => null, 'mensajes' => array_values($mensajes)]]]);
+    }
+
+    /**
+     * Cierre condicional: una sola sentencia que solo cambia la carga si sigue `procesando`. Si otro intento
+     * (una reentrega tardía o `failed()` tras un timeout) ya la terminó, este cierre no la pisa.
+     *
+     * @param  array{total?: int, creados?: int, con_error?: int, errores: list<array{fila: int|null, mensajes: list<string>}>}  $valores
+     */
+    private function terminar(EstadoImportacion $estado, array $valores): void
+    {
+        ImportacionUsuario::query()
+            ->whereKey($this->importacionId)
+            ->where('estado', EstadoImportacion::Procesando->value)
+            ->update([
+                ...$valores,
+                'estado' => $estado->value,
+                'errores' => json_encode($valores['errores']),
+                'updated_at' => now(),
+            ]);
     }
 
     private static function mensajeSinAdministrador(): string

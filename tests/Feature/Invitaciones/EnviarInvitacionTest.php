@@ -229,3 +229,34 @@ it('registra el fallo definitivo solo con ids', function () {
         'excepcion' => RuntimeException::class,
     ]);
 });
+
+/** Simulates a job queued before `sello` existed: the serialized payload simply lacks the property. */
+function trabajoSinSello(EnviarInvitacion $trabajo): EnviarInvitacion
+{
+    $serializado = preg_replace('/s:5:"sello";s:64:"[0-9a-f]{64}";/', '', serialize($trabajo), 1, $reemplazos);
+    expect($reemplazos)->toBe(1);
+    $serializado = preg_replace_callback(
+        '/^O:(\d+):"([^"]+)":(\d+):/',
+        fn (array $m): string => 'O:'.$m[1].':"'.$m[2].'":'.((int) $m[3] - 1).':',
+        $serializado,
+    );
+
+    return unserialize($serializado);
+}
+
+it('un trabajo encolado antes de existir el sello no envía ni rota el enlace y registra solo ids', function () {
+    Queue::fake();
+    Mail::fake();
+    Log::spy();
+    $membresia = invitar(administradorDe($this->a));
+    $antiguo = trabajoSinSello(Queue::pushed(EnviarInvitacion::class)->first());
+
+    app()->call([$antiguo, 'handle']);
+
+    Mail::assertNothingSent();
+    expect($membresia->fresh()->invitacion_hash)->toBe($membresia->invitacion_hash);
+    Log::shouldHaveReceived('warning')->once()->with('Se descartó un envío de invitación encolado sin sello; reenvíela.', [
+        'establecimiento_id' => $this->a,
+        'membresia_id' => $membresia->id,
+    ]);
+});
