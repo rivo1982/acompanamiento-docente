@@ -167,7 +167,7 @@ it('reenviar informa si el correo no se pudo encolar, con el enlace anterior ya 
     Bus::shouldReceive('dispatch')->andThrow(new RuntimeException('cola caída'));
 
     expect(fn () => reenviar($administrador, $membresia->id))
-        ->toThrow(InvitacionNoEncolada::class, 'La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.')
+        ->toThrow(InvitacionNoEncolada::class, 'La invitación quedó registrada, pero su correo no pudo programarse. Reenviarla más tarde desde las invitaciones pendientes.')
         ->and(fn () => aceptarCon($tokenViejo))->toThrow(InvitacionInvalida::class)
         ->and($membresia->fresh()->estado)->toBe('invitada');
 });

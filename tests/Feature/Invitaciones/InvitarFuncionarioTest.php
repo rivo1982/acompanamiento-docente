@@ -307,7 +307,7 @@ it('informa que la invitación quedó registrada pero su correo no se pudo encol
         $this->fail('Se esperaba InvitacionNoEncolada.');
     } catch (InvitacionNoEncolada $e) {
         $membresia = Membresia::query()->findOrFail($e->membresiaId);
-        expect($e->getMessage())->toBe('La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.')
+        expect($e->getMessage())->toBe('La invitación quedó registrada, pero su correo no pudo programarse. Reenviarla más tarde desde las invitaciones pendientes.')
             ->and($e->getMessage())->not->toContain('ana@ejemplo.cl')
             ->and($e->getPrevious())->toBeNull()
             ->and($membresia->estado)->toBe('invitada')

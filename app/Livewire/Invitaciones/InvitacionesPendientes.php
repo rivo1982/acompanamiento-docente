@@ -45,6 +45,8 @@ class InvitacionesPendientes extends Component
 
     public const AVISO = 'aviso';
 
+    private const SIN_ENLACE = 'Esta invitación ya no tiene un enlace que anular.';
+
     /** Id de la invitación cuya anulación se está confirmando (modal abierto). Solo la cambia el servidor. */
     #[Locked]
     public ?int $anulando = null;
@@ -89,9 +91,9 @@ class InvitacionesPendientes extends Component
 
         $invitacion = $this->invitacionDelEstablecimiento($id, $actual);
 
-        if ($invitacion->estado !== 'invitada' || $invitacion->invitacion_expira_en === null) {
+        if (! $this->tieneEnlaceVivo($invitacion)) {
             $this->anulando = null;
-            $this->mostrarMensaje(self::AVISO, 'Esta invitación ya no tiene un enlace que anular.');
+            $this->mostrarMensaje(self::AVISO, self::SIN_ENLACE);
 
             return;
         }
@@ -115,6 +117,14 @@ class InvitacionesPendientes extends Component
         $invitacion = $this->invitacionDelEstablecimiento($this->anulando, $actual);
         $nombre = $this->nombreDe($invitacion);
         $this->reset('mensaje', 'tipoDeMensaje', 'anulando');
+
+        // Entre la confirmación y esta acción la invitación pudo aceptarse o anularse en otra pestaña. AnularInvitacion
+        // es idempotente con una ya anulada; aquí no se informa un éxito que no ocurrió.
+        if (! $this->tieneEnlaceVivo($invitacion)) {
+            $this->mostrarMensaje(self::AVISO, self::SIN_ENLACE);
+
+            return;
+        }
 
         try {
             $anulaciones->anular($actual->membresia() ?? abort(403), $invitacion->id);
@@ -149,8 +159,10 @@ class InvitacionesPendientes extends Component
     }
 
     /**
-     * Membresías `invitada` del establecimiento: vencidas primero (misma regla que EstadoDePlazo: `ahora >
-     * vencimiento`), luego las vigentes por vencimiento y al final las anuladas.
+     * Membresías `invitada` del establecimiento por vencimiento ascendente (así las vencidas quedan primero) y al final
+     * las anuladas. Sin comparar con la hora actual en SQL: `invitacion_expira_en` es `timestamp without time zone`
+     * en la hora local de la aplicación (America/Santiago), y ordenar por la columna no depende de la zona de la
+     * sesión de la base. Las insignias las calcula EstadoDePlazo en PHP con la misma zona.
      *
      * @return Builder<Membresia>
      */
@@ -161,10 +173,7 @@ class InvitacionesPendientes extends Component
             ->where('membresias.establecimiento_id', $establecimientoId)
             ->where('membresias.estado', 'invitada')
             ->with(['usuario:id,correo', 'persona'])
-            ->orderByRaw(
-                'CASE WHEN membresias.invitacion_expira_en IS NULL THEN 2 WHEN membresias.invitacion_expira_en < ? THEN 0 ELSE 1 END',
-                [now()->toDateTimeString()],
-            )
+            ->orderByRaw('CASE WHEN membresias.invitacion_expira_en IS NULL THEN 1 ELSE 0 END')
             ->orderBy('membresias.invitacion_expira_en')
             ->orderBy('membresias.id');
     }
@@ -259,6 +268,11 @@ class InvitacionesPendientes extends Component
             ->where('establecimiento_id', $actual->id() ?? abort(403))
             ->with('persona')
             ->first() ?? abort(404);
+    }
+
+    private function tieneEnlaceVivo(Membresia $invitacion): bool
+    {
+        return $invitacion->estado === 'invitada' && $invitacion->invitacion_expira_en !== null;
     }
 
     private function nombreDe(Membresia $invitacion): string

@@ -372,3 +372,64 @@ it('warns when the invitation is no longer pending', function () {
         ->assertSee('Esta persona ya no tiene una invitación pendiente en este establecimiento.');
     Queue::assertNothingPushed();
 });
+
+it('orders and labels invitations by local time around midnight in America/Santiago', function () {
+    // 23:59:30 local = 02:59:30 UTC the next day: a UTC comparison would call the 00:00:30 invitation expired.
+    Carbon::setTestNow('2026-10-14 23:59:30');
+    $admin = administradorDe($this->a);
+    invitacionDeLaLista($admin, 'Anulada', null);
+    invitacionDeLaLista($admin, 'Manana', '2026-10-15 00:00:30');
+    invitacionDeLaLista($admin, 'Antes', '2026-10-14 23:59:00');
+
+    $html = listaDeInvitaciones()
+        ->assertSeeInOrder(['Antes Ficticio', 'Manana Ficticio', 'Anulada Ficticio'])
+        ->html();
+
+    expect(filaDeInvitacion($html, 'Antes Ficticio'))->toMatch('/<span[^>]*\bbg-peligro-fondo\b[^>]*>Vencida hoy<\/span>/')
+        ->and(filaDeInvitacion($html, 'Manana Ficticio'))->not->toContain('Vencida')
+        ->and(filaDeInvitacion($html, 'Manana Ficticio'))->toMatch('/<span[^>]*\bbg-neutro-fondo\b[^>]*>En plazo \(1 día hábil\)<\/span>/');
+});
+
+it('orders and labels invitations by local time right after the September DST change', function () {
+    // 06-09-2026: local clocks jump from 00:00 to 01:00 (UTC-4 -> UTC-3).
+    Carbon::setTestNow('2026-09-06 01:30:00');
+    $admin = administradorDe($this->a);
+    invitacionDeLaLista($admin, 'Luego', '2026-09-06 02:00:00');
+    invitacionDeLaLista($admin, 'Sabado', '2026-09-05 23:45:00');
+
+    $html = listaDeInvitaciones()
+        ->assertSeeInOrder(['Sabado Ficticio', 'Luego Ficticio'])
+        ->html();
+
+    expect(filaDeInvitacion($html, 'Sabado Ficticio'))->toMatch('/<span[^>]*\bbg-peligro-fondo\b[^>]*>Vencida<\/span>/')
+        ->and(filaDeInvitacion($html, 'Luego Ficticio'))->toMatch('/<span[^>]*\bbg-aviso-fondo\b[^>]*>Vence hoy<\/span>/');
+});
+
+it('re-checks under the action that the link is still live: cancelled in between warns and changes nothing', function () {
+    $invitacion = invitacionDeLaLista(administradorDe($this->a), 'Ines');
+    $componente = listaDeInvitaciones()->call('confirmarAnulacion', $invitacion->id);
+    $invitacion->forceFill(['invitacion_hash' => null, 'invitacion_expira_en' => null])->save();
+    $antes = $invitacion->refresh()->updated_at;
+
+    $componente->call('anular')
+        ->assertSet('anulando', null)
+        ->assertSet('tipoDeMensaje', 'aviso')
+        ->assertSee('Esta invitación ya no tiene un enlace que anular.')
+        ->assertDontSee('anulada. Su enlace ya no sirve.');
+
+    expect($invitacion->refresh()->estado)->toBe('invitada')
+        ->and($invitacion->updated_at->equalTo($antes))->toBeTrue();
+});
+
+it('re-checks under the action that the invitation is still pending: accepted in between warns and changes nothing', function () {
+    $invitacion = invitacionDeLaLista(administradorDe($this->a), 'Ines');
+    $componente = listaDeInvitaciones()->call('confirmarAnulacion', $invitacion->id);
+    $invitacion->forceFill(['estado' => 'activa', 'invitacion_hash' => null, 'invitacion_expira_en' => null])->save();
+
+    $componente->call('anular')
+        ->assertSet('anulando', null)
+        ->assertSet('tipoDeMensaje', 'aviso')
+        ->assertSee('Esta invitación ya no tiene un enlace que anular.');
+
+    expect($invitacion->refresh()->estado)->toBe('activa');
+});
