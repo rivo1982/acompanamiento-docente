@@ -75,7 +75,8 @@ it('shows the Administrador the invite form with the spreadsheet fields in order
     expect(substr_count($html, '<h1'))->toBe(1)
         ->and($html)->toMatch('/<form\b[^>]*method="post"[^>]*wire:submit="invitar"/')
         ->and($html)->toContain('type="email"')
-        ->and($html)->toContain('type="tel"');
+        ->and($html)->toContain('type="tel"')
+        ->and($html)->toMatch('/<select\\b[^>]*\\bname="funcion"/');
 });
 
 it('forbids the invite page and its action to a user who is not Administrador', function () {
@@ -153,7 +154,8 @@ it('invites the person, queues the mail and shows a success message, then clears
         ->assertSet('rut', '')
         ->assertSet('correo', '')
         ->assertSet('funcion', '')
-        ->assertJs("document.getElementById('mensaje-invitacion').focus()");
+        ->assertJs("document.getElementById('mensaje-invitacion').focus()")
+        ->assertDontSee('aria-live', false);
 
     $membresia = Membresia::query()->where('establecimiento_id', $this->a)->where('estado', 'invitada')->sole();
     expect(Usuario::query()->findOrFail($membresia->usuario_id)->correo)->toBe('ana.perez@example.test');

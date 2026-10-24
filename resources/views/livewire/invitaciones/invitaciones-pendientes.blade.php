@@ -9,27 +9,32 @@
         </x-slot:acciones>
     </x-page-header>
 
-    {{-- Mensaje de la última acción: Éxito como estado; aviso como alerta. Recibe el foco al cambiar. --}}
-    <div aria-live="polite">
-        @if ($mensaje !== null)
-            <div
-                id="mensaje-invitaciones"
-                tabindex="-1"
-                role="{{ $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::EXITO ? 'status' : 'alert' }}"
-                @class([
-                    'mb-6 rounded-control border p-3 text-tabla text-pretty focus:outline-none',
-                    'border-exito bg-exito-fondo text-exito' => $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::EXITO,
-                    'border-aviso bg-aviso-fondo text-aviso' => $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::AVISO,
-                ])
-            >{{ $mensaje }}</div>
-        @endif
-    </div>
+    {{--
+        Mensaje de la última acción, como en "Aceptar invitación" (C4.1): un solo mecanismo, el rol del propio mensaje
+        (Éxito como estado; aviso como alerta) más el foco que le da el servidor. Sin región aria-live envolvente, que lo
+        anunciaría dos veces.
+    --}}
+    @if ($mensaje !== null)
+        <div
+            id="mensaje-invitaciones"
+            tabindex="-1"
+            role="{{ $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::EXITO ? 'status' : 'alert' }}"
+            @class([
+                'mb-6 rounded-control border p-3 text-tabla text-pretty focus:outline-none',
+                'border-exito bg-exito-fondo text-exito' => $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::EXITO,
+                'border-aviso bg-aviso-fondo text-aviso' => $tipoDeMensaje === \App\Livewire\Invitaciones\InvitacionesPendientes::AVISO,
+            ])
+        >{{ $mensaje }}</div>
+    @endif
 
     <x-card aria-labelledby="titulo-invitaciones">
         <h2 id="titulo-invitaciones" tabindex="-1" class="mb-4 text-subtitulo font-semibold text-balance focus:outline-none">Invitaciones por activar ({{ \App\Support\FormatoDelPanel::entero($paginador->total()) }})</h2>
 
-        {{-- Anuncia el resultado al paginar (la región existe siempre, incluso sin filas). --}}
-        <p role="status" class="sr-only">{{ \App\Support\FormatoDelPanel::resultados($paginador->total()) }}</p>
+        {{--
+            Sin región de estado para el total: el total no cambia al paginar ni con reenviar/anular (la invitación
+            queda en la lista), así que una región viva solo repetiría la cantidad junto al mensaje de la acción. Al
+            cambiar de página la paginación lleva el foco a este título, que ya dice la cantidad: se anuncia una vez.
+        --}}
 
         @if ($filas === [])
             <div class="flex flex-col items-start gap-4">
@@ -37,6 +42,9 @@
                 <x-button :href="route('invitaciones.create')" variante="secundario">Invitar funcionario</x-button>
             </div>
         @else
+            {{-- Aviso de Reenviar (decisión del usuario 2026-10-24): una vez sobre la tabla, asociado a cada botón. --}}
+            <p id="aviso-reenviar" class="mb-4 text-tabla text-texto-atenuado text-pretty">Se enviará un nuevo enlace; el anterior dejará de funcionar.</p>
+
             <x-tabla titulo="Invitaciones por activar">
                 <x-slot:encabezado>
                     <tr>
@@ -61,6 +69,7 @@
                                 <x-button
                                     variante="secundario"
                                     wire:click="reenviar({{ $fila['id'] }})"
+                                    aria-describedby="aviso-reenviar"
                                     wire:loading.attr="disabled"
                                     wire:target="reenviar({{ $fila['id'] }})"
                                 >

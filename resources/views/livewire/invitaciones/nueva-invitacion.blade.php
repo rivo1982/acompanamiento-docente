@@ -9,22 +9,24 @@
         </x-slot:acciones>
     </x-page-header>
 
-    {{-- Región del mensaje del último envío: Éxito como estado; aviso y error como alerta. Recibe el foco al cambiar. --}}
-    <div aria-live="polite">
-        @if ($mensaje !== null)
-            <div
-                id="mensaje-invitacion"
-                tabindex="-1"
-                role="{{ $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::EXITO ? 'status' : 'alert' }}"
-                @class([
-                    'mb-6 rounded-control border p-3 text-tabla text-pretty focus:outline-none',
-                    'border-exito bg-exito-fondo text-exito' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::EXITO,
-                    'border-aviso bg-aviso-fondo text-aviso' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::AVISO,
-                    'border-peligro bg-peligro-fondo text-peligro' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::PELIGRO,
-                ])
-            >{{ $mensaje }}</div>
-        @endif
-    </div>
+    {{--
+        Mensaje del último envío, como en "Aceptar invitación" (C4.1): un solo mecanismo, el rol del propio mensaje
+        (Éxito como estado; aviso y error como alerta) más el foco que le da el servidor. Sin región aria-live
+        envolvente, que lo anunciaría dos veces.
+    --}}
+    @if ($mensaje !== null)
+        <div
+            id="mensaje-invitacion"
+            tabindex="-1"
+            role="{{ $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::EXITO ? 'status' : 'alert' }}"
+            @class([
+                'mb-6 rounded-control border p-3 text-tabla text-pretty focus:outline-none',
+                'border-exito bg-exito-fondo text-exito' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::EXITO,
+                'border-aviso bg-aviso-fondo text-aviso' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::AVISO,
+                'border-peligro bg-peligro-fondo text-peligro' => $tipoDeMensaje === \App\Livewire\Invitaciones\NuevaInvitacion::PELIGRO,
+            ])
+        >{{ $mensaje }}</div>
+    @endif
 
     <x-card>
         <form method="post" wire:submit="invitar" wire:loading.attr="aria-busy" wire:target="invitar" class="flex flex-col gap-6" novalidate>
@@ -107,6 +109,7 @@
                     :obligatorio="true"
                     :error="$errors->first('funcion')"
                     wire:model="funcion"
+                    name="funcion"
                 >
                     <option value="">Elegir función</option>
                     @foreach (\App\Livewire\Invitaciones\NuevaInvitacion::FUNCIONES as $valor => $etiqueta)

@@ -235,7 +235,7 @@ class InvitacionesPendientes extends Component
         try {
             $plazo = EstadoDePlazo::calcular($invitacion->invitacion_expira_en, null, $dias);
         } catch (InvalidArgumentException) {
-            return ['texto' => 'Vencimiento no disponible', 'variante' => 'neutro'];
+            return ['texto' => 'Plazo no disponible', 'variante' => 'neutro'];
         }
 
         return match (true) {

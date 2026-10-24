@@ -154,6 +154,13 @@ it('marks each invitation with the host deadline badge, counting business days, 
         ->and(filaDeInvitacion($html, 'Anulada Ficticio'))->toMatch('/<span[^>]*\bbg-neutro-fondo\b[^>]*>Anulada<\/span>/');
 });
 
+it('shows the brief\'s Plazo no disponible badge when the deadline cannot be computed', function () {
+    invitacionDeLaLista(administradorDe($this->a), 'Lejana', '2050-01-01 10:00:00'); // beyond the plausible range
+
+    expect(filaDeInvitacion(listaDeInvitaciones()->html(), 'Lejana Ficticio'))
+        ->toMatch('/<span[^>]*\\bbg-neutro-fondo\\b[^>]*>Plazo no disponible<\\/span>/');
+});
+
 it('says an invitation that expired earlier today expired today', function () {
     invitacionDeLaLista(administradorDe($this->a), 'Temprano', '2026-10-14 08:00:00');
 
@@ -181,7 +188,7 @@ it('shows 20 invitations per page with the host pagination', function () {
     }
 
     $componente = listaDeInvitaciones()
-        ->assertSee('23 resultados')
+        ->assertSee('Invitaciones por activar (23)')
         ->assertSee('Página 1 de 2')
         ->assertSee('Persona20 Ficticio')
         ->assertDontSee('Persona21 Ficticio');
@@ -229,6 +236,42 @@ it('resends an invitation: the old link dies, the expiry is renewed and the mail
     'vencida' => ['2026-10-01 10:00:00'],
     'anulada' => [null],
 ]);
+
+it('announces the action message once: its own role and focus, with no wrapping live region', function () {
+    $invitacion = invitacionDeLaLista(administradorDe($this->a), 'Ines');
+
+    $html = listaDeInvitaciones()
+        ->call('reenviar', $invitacion->id)
+        ->assertJs("setTimeout(() => document.getElementById('mensaje-invitaciones')?.focus(), 0)")
+        ->html();
+
+    expect($html)->not->toContain('aria-live')
+        ->and(substr_count($html, 'role="status"'))->toBe(1)
+        ->and($html)->toMatch('/<div[^>]*id="mensaje-invitaciones"[^>]*role="status"/');
+});
+
+it('keeps the total in the focusable heading only, not in a live region', function () {
+    invitacionDeLaLista(administradorDe($this->a), 'Unica');
+
+    $html = listaDeInvitaciones()->html();
+
+    expect($html)->toMatch('/<h2[^>]*id="titulo-invitaciones"[^>]*tabindex="-1"[^>]*>Invitaciones por activar \\(1\\)<\\/h2>/')
+        ->and($html)->not->toContain('role="status"')
+        ->and($html)->not->toContain('aria-live');
+});
+
+it('explains once above the table what Reenviar does and ties the hint to every Reenviar button', function () {
+    $admin = administradorDe($this->a);
+    invitacionDeLaLista($admin, 'Ines');
+    invitacionDeLaLista($admin, 'Olga');
+
+    $html = listaDeInvitaciones()->html();
+
+    expect(substr_count($html, 'Se enviará un nuevo enlace; el anterior dejará de funcionar.'))->toBe(1)
+        ->and($html)->toMatch('/<p[^>]*id="aviso-reenviar"[^>]*>Se enviará un nuevo enlace; el anterior dejará de funcionar\\.<\\/p>/')
+        ->and(filaDeInvitacion($html, 'Ines Ficticio'))->toMatch('/<button[^>]*aria-describedby="aviso-reenviar"[^>]*>\\s*<span[^>]*>Reenviar/')
+        ->and(filaDeInvitacion($html, 'Olga Ficticio'))->toMatch('/<button[^>]*aria-describedby="aviso-reenviar"[^>]*>\\s*<span[^>]*>Reenviar/');
+});
 
 it('warns with retry guidance when the resent mail cannot be queued', function () {
     $invitacion = invitacionDeLaLista(administradorDe($this->a), 'Ines');

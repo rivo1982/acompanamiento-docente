@@ -116,6 +116,16 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     Correction pass (one): live-region double announcement (both views), select name, "Plazo no
     disponible" per brief, table loading skeleton per brief, count/status re-announcement, the
     Reenviar hint.
+    C4.2 correction pass (delegated writer): (1) removed the wrapping aria-live in both views; one
+    mechanism = role on the message (status/alert) + server focus, same as C4.1; (2) select
+    name="funcion"; (3) "Plazo no disponible" (Neutro); (5) removed the sr-only role="status" total
+    (total never changes on page/reenviar/anular; pagination focuses the h2 that carries "(N)", so
+    it is announced once on page change only); (6) hint shown once above the table
+    (#aviso-reenviar), aria-describedby on every Reenviar button. (4) needs_brief PENDING: brief says
+    only "esqueleto en tablas" (diseno.md:156), no tokens/shape/row count, and Vinkured has no
+    skeleton precedent (no wire:loading skeleton in Alertas/Avisos index) — not implemented.
+    Tests: +4 pendientes (badge, single announcement, count not live, hint), invitar asserts select
+    name and no aria-live. Evidence: public 54/54; pest 599 passed; pint passed; npm run build ok.
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
