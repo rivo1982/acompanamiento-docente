@@ -8,6 +8,7 @@
 use App\Models\Indicador;
 use App\Models\PautaBase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 
 uses(RefreshDatabase::class);
 
@@ -31,6 +32,11 @@ it('no deja ver el catálogo a un miembro sin ficha de funcionario', function ()
 
     expect(puede($usuario, $this->establecimiento, 'verCualquiera', PautaBase::class))->toBeFalse()
         ->and(puede($usuario, $this->establecimiento, 'ver', $this->indicador))->toBeFalse();
+});
+
+it('no deja ver el catálogo a un invitado', function () {
+    expect(Gate::forUser(null)->allows('verCualquiera', PautaBase::class))->toBeFalse()
+        ->and(Gate::forUser(null)->allows('ver', $this->indicador))->toBeFalse();
 });
 
 it('no deja modificar el catálogo a nadie', function () {

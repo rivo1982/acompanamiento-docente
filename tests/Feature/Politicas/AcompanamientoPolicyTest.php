@@ -47,6 +47,21 @@ it('niega crear al observador asignado que dejó de ser observador', function ()
     expect(puede($this->observador, $this->a, 'crear', [Acompanamiento::class, $this->funcionarioDocente]))->toBeFalse();
 });
 
+it('deja terminar el acompañamiento en curso al observador que perdió la habilitación, pero no crear otro', function () {
+    DB::table('observadores')->where('funcionario_id', $this->observadorId)->delete();
+
+    expect(puede($this->observador, $this->a, 'actualizar', $this->enCurso))->toBeTrue()
+        ->and(puede($this->observador, $this->a, 'responder', $this->enCurso))->toBeTrue()
+        ->and(puede($this->observador, $this->a, 'finalizar', $this->enCurso))->toBeTrue()
+        ->and(puede($this->observador, $this->a, 'crear', [Acompanamiento::class, $this->funcionarioDocente]))->toBeFalse();
+});
+
+it('niega crear al observador asignado cuando el docente ya no es funcionario vigente', function () {
+    DB::table('funcionarios')->where('id', $this->docenteId)->update(['fecha_termino' => now()->subDay()->toDateString()]);
+
+    expect(puede($this->observador, $this->a, 'crear', [Acompanamiento::class, $this->funcionarioDocente]))->toBeFalse();
+});
+
 it('deja actualizar, responder y finalizar solo a su observador mientras sigue en curso', function (string $habilidad) {
     expect(puede($this->observador, $this->a, $habilidad, $this->enCurso))->toBeTrue()
         ->and(puede($this->observador, $this->a, $habilidad, $this->finalizado))->toBeFalse()

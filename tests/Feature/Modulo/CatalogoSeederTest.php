@@ -29,10 +29,12 @@ function indicadorDelCatalogo(int $numero): array
         ->firstWhere('number', $numero);
 }
 
-it('siembra diez pautas base y sesenta indicadores numerados', function () {
+it('siembra diez pautas base, trece ámbitos y sesenta indicadores numerados', function () {
     $this->seed(CatalogSeeder::class);
 
     expect(PautaBase::count())->toBe(10)
+        ->and(Ambito::count())->toBe(13)
+        ->and(Indicador::count())->toBe(60)
         ->and(PautaBase::orderBy('numero')->pluck('numero')->all())->toBe(range(1, 10))
         ->and(Indicador::orderBy('numero')->pluck('numero')->all())->toBe(range(1, 60))
         ->and(ApoyoPedagogico::count())->toBe(0);
@@ -77,12 +79,11 @@ it('guarda la advertencia de uso de la pauta de ética', function () {
 
 it('no duplica el catálogo al sembrar dos veces', function () {
     $this->seed(CatalogSeeder::class);
-    $ambitos = Ambito::count();
 
     $this->seed(CatalogSeeder::class);
 
     expect(PautaBase::count())->toBe(10)
-        ->and(Ambito::count())->toBe($ambitos)
+        ->and(Ambito::count())->toBe(13)
         ->and(Indicador::count())->toBe(60);
 });
 

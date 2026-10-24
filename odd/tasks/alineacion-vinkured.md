@@ -68,7 +68,7 @@ would make integration costly and risky.
   'directivo' (RolesDelUsuario::esDirectivo). Jefe de UTP will be added upstream in Vinkured's
   FuncionesBaseSeeder as clave 'jefe_utp', categoria 'directivo' (proposal sent by user), so it
   is covered automatically; the module adds no UTP data of its own.
-- [ ] A3.1 Review follow-ups (A2.3+A3 commit 9dac0df, review base 9129755, approved +
+- [x] A3.1 Review follow-ups (A2.3+A3 commit 9dac0df, review base 9129755, approved +
   acknowledged): trigger FOR SHARE on parent can deadlock when two transactions write respuestas
   then update the same acompanamiento — lock with FOR UPDATE or document single-writer (R3-001
   WARNING); assert trigger messages to tell its two branches apart (R3-002); test an expired
@@ -76,7 +76,7 @@ would make integration costly and risky.
   assignment guard must report missing input (R3-004).
   DECIDED (user, 2026-10-24): an observer who loses the observer flag MAY still finish an
   acompanamiento already en_curso (keep current behavior; lock it in with a test).
-- [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
+- [x] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
 
 ## Progress / Evidence
@@ -295,7 +295,71 @@ would make integration costly and risky.
   - Parent fix (inline): HostSchemaLoadedTest now excludes module functions/triggers from the
     host counts. Re-run: `vendor/bin/pest --compact` 210 passed / 812 assertions; public 54 / 54.
 
+- A3.1+A4 route: delegated writer (trigger: 2+ non-trivial files).
+- A3.1 evidence:
+  - R3-001: trigger now reads the parent acompanamiento FOR NO KEY UPDATE (was FOR SHARE), edited in
+    place (migration not deployed; down() unchanged: DROP TRIGGER/FUNCTION IF EXISTS, same signature).
+    It is the lock a non-key UPDATE (finalizar(), touching updated_at) takes, so a transaction that
+    writes a respuesta and later updates the acompanamiento never upgrades a lock (the FOR SHARE ->
+    UPDATE upgrade was the deadlock); respuesta writes per acompanamiento serialize (one observer per
+    acompanamiento: acceptable); still conflicts with finalizar() so the race guarantee holds; unlike
+    FOR UPDATE it does not block FK FOR KEY SHARE checks. Test is structural (pg_get_functiondef
+    contains FOR NO KEY UPDATE, no FOR SHARE): RefreshDatabase's single uncommitted transaction cannot
+    host a two-connection concurrency test.
+  - R3-002: Spanish, distinct messages: 'Las respuestas de un acompañamiento finalizado no se pueden
+    crear, modificar ni eliminar' / 'El indicador de la respuesta no forma parte del pauta_snapshot de
+    su acompañamiento'. DB tests assert SQLSTATE 23514 + message (local helper rechazadoPorElTrigger).
+  - R3-003: expired-observer test now uses a docente funcionario with an `observadores` row and a past
+    fecha_termino; asserts 'no es observador vigente' and no row stored.
+  - R3-004: saving guard throws AsignacionAcompanamientoInvalida::faltaFuncionario('observador_id' |
+    'docente_id') ('Falta el <campo> de la asignación.') before any (int) cast.
+  - DECIDED lock-in: AcompanamientoPolicyTest 'deja terminar el acompañamiento en curso al observador
+    que perdió la habilitación, pero no crear otro' (green on first run: behavior already present).
+  - RED: 10 failed / 121 passed in tests/Feature/Modulo + Politicas (6 trigger messages, 1 lock mode,
+    2 R3-004, 1 A4 gap below). GREEN: 131 passed.
+- A4 audit (b3397fc, 84 tests: 70 mapped, 14 obsolete, 3 missing counterparts added, 1 missing
+  behavior implemented). Per old file -> current file (mapped/total):
+  - Feature/ExampleTest 1/1 -> Feature/ExampleTest; Unit/ExampleTest 1/1 -> Unit/ExampleTest.
+  - Models/CoachingAssignmentTest 2/2 -> Modulo/AsignacionAcompanamientoTest.
+  - Models/ObservationTest 10/10 -> Modulo/AcompanamientoTest (one-to-one, same order).
+  - Models/RubricTest 4/4 -> Modulo/PautaTest.
+  - Models/SchoolTest 0/2: obsolete — RBD uniqueness and typed sostenedor are host-owned
+    (establecimientos/sostenedores schema).
+  - Models/UserObserverTest 8/13 -> Modulo/RolesDelModuloTest ('resuelve los roles' dataset: principal,
+    curriculum head = categoria directivo incl. future jefe_utp, admin always observer, teacher not
+    observer, teacher flagged; promotion = 'evalúa la elegibilidad'). Demotion clears observer and
+    demoted admin can be re-flagged: MISSING -> added 'deja de ser administrador y observador al perder
+    la función directiva, salvo que se lo habilite'. Obsolete (5): demotion in same save, re-flag in a
+    later save, keep flag on unrelated update (no is_observer column: flag is an `observadores` row,
+    roles derived at call time); user defaults to teacher (no role column); observers/teachers scopes
+    (replaced by RolesDelModulo::puedeObservar/puedeSerObservado).
+  - Policies/CatalogPolicyTest 2/2 -> Politicas/CatalogoPolicyTest; guest: MISSING -> added 'no deja
+    ver el catálogo a un invitado'.
+  - Policies/CoachingAssignmentPolicyTest 9/9 -> Politicas/AsignacionAcompanamientoPolicyTest (list/
+    create/delete, denied roles, other school, not-eligible dataset) + the 3 "cannot be stored" cases in
+    Modulo/AsignacionAcompanamientoTest. Organization-admin parts obsolete (sostenedor open question).
+  - Policies/ObservationPolicyTest 10/10 -> Politicas/AcompanamientoPolicyTest. 'cannot create once the
+    teacher moved to another school': MISSING behavior (crear did not require the docente to be vigente)
+    -> added 'niega crear al observador asignado cuando el docente ya no es funcionario vigente' and
+    AcompanamientoPolicy::crear now requires RolesDelModulo::puedeSerObservado(docente). Org-admin view
+    obsolete.
+  - Policies/ReportGateTest 6/6 -> Politicas/ReportesGateTest (org-admin parts obsolete).
+  - Policies/RubricPolicyTest 3/5 -> Politicas/PautaPolicyTest; obsolete (2): organization admin
+    read-not-edit and other-organization admin (sostenedor open question).
+  - Policies/SchoolPolicyTest 0/5: obsolete — establecimiento view and staff management are host-owned
+    in Vinkured; organization admin is the open sostenedor question.
+  - Seeders/CatalogSeederTest 10/10 -> Modulo/CatalogoSeederTest (one-to-one). Seeder check on new
+    tables: now asserts 10 pautas_base / 13 ambitos / 60 indicadores, same counts after a re-run,
+    indicator 1 texts equal catalog.json (levels, retro, fuentes, ámbito).
+  - Unit/AchievementLevelTest 4/4 -> Unit/NivelLogroTest (+1 felicitación single-source test).
+- A3.1+A4 checks: `vendor/bin/pest --compact` 217 passed / 853 assertions; `vendor/bin/pint --dirty
+  --format agent` passed; public tables before/after 54 / 54.
+
 ## Next step
-A4: policies and Pest port are done here; remaining is a final audit that every
-b3397fc test has a Pest counterpart (e.g. old SchoolPolicy view/manageStaff has no module equivalent:
-staff management is host-owned) and the catalog seeder check on the new tables. Then A5.
+A5: resume the original plan T4+ (odd/tasks/acompanamiento-docente.md) on the aligned base. Changes
+because Vinkured owns establecimientos/funcionarios: T4 "school setup + Excel staff import" is
+host-owned (Vinkured creates establecimientos, personas, funcionarios, funciones, membresias) and is
+re-scoped to module setup only: observer flagging (`observadores` CRUD for directivos) plus, if still
+wanted, an import of observer flags/assignments by RUT matched against existing funcionarios (no person
+creation). T5–T8 keep their scope but read host data (cursos, asignaturas, funcionarios) and use the
+Spanish policies; organization (sostenedor) reports in T8 stay blocked on the open sostenedor question.

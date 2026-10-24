@@ -9,10 +9,19 @@ use Illuminate\Support\Facades\DB;
  * mueve ni elimina una respuesta de un acompañamiento finalizado, ni guarda un indicador ausente
  * de su `pauta_snapshot`. La guarda de Eloquent sigue dando la excepción legible; esta es la red.
  *
- * Carrera con finalizar(): la clave foránea solo toma FOR KEY SHARE sobre el acompañamiento, que no
- * choca con el UPDATE de finalizar(). El trigger lee el acompañamiento con FOR SHARE, que sí choca:
- * si finalizar() llegó antes, la escritura espera su COMMIT y, en READ COMMITTED, vuelve a leer la
- * fila ya finalizada y se rechaza; si la respuesta llegó antes, finalizar() espera a que se confirme.
+ * Bloqueo del acompañamiento: el trigger lo lee con FOR NO KEY UPDATE, el mismo modo de bloqueo que
+ * toma un UPDATE de columnas no clave (finalizar(), o tocar updated_at). Así:
+ * - choca con finalizar(): si finalizar() llegó antes, la escritura espera su COMMIT y, en READ
+ *   COMMITTED, vuelve a leer la fila ya finalizada y se rechaza; si la respuesta llegó antes,
+ *   finalizar() espera a que se confirme (la clave foránea sola, FOR KEY SHARE, no chocaría);
+ * - serializa las escrituras de respuestas de un mismo acompañamiento, y una transacción que luego
+ *   actualiza ese acompañamiento ya tiene el bloqueo que necesita: no hay escalada de FOR SHARE a
+ *   UPDATE, que dejaba a dos transacciones esperándose mutuamente (deadlock, R3-001). Serializar es
+ *   aceptable: cada acompañamiento tiene un único observador que lo escribe;
+ * - a diferencia de FOR UPDATE, no bloquea las comprobaciones FOR KEY SHARE de claves foráneas
+ *   que apuntan al acompañamiento.
+ *
+ * Cada rama tiene su propio mensaje para distinguir el motivo del rechazo (R3-002).
  */
 return new class extends Migration
 {
@@ -26,10 +35,10 @@ return new class extends Migration
             BEGIN
                 IF TG_OP IN ('UPDATE', 'DELETE') THEN
                     SELECT estado INTO acompanamiento_estado
-                    FROM acompanamientos WHERE id = OLD.acompanamiento_id FOR SHARE;
+                    FROM acompanamientos WHERE id = OLD.acompanamiento_id FOR NO KEY UPDATE;
 
                     IF acompanamiento_estado = 'finalizado' THEN
-                        RAISE EXCEPTION 'respuestas_acompanamiento of a finalizado acompanamiento cannot change'
+                        RAISE EXCEPTION 'Las respuestas de un acompañamiento finalizado no se pueden crear, modificar ni eliminar'
                             USING ERRCODE = 'check_violation';
                     END IF;
                 END IF;
@@ -39,10 +48,10 @@ return new class extends Migration
                 END IF;
 
                 SELECT estado, pauta_snapshot INTO acompanamiento_estado, snapshot
-                FROM acompanamientos WHERE id = NEW.acompanamiento_id FOR SHARE;
+                FROM acompanamientos WHERE id = NEW.acompanamiento_id FOR NO KEY UPDATE;
 
                 IF acompanamiento_estado = 'finalizado' THEN
-                    RAISE EXCEPTION 'respuestas_acompanamiento of a finalizado acompanamiento cannot change'
+                    RAISE EXCEPTION 'Las respuestas de un acompañamiento finalizado no se pueden crear, modificar ni eliminar'
                         USING ERRCODE = 'check_violation';
                 END IF;
 
@@ -50,7 +59,7 @@ return new class extends Migration
                     SELECT 1 FROM jsonb_array_elements(COALESCE(snapshot -> 'indicadores', '[]'::jsonb)) AS entrada
                     WHERE entrada ->> 'id' = NEW.indicador_id::text
                 ) THEN
-                    RAISE EXCEPTION 'respuestas_acompanamiento.indicador_id must be in the acompanamiento pauta_snapshot'
+                    RAISE EXCEPTION 'El indicador de la respuesta no forma parte del pauta_snapshot de su acompañamiento'
                         USING ERRCODE = 'check_violation';
                 END IF;
 

@@ -29,12 +29,19 @@ class AsignacionAcompanamiento extends Model
      * Guarda de elegibilidad (R1-001): el observador debe poder observar y el docente calificar como
      * docente, ambos vigentes en el establecimiento activo, y nunca el mismo funcionario. La base
      * repite lo que puede (mismo establecimiento, par distinto); la elegibilidad vive en RolesDelModulo.
+     * Un id ausente se informa como tal (R3-004), nunca se convierte en el funcionario 0.
      *
      * @throws AsignacionAcompanamientoInvalida
      */
     protected static function booted(): void
     {
         static::saving(function (AsignacionAcompanamiento $asignacion): void {
+            foreach (['observador_id', 'docente_id'] as $campo) {
+                if ($asignacion->{$campo} === null) {
+                    throw AsignacionAcompanamientoInvalida::faltaFuncionario($campo);
+                }
+            }
+
             $observadorId = (int) $asignacion->observador_id;
             $docenteId = (int) $asignacion->docente_id;
             $roles = app(RolesDelModulo::class);

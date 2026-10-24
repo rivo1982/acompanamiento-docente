@@ -9,6 +9,11 @@ use LogicException;
  */
 final class AsignacionAcompanamientoInvalida extends LogicException
 {
+    public static function faltaFuncionario(string $campo): self
+    {
+        return new self("Falta el {$campo} de la asignación.");
+    }
+
     public static function mismoFuncionario(int $funcionarioId): self
     {
         return new self("El funcionario [{$funcionarioId}] no puede asignarse a sí mismo.");

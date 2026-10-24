@@ -74,6 +74,23 @@ it('pierde el rol de observador al quitarlo de la tabla de observadores', functi
     expect(rolesDe($usuario, $this->establecimiento)->esObservador($usuario))->toBeFalse();
 });
 
+it('deja de ser administrador y observador al perder la función directiva, salvo que se lo habilite', function () {
+    [$usuario, $funcionario] = usuarioDelModulo($this->establecimiento, 'administrador');
+    asignarFuncion($this->establecimiento, $funcionario, newFuncion('docente'));
+
+    DB::table('funcionario_funciones')->where('funcionario_id', $funcionario)
+        ->whereIn('funcion_id', DB::table('funciones')->where('categoria', 'directivo')->select('id'))
+        ->delete();
+
+    $roles = rolesDe($usuario, $this->establecimiento);
+    expect($roles->esAdministrador($usuario))->toBeFalse()
+        ->and($roles->esObservador($usuario))->toBeFalse()
+        ->and($roles->esDocente($usuario))->toBeTrue();
+
+    habilitarObservador($this->establecimiento, $funcionario);
+    expect(rolesDe($usuario, $this->establecimiento)->esObservador($usuario))->toBeTrue();
+});
+
 it('no lleva los roles de un establecimiento a otro', function () {
     $otro = newEstablecimiento('2000', 'Colegio B');
     [$usuario] = usuarioDelModulo($this->establecimiento, 'administrador');

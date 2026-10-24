@@ -12,10 +12,32 @@ use App\Models\Acompanamiento;
 use App\Models\Indicador;
 use App\Models\Pauta;
 use App\Models\RespuestaAcompanamiento;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
+
+const MENSAJE_FINALIZADO = 'Las respuestas de un acompañamiento finalizado no se pueden crear, modificar ni eliminar';
+const MENSAJE_FUERA_DEL_SNAPSHOT = 'El indicador de la respuesta no forma parte del pauta_snapshot de su acompañamiento';
+
+/**
+ * R3-002: the integrity trigger rejects with check_violation (23514) and a message that tells its
+ * two branches apart (finalizado vs indicador outside the snapshot).
+ */
+function rechazadoPorElTrigger(Closure $sentencia, string $mensaje): void
+{
+    try {
+        DB::transaction($sentencia);
+    } catch (QueryException $e) {
+        expect($e->getCode())->toBe('23514')
+            ->and($e->getMessage())->toContain($mensaje);
+
+        return;
+    }
+
+    throw new RuntimeException('Se esperaba que el trigger rechazara la sentencia.');
+}
 
 beforeEach(function () {
     $this->establecimiento = newEstablecimiento('1000');
@@ -121,17 +143,17 @@ describe('en la base, sin pasar por Eloquent', function () {
     it('rechaza insertar un indicador ausente del snapshot', function () {
         $ajeno = Indicador::factory()->create();
 
-        rejected(fn () => DB::table('respuestas_acompanamiento')->insert([
+        rechazadoPorElTrigger(fn () => DB::table('respuestas_acompanamiento')->insert([
             'establecimiento_id' => $this->establecimiento, 'acompanamiento_id' => $this->acompanamiento->id,
             'indicador_id' => $ajeno->id, 'nivel' => 'logrado',
-        ]), '23514');
+        ]), MENSAJE_FUERA_DEL_SNAPSHOT);
     });
 
     it('rechaza cambiar en bloque a un indicador ausente del snapshot', function () {
         RespuestaAcompanamiento::factory()->for($this->acompanamiento)->create(['indicador_id' => $this->indicador->id]);
         $ajeno = Indicador::factory()->create();
 
-        rejected(fn () => RespuestaAcompanamiento::query()->update(['indicador_id' => $ajeno->id]), '23514');
+        rechazadoPorElTrigger(fn () => RespuestaAcompanamiento::query()->update(['indicador_id' => $ajeno->id]), MENSAJE_FUERA_DEL_SNAPSHOT);
 
         expect(DB::table('respuestas_acompanamiento')->value('indicador_id'))->toBe($this->indicador->id);
     });
@@ -145,26 +167,26 @@ describe('en la base, sin pasar por Eloquent', function () {
         });
 
         it('rechaza insertar respuestas', function () {
-            rejected(fn () => DB::table('respuestas_acompanamiento')->insert([
+            rechazadoPorElTrigger(fn () => DB::table('respuestas_acompanamiento')->insert([
                 'establecimiento_id' => $this->establecimiento, 'acompanamiento_id' => $this->acompanamiento->id,
                 'indicador_id' => $this->otroIndicador->id, 'nivel' => 'logrado',
-            ]), '23514');
+            ]), MENSAJE_FINALIZADO);
 
             expect(DB::table('respuestas_acompanamiento')->count())->toBe(1);
         });
 
         it('rechaza modificar respuestas en bloque', function () {
-            rejected(fn () => RespuestaAcompanamiento::query()
+            rechazadoPorElTrigger(fn () => RespuestaAcompanamiento::query()
                 ->where('acompanamiento_id', $this->acompanamiento->id)
-                ->update(['nivel' => 'destacado']), '23514');
+                ->update(['nivel' => 'destacado']), MENSAJE_FINALIZADO);
 
             expect(DB::table('respuestas_acompanamiento')->value('nivel'))->toBe('en_desarrollo');
         });
 
         it('rechaza eliminar respuestas en bloque', function () {
-            rejected(fn () => RespuestaAcompanamiento::query()
+            rechazadoPorElTrigger(fn () => RespuestaAcompanamiento::query()
                 ->where('acompanamiento_id', $this->acompanamiento->id)
-                ->delete(), '23514');
+                ->delete(), MENSAJE_FINALIZADO);
 
             expect(DB::table('respuestas_acompanamiento')->count())->toBe(1);
         });
@@ -172,9 +194,18 @@ describe('en la base, sin pasar por Eloquent', function () {
         it('rechaza sacar en bloque una respuesta hacia un acompañamiento abierto', function () {
             $abierto = Acompanamiento::factory()->for(Pauta::find($this->acompanamiento->pauta_id))->create();
 
-            rejected(fn () => DB::table('respuestas_acompanamiento')
+            rechazadoPorElTrigger(fn () => DB::table('respuestas_acompanamiento')
                 ->where('acompanamiento_id', $this->acompanamiento->id)
-                ->update(['acompanamiento_id' => $abierto->id]), '23514');
+                ->update(['acompanamiento_id' => $abierto->id]), MENSAJE_FINALIZADO);
         });
     });
+});
+
+it('bloquea el acompañamiento con el mismo modo que su UPDATE para no escalar locks', function () {
+    $definicion = DB::scalar(
+        "select pg_get_functiondef('respuestas_acompanamiento_exigen_acompanamiento_en_curso'::regproc)"
+    );
+
+    expect($definicion)->toContain('FOR NO KEY UPDATE')
+        ->and($definicion)->not->toContain('FOR SHARE');
 });

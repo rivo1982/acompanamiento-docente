@@ -10,7 +10,7 @@ use App\Support\RolesDelModulo;
 
 /**
  * Acompañamientos del establecimiento activo:
- * - crear: un observador vigente, para un docente que tiene asignado;
+ * - crear: un observador vigente, para un docente vigente que tiene asignado;
  * - actualizar, responder y finalizar: su observador, mientras sigue en curso;
  * - ver y exportar: su observador, su docente solo una vez finalizado y el administrador del módulo.
  * Un acompañamiento de otro establecimiento siempre es no.
@@ -23,6 +23,7 @@ class AcompanamientoPolicy
 
         return $roles->esDelEstablecimientoActivo($docente->establecimiento_id)
             && $roles->esObservador($usuario)
+            && $roles->puedeSerObservado((int) $docente->getKey())
             && AsignacionAcompanamiento::query()
                 ->whereIn('observador_id', $roles->funcionarios())
                 ->where('docente_id', $docente->getKey())

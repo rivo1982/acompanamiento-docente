@@ -107,14 +107,30 @@ it('rechaza un observador que no es observador', function () {
 });
 
 it('rechaza un observador habilitado cuya fecha de término ya venció', function () {
-    $vencido = funcionarioConFuncion($this->establecimiento, 'directivo');
+    $vencido = funcionarioConFuncion($this->establecimiento, 'docente');
+    habilitarObservador($this->establecimiento, $vencido);
     DB::table('funcionarios')->where('id', $vencido)->update(['fecha_termino' => now()->subDay()->toDateString()]);
 
     expect(fn () => AsignacionAcompanamiento::factory()->create([
         'observador_id' => $vencido,
         'docente_id' => funcionarioConFuncion($this->establecimiento, 'docente'),
-    ]))->toThrow(AsignacionAcompanamientoInvalida::class);
+    ]))->toThrow(AsignacionAcompanamientoInvalida::class, "El funcionario [{$vencido}] no es observador vigente");
+
+    expect(AsignacionAcompanamiento::count())->toBe(0);
 });
+
+it('informa el funcionario que falta en vez de tratarlo como el id 0', function (string $faltante) {
+    $ids = [
+        'observador_id' => funcionarioConFuncion($this->establecimiento, 'directivo'),
+        'docente_id' => funcionarioConFuncion($this->establecimiento, 'docente'),
+    ];
+    unset($ids[$faltante]);
+
+    expect(fn () => AsignacionAcompanamiento::create($ids))
+        ->toThrow(AsignacionAcompanamientoInvalida::class, "Falta el {$faltante} de la asignación.");
+
+    expect(AsignacionAcompanamiento::count())->toBe(0);
+})->with(['observador_id', 'docente_id']);
 
 it('rechaza un docente que no califica como docente', function () {
     expect(fn () => AsignacionAcompanamiento::factory()->create([
