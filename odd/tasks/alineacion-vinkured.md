@@ -74,8 +74,8 @@ would make integration costly and risky.
   WARNING); assert trigger messages to tell its two branches apart (R3-002); test an expired
   observador from the `observadores` table, not a directivo (R3-003); null ids in the
   assignment guard must report missing input (R3-004).
-  PRODUCT QUESTION pending: may an observer who loses the observer flag still finish an
-  acompanamiento already en_curso? (current behavior: yes, as in the old matrix).
+  DECIDED (user, 2026-10-24): an observer who loses the observer flag MAY still finish an
+  acompanamiento already en_curso (keep current behavior; lock it in with a test).
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
 
