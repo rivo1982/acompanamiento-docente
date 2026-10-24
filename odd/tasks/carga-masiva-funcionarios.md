@@ -68,5 +68,16 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   - vendor/bin/pest --compact: 271 passed (984 assertions); public tables 54 before / 54 after.
   - vendor/bin/pint --dirty --format agent: passed.
 
+- C1 commits f2d76dc (openspout) + 347b39b. Native review base 78d7544 (also covers A3.1/A4
+  7624006), lens review-reliability → approved, acknowledged. Advisory:
+  - R3-001 trigger migration edited in place: verified no persistent schema ran it (only
+    acompanamiento_test, rebuilt per run; schema `acompanamiento` does not exist yet). RULE from
+    now on: once any migration runs in a persistent schema or the branch is merged, change
+    schema only through NEW migrations.
+  - R3-002 lock mode checked structurally only (concurrency untestable under RefreshDatabase) —
+    accepted, documented.
+  - R3-003 data rows with more than 7 columns silently drop extra cells → fold into C2: reject
+    non-empty cells beyond column 7 per row.
+
 ## Next step
-C2 — unit invitation (route to be decided by the parent).
+C2 — unit invitation (route: delegated writer; HIGH risk: authentication).
