@@ -6,10 +6,10 @@ use App\Models\Usuario;
 use App\Support\Invitaciones\EnlaceDeInvitacion;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -28,7 +28,9 @@ beforeEach(function () {
     $this->a = newEstablecimiento('1000', 'Colegio Ficticio A');
     $this->b = newEstablecimiento('2000', 'Colegio Ficticio B');
     Mail::fake();
-    RateLimiter::clear('invitaciones:127.0.0.1');
+    // The named limiter stores hashed keys (md5 of name + key), so RateLimiter::clear('invitaciones:<ip>') cleared
+    // nothing. The test cache store is `array`; flushing it resets every limiter key whatever its hashing.
+    Cache::store()->flush();
 });
 
 /** Invites a person into Colegio A (as its Administrador), then leaves no session. Returns the invited membresia. */
@@ -262,12 +264,53 @@ it('asks a different logged-in user to log out first, without data about the inv
     expect($membresia->fresh()->estado)->toBe('invitada');
 })->with(['cuenta nueva' => false, 'cuenta existente' => true]);
 
-it('throttles the invitation page per ip to slow down token guessing', function () {
-    foreach (range(1, 10) as $_) {
-        $this->get(route('invitaciones.aceptar', str_repeat('b', 43)))->assertOk();
+it('does not throttle a school behind one IP opening many different invitation links', function () {
+    $tokens = [];
+    foreach (range(1, 20) as $i) {
+        invitacionPendiente($this->a, ['rut' => otroRut(), 'correo' => "persona{$i}@example.test"]);
+        $tokens[] = tokenDeLaUltimaInvitacion();
     }
 
-    $this->get(route('invitaciones.aceptar', str_repeat('c', 43)))->assertTooManyRequests();
+    foreach ($tokens as $token) {
+        $this->get(route('invitaciones.aceptar', $token))->assertOk()->assertSee('Contraseña nueva');
+    }
+});
+
+it('throttles one link hammered from the same IP to slow down guessing', function () {
+    $token = str_repeat('b', 43);
+    foreach (range(1, 10) as $_) {
+        $this->get(route('invitaciones.aceptar', $token))->assertOk();
+    }
+
+    $this->get(route('invitaciones.aceptar', $token))->assertTooManyRequests();
+    $this->get(route('invitaciones.aceptar', str_repeat('c', 43)))->assertOk();
+    $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->get(route('invitaciones.aceptar', $token))->assertOk();
+});
+
+it('keeps a per-IP ceiling across different links', function () {
+    foreach (range(1, 120) as $i) {
+        $this->get(route('invitaciones.aceptar', str_pad((string) $i, 43, 'x')))->assertOk();
+    }
+
+    $this->get(route('invitaciones.aceptar', str_repeat('z', 43)))->assertTooManyRequests();
+});
+
+it('sends a logged-in invitee to the establecimiento selection when the new establecimiento cannot be selected', function () {
+    $existente = usuarioConMembresia($this->b, 'activa', ['correo' => 'ya.existe@example.test']);
+    $membresia = invitacionPendiente($this->a, ['correo' => 'ya.existe@example.test']);
+    $token = tokenDeLaUltimaInvitacion();
+    // The new access is suspended right after the acceptance (e.g. by the Administrador), before the selection.
+    Membresia::saved(function (Membresia $guardada) use ($membresia): void {
+        if ($guardada->is($membresia) && $guardada->estado === 'activa') {
+            DB::table('membresias')->where('id', $membresia->id)->update(['estado' => 'suspendida']);
+        }
+    });
+
+    pantalla($token, $existente)
+        ->call('aceptar')
+        ->assertRedirect(route('establecimientos.seleccionar'));
+
+    expect(session('establecimiento_id'))->toBeNull();
 });
 
 it('does not require an active establecimiento from a logged-in user', function () {

@@ -55,8 +55,14 @@ class AppServiceProvider extends ServiceProvider
         // Vinkured no define Password::defaults(): propuesta del módulo, mínimo 12 caracteres con letras y números.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
 
-        // Pantalla del enlace de invitación: 10 por minuto por IP, para frenar a quien prueba tokens.
-        RateLimiter::for('invitaciones', fn (Request $request): Limit => Limit::perMinute(10)->by('invitaciones:'.$request->ip()));
+        // Pantalla del enlace de invitación: 10 por minuto por enlace y por IP (frena a quien insiste con un mismo
+        // enlace), más un techo holgado de 120 por minuto por IP (frena a quien prueba tokens distintos) que no bloquea
+        // al personal de un colegio que sale a internet por una misma IP justo después de una carga masiva. El token
+        // entra a la clave solo como SHA-256.
+        RateLimiter::for('invitaciones', fn (Request $request): array => [
+            Limit::perMinute(10)->by('enlace:'.$request->ip().':'.hash('sha256', (string) $request->route('token'))),
+            Limit::perMinute(120)->by('ip:'.$request->ip()),
+        ]);
 
         $this->registrarPermisos();
     }

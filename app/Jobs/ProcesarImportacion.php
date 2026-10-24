@@ -20,6 +20,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -231,9 +232,11 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
      */
     private function terminar(EstadoImportacion $estado, array $valores): void
     {
-        // Los valores pasan por los casts del modelo (enum y JSON) antes de la sentencia; el builder de Eloquent
-        // agrega updated_at.
-        $cierre = (new ImportacionUsuario)->forceFill([...$valores, 'estado' => $estado])->getAttributes();
+        // Los valores pasan por los casts del modelo (enum y JSON) antes de la sentencia, pero solo se escriben las
+        // columnas pedidas: los valores por omisión del modelo (`$attributes`: contadores en 0) no entran al UPDATE.
+        // El builder de Eloquent agrega updated_at.
+        $valores = [...$valores, 'estado' => $estado];
+        $cierre = Arr::only((new ImportacionUsuario)->forceFill($valores)->getAttributes(), array_keys($valores));
 
         $cerradas = ImportacionUsuario::query()
             ->whereKey($this->importacionId)

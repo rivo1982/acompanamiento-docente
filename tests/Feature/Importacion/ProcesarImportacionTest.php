@@ -429,3 +429,38 @@ it('no pisa con fallida una carga que otro intento ya dejó completada mientras 
         ->creados->toBe(3)
         ->errores->toBeNull();
 });
+
+it('al fallar solo cambia estado, errores y updated_at: no repone los contadores por omisión del modelo', function () {
+    iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION]), administradorDe($this->a));
+    $trabajo = trabajoDeImportacion();
+    $sentencias = [];
+    app()->instance(LectorDePlanilla::class, new class($trabajo->importacionId) implements LectorDePlanilla
+    {
+        public function __construct(private int $importacionId) {}
+
+        public function filas(string $ruta): iterable
+        {
+            // Sigue `procesando`: el cierre sí aplica, pero no debe tocar estos contadores.
+            DB::table('importaciones_usuarios')->where('id', $this->importacionId)->update(['total' => 4, 'creados' => 2, 'con_error' => 1]);
+
+            throw PlanillaIlegible::noSePuedeLeer();
+        }
+    });
+    DB::listen(function ($consulta) use (&$sentencias): void {
+        if (str_starts_with($consulta->sql, 'update "importaciones_usuarios"') && str_contains($consulta->sql, '"errores"')) {
+            $sentencias[] = $consulta->sql;
+        }
+    });
+
+    procesar($trabajo);
+
+    expect(ImportacionUsuario::query()->sole())
+        ->estado->toBe(EstadoImportacion::Fallida)
+        ->total->toBe(4)
+        ->creados->toBe(2)
+        ->con_error->toBe(1)
+        ->and($sentencias)->toHaveCount(1)
+        ->and($sentencias[0])->not->toContain('"total"')
+        ->and($sentencias[0])->not->toContain('"creados"')
+        ->and($sentencias[0])->not->toContain('"con_error"');
+});
