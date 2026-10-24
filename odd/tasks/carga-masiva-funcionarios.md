@@ -108,6 +108,14 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
        business-day logic (DiasHabiles, EstadoDePlazo, DiaNoHabil model and what they need) as
        @host-owned.
     2. Cancelled invitation badge: "Anulada", Neutro (gris) — propose adding to Vinkured's brief.
+    Audit C4.2 (7a4c502 + 6e3ede2): 0 blockers, 5 findings, 2 needs_brief:
+    - "Vencida hoy": resolved by host precedent (Vinkured Panel/Usuarios.php:93 uses it); the
+      brief's mapping (diseno.md:106 vs :99) is inconsistent → report upstream.
+    - Reenviar confirmation DECIDED (user, 2026-10-24): no confirmation; show a visible hint
+      "Se enviará un nuevo enlace; el anterior dejará de funcionar." → propose to Vinkured brief.
+    Correction pass (one): live-region double announcement (both views), select name, "Plazo no
+    disponible" per brief, table loading skeleton per brief, count/status re-announcement, the
+    Reenviar hint.
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
