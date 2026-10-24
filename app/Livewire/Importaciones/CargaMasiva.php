@@ -6,9 +6,11 @@ use App\Actions\IniciarImportacion;
 use App\Enums\EstadoImportacion;
 use App\Models\ImportacionUsuario;
 use App\Support\EstablecimientoActual;
+use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -74,12 +76,11 @@ class CargaMasiva extends Component
         $this->resetErrorBag();
 
         $validacion = Validator::make(['archivo' => $this->archivo], [
-            'archivo' => ['bail', 'required', 'file', 'extensions:xlsx', 'max:'.self::tamanoMaximoKb(), 'mimes:xlsx'],
+            'archivo' => ['bail', 'required', 'file', 'extensions:xlsx', 'max:'.self::tamanoMaximoKb(), self::reglaDeContenidoXlsx()],
         ], [
             'archivo.required' => 'Elegir la planilla .xlsx que se va a subir.',
             'archivo.file' => 'El archivo no se pudo subir. Volver a elegirlo.',
             'archivo.extensions' => 'El archivo debe ser una planilla Excel (.xlsx).',
-            'archivo.mimes' => 'El archivo debe ser una planilla Excel (.xlsx).',
             'archivo.max' => 'La planilla no puede superar los '.self::tamanoLegible().'.',
         ]);
 
@@ -130,6 +131,23 @@ class CargaMasiva extends Component
             EstadoImportacion::Completada => number_format($carga->creados, 0, ',', '.').' de '.number_format($carga->total, 0, ',', '.').' invitadas',
             EstadoImportacion::Fallida => 'No se completó',
             default => 'Sin resultado aún',
+        };
+    }
+
+    /**
+     * Valida el contenido y no el tipo MIME detectado: según la versión de libmagic del servidor y el programa que guardó
+     * la planilla, un .xlsx válido puede detectarse como application/zip u octet-stream y `mimes:xlsx` lo rechazaría.
+     * Un .xlsx es un ZIP (firma PK\x03\x04); uno cifrado o un .xls antiguo es OLE y no la tiene. LectorXlsx revisa el resto.
+     */
+    private static function reglaDeContenidoXlsx(): Closure
+    {
+        return function (string $atributo, mixed $archivo, Closure $fallar): void {
+            $ruta = $archivo instanceof UploadedFile ? $archivo->getRealPath() : false;
+            $firma = $ruta !== false ? @file_get_contents($ruta, false, null, 0, 4) : false;
+
+            if ($firma !== "PK\x03\x04") {
+                $fallar('El archivo debe ser una planilla Excel (.xlsx).');
+            }
         };
     }
 

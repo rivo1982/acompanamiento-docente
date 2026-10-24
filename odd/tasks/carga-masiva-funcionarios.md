@@ -145,6 +145,13 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     Información, Completada Éxito, Fallida Aviso (consistent with Aviso for recoverable page-level
     problems) → propose to Vinkured brief. Correction pass will add badges, "Carga masiva" links in
     the invitations views, the ValidadorDePlanilla "Divídala" copy fix, and audit findings.
+    Correction pass committed bb4b7f0. Native review (base 4e56734, commits 3d0a215..bb4b7f0):
+    approved + acknowledged. Advisory R3-mimes FIXED by parent (inline, test-first): `mimes:xlsx`
+    trusted the detected MIME → a real .xlsx detected as application/zip/octet-stream was REJECTED
+    and a text file claiming the xlsx MIME was ACCEPTED (RED: 3 failing). Now a content rule checks
+    the ZIP signature (PK\x03\x04); LectorXlsx still validates the rest. 652 passed; public 54/54.
+    Advisory pending (C4.3.1): polling bound is fixed at 10 min regardless of import size/progress
+    → consider progress-aware bound (e.g. extend while counters change).
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
 

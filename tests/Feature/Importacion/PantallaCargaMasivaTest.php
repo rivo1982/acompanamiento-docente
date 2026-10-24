@@ -139,6 +139,30 @@ it('rejects a file that is not an .xlsx and deletes the temporary copy', functio
     Queue::assertNothingPushed();
 });
 
+it('accepts a real .xlsx even when the server detects it as a plain ZIP', function (string $mime) {
+    administradorDe($this->a);
+
+    Livewire::test(CargaMasiva::class)
+        ->set('archivo', planillaParaPantalla($this->temporal)->mimeType($mime))
+        ->call('subir')
+        ->assertHasNoErrors();
+
+    expect(ImportacionUsuario::query()->count())->toBe(1);
+})->with(['application/zip', 'application/octet-stream']);
+
+it('rejects a renamed text file even if it claims the spreadsheet MIME type', function () {
+    administradorDe($this->a);
+
+    Livewire::test(CargaMasiva::class)
+        ->set('archivo', UploadedFile::fake()->createWithContent('funcionarios.xlsx', 'texto plano, no una planilla')
+            ->mimeType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))
+        ->call('subir')
+        ->assertHasErrors(['archivo'])
+        ->assertSee('El archivo debe ser una planilla Excel (.xlsx).');
+
+    expect(ImportacionUsuario::sinEstablecimiento()->count())->toBe(0);
+});
+
 it('rejects a renamed file whose content is not a spreadsheet', function () {
     administradorDe($this->a);
 
