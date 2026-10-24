@@ -54,7 +54,7 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     caller/import can record; test the branch.
 - [x] C3 Bulk import: ImportacionUsuario model + estado values, upload, per-row processing
   reusing C2, summary (total/creados/con_error/errores without enumeration leaks).
-- [ ] C3.1 Review follow-ups (C2.1+C3 commit fb7a310, review base 41f922b, approved +
+- [x] C3.1 Review follow-ups (C2.1+C3 commit fb7a310, review base 41f922b, approved +
   acknowledged):
   - ProcesarImportacion final `completada` write is unconditional: a redelivered attempt (when
     retry_after < processing time) can be overwritten/clobbered — make the final transition
@@ -68,7 +68,7 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   APPROVED by user (2026-10-24). Process per .agents/skills/vinkured-ui/SKILL.md: per screen one
   writer → one read-only auditor (web-design-guidelines) → ≤1 correction pass → visual check
   375/768/1280 (if a browser tool is available; otherwise reported as pending) → tests → commit.
-  - [ ] C4.0 UI foundation (+ C3.1 fixes): Livewire 4 + Tailwind 4.3 + Vite matching Vinkured
+  - [x] C4.0 UI foundation (+ C3.1 fixes): Livewire 4 + Tailwind 4.3 + Vite matching Vinkured
     versions; copy Vinkured design assets as @host-owned (docs/diseno.md, CONTEXT.md,
     resources/css/app.css tokens, Inter font, Blade components, layouts), host Login +
     establecimiento selection + routes/middleware wiring.
@@ -213,6 +213,52 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   - vendor/bin/pest --compact: 355 passed (1436 assertions). vendor/bin/pint --dirty --format agent: passed.
     public tables 54 before / 54 after.
 
+- C3.1+C4.0 route: delegated writer (trigger: 2+ non-trivial files).
+- C3.1 done:
+  - ProcesarImportacion: both final transitions (completada, fallida) go through `terminar()`, ONE
+    `UPDATE ... WHERE id = ? AND estado = 'procesando'`; a late/redelivered attempt or failed() result is never
+    clobbered. PHPDoc deploy note: queue `retry_after` (DB_QUEUE_RETRY_AFTER, default 90 s) and worker `--timeout`
+    must exceed the worst-case processing time of a 2000-row file (config/queue.php is outside this task's surface).
+  - EnviarInvitacion: a payload serialized without `sello` (pre-C2.1) is skipped (no send, no rotation) and logged
+    as warning with ids only. Deploy note (PHPDoc): drain EnviarInvitacion jobs before deploying, or the
+    Administrador resends pending invitations whose send was discarded.
+  - EnviarInvitacion PHPDoc documents the accepted tradeoff: Mail::send inside the transaction; a commit failure
+    after the send leaves the mailed link dead until the retry mails a fresh one.
+  - RED: 2 new ProcesarImportacion tests failed (completada clobbered fallida; fallida clobbered completada);
+    1 new EnviarInvitacion test errored ("Typed property ...::$sello must not be accessed before initialization").
+    GREEN: Importacion 18/18, Invitaciones 66/66.
+- C4.0 PARTIAL (not checked):
+  - livewire/livewire ^4.4 installed (v4.4.8, same minor as Vinkured's lock 4.4.7; only package added to the
+    lock). package.json now identical to Vinkured's (+ @fontsource-variable/inter); package-lock.json created;
+    `npm install` 0 vulnerabilities; `npm run build` OK.
+  - Copied @host-owned (byte-identical + tag line): CONTEXT.md, docs/diseno.md, resources/css/app.css,
+    resources/js/app.js, vite.config.js (bunny fonts removed, as Vinkured), app/Livewire/{Login,
+    SeleccionarEstablecimiento, SelectorDeEstablecimiento}.php, resources/views/livewire/{login,
+    seleccionar-establecimiento, selector-de-establecimiento}.blade.php, resources/views/components/{badge, button,
+    campo, card, modal, page-header, paginacion, tabla}.blade.php, resources/views/components/layouts/{app,
+    simple}.blade.php.
+  - Wiring: routes login (guest), logout + establecimientos.seleccionar (auth), `panel` placeholder home
+    (auth + establecimiento.activo, module-owned view resources/views/inicio.blade.php on the simple layout; named
+    `panel` so the copies redirect unchanged; remove at integration). bootstrap/app.php: redirectGuestsTo(login),
+    redirectUsersTo(panel), as Vinkured. No new middleware or gates needed.
+  - BLOCKER: layouts/app.blade.php does not render: it calls App\Support\AriaCurrent (host helper, app/Support is
+    outside the allowed surface). paginacion.blade.php also needs App\Support\FormatoDelPanel at render time. Both
+    are small host classes to copy as @host-owned. With AriaCurrent copied, the app layout should render unchanged:
+    its Alertas/Avisos entries are behind `can('viewAny', Alerta/Aviso::class)` with no policy -> false (unverified).
+  - `/` still returns welcome: Vinkured redirects to panel/login, but tests/Feature/ExampleTest.php (outside the
+    surface) asserts 200.
+  - Tests: tests/Feature/Acceso/LoginTest.php (18, ported from Vinkured LoginTest/LogoutTest + module cases);
+    RED with the wiring reverted: 18 tests, 2 passed, 4 failed, 12 errors; GREEN 18/18.
+    tests/Feature/Ui/FundacionUiTest.php (31: host tags, tokens in source and in a temp-dir Vite build, self-hosted
+    Inter, simple layout render) written after the copy (structural; no RED).
+  - vendor/bin/pest --compact: 407 passed (1575 assertions). pint --dirty: passed. public tables 54 before / 54
+    after.
+
+- C4.0 CLOSED by parent (inline, mechanical): copied app/Support/AriaCurrent.php and
+  app/Support/FormatoDelPanel.php as @host-owned (diff vs Vinkured = tag lines only); added
+  FundacionUiTest "renders the host app layout for an active user" → 32/32 passed. `/` welcome
+  page kept for now (ExampleTest); align with Vinkured redirect at integration.
+
 ## Next step
-C4 — UI for invite, resend/revoke, import upload and results (Livewire, Vinkured UI skills). Requires installing
-Livewire 4 to match Vinkured: new dependency, needs user approval first.
+C4.1 — screen "aceptar invitación" (vinkured-ui process: writer → auditor → ≤1 correction → visual
+check → tests → commit).
