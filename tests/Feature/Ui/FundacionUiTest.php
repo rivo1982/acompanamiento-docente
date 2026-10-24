@@ -4,8 +4,13 @@
  * UI foundation copied from Vinkured (@host-owned). Token and font cases are ported from Vinkured
  * tests/Feature/Ui/TokensYFuentesTest.php and CssCompiladoTest.php; the build runs into a temporary
  * directory so public/build is never touched.
+ *
+ * The cases that run a real Vite build are in the `build` group, excluded from the default run in phpunit.xml
+ * (slow, and they need node_modules). Run them with `vendor/bin/pest --group=build` after `npm install`;
+ * without node_modules they are skipped.
  */
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Symfony\Component\Process\Process;
 
@@ -50,6 +55,7 @@ function archivosCopiadosDeVinkured(): array
         'resources/views/livewire/login.blade.php', 'resources/views/livewire/seleccionar-establecimiento.blade.php',
         'resources/views/livewire/selector-de-establecimiento.blade.php',
         'resources/views/components/layouts/app.blade.php', 'resources/views/components/layouts/simple.blade.php',
+        'app/Support/AriaCurrent.php', 'app/Support/FormatoDelPanel.php',
         ...array_map(fn (string $c): string => "resources/views/components/{$c}.blade.php",
             ['badge', 'button', 'campo', 'card', 'modal', 'page-header', 'paginacion', 'tabla']),
     ];
@@ -60,21 +66,35 @@ it('tags every copied host file with its Vinkured origin', function (string $rut
         ->toContain("@host-owned Copied from Vinkured {$ruta} — do not modify here; replace with the host class at integration.");
 })->with(archivosCopiadosDeVinkured());
 
-it('defines the brief tokens with their exact hex values in the source and the built CSS', function (string $token, string $hex) {
-    expect(file_get_contents(resource_path('css/app.css')))->toContain("--color-{$token}: {$hex};")
-        ->and(cssCompiladoDelModulo())->toContain("--color-{$token}:{$hex}");
-})->with([
+dataset('tokens del brief', [
     ['fondo', '#f8fafc'], ['superficie-atenuada', '#f1f5f9'], ['texto', '#0f172a'], ['acento', '#0f5c63'],
     ['borde-campo', '#64748b'], ['peligro', '#b91c1c'], ['aviso', '#92400e'], ['exito', '#166534'],
 ]);
+
+/** The build cases need the Vite binary from npm install. */
+function sinViteInstalado(): bool
+{
+    return ! is_file(base_path('node_modules/.bin/vite'));
+}
+
+it('defines the brief tokens with their exact hex values in the source', function (string $token, string $hex) {
+    expect(file_get_contents(resource_path('css/app.css')))->toContain("--color-{$token}: {$hex};");
+})->with('tokens del brief');
+
+it('keeps the brief tokens with their exact hex values in the built CSS', function (string $token, string $hex) {
+    expect(cssCompiladoDelModulo())->toContain("--color-{$token}:{$hex}");
+})->with('tokens del brief')->group('build')->skip(fn (): bool => sinViteInstalado(), 'node_modules is not installed (run npm install).');
+
+it('does not reference external font hosts in the Vite config', function () {
+    expect(strtolower(file_get_contents(base_path('vite.config.js'))))->not->toContain('fonts');
+});
 
 it('self-hosts Inter in the built CSS without external font hosts', function () {
     $css = cssCompiladoDelModulo();
 
     expect($css)->toContain('@font-face')->toContain('Inter Variable')->toContain('.woff2')
-        ->and($css)->not->toMatch('~url\(\s*["\']?(https?:)?//~i')
-        ->and(strtolower(file_get_contents(base_path('vite.config.js'))))->not->toContain('fonts');
-});
+        ->and($css)->not->toMatch('~url\(\s*["\']?(https?:)?//~i');
+})->group('build')->skip(fn (): bool => sinViteInstalado(), 'node_modules is not installed (run npm install).');
 
 it('renders the simple layout in Chilean Spanish with skip link, main landmark and Livewire assets', function () {
     $html = Blade::render('<x-layouts.simple titulo="Prueba"><p>Contenido</p></x-layouts.simple>');
@@ -100,4 +120,4 @@ it('renders the host app layout for an active user once its host helpers are pre
         ->toContain('<main id="contenido"')
         ->toContain('<p>Contenido</p>')
         ->toContain(route('panel'));
-})->uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+})->uses(RefreshDatabase::class);

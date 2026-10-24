@@ -361,6 +361,7 @@ it('el fallo definitivo del trabajo marca la carga como fallida, borra la planil
 });
 
 it('no pisa con completada una carga que otro intento ya dejó fallida mientras procesaba', function () {
+    Log::spy();
     iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION, filaDeFuncionario(30000100, 'tardio@example.com')]), administradorDe($this->a));
     $trabajo = trabajoDeImportacion();
     $mensajeDelOtroIntento = [['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Súbala nuevamente.']]];
@@ -378,6 +379,28 @@ it('no pisa con completada una carga que otro intento ya dejó fallida mientras 
         ->errores->toBe($mensajeDelOtroIntento)
         ->creados->toBe(0)
         ->and(planillasGuardadas())->toBe([]);
+    Log::shouldHaveReceived('warning')->once()->with('Una carga masiva ya estaba terminada por otro intento; no se cambió su resultado.', [
+        'establecimiento_id' => $trabajo->establecimientoId,
+        'importacion_id' => $trabajo->importacionId,
+        'estado_descartado' => 'completada',
+    ]);
+});
+
+it('cierra la carga a través del modelo: guarda los errores con sus casts y renueva updated_at', function () {
+    iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION, ['RUT inválido', 'Nombre', 'Apellido', null, 'no-es-correo', null, 'Docente']]), administradorDe($this->a));
+    $trabajo = trabajoDeImportacion();
+    DB::table('importaciones_usuarios')->where('id', $trabajo->importacionId)->update(['updated_at' => now()->subDay()]);
+
+    procesar($trabajo);
+
+    $importacion = ImportacionUsuario::query()->sole();
+    $guardado = DB::table('importaciones_usuarios')->where('id', $importacion->id)->value('errores');
+    expect($importacion)
+        ->estado->toBe(EstadoImportacion::Completada)
+        ->con_error->toBe(1)
+        ->updated_at->isToday()->toBeTrue()
+        ->and(json_decode($guardado, true))->toBe($importacion->errores)
+        ->and($importacion->errores[0]['fila'])->toBe(2);
 });
 
 it('no pisa con fallida una carga que otro intento ya dejó completada mientras procesaba', function () {

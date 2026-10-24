@@ -194,3 +194,52 @@ it('does not log out with GET', function () {
     $this->actingAs($u)->get('/logout')->assertStatus(405);
     $this->assertAuthenticatedAs($u);
 });
+
+/*
+ * Lockout cases ported from Vinkured tests/Feature/Acceso/LoginTest.php ("locks the sixth attempt, even with the
+ * right password, and reports the remaining seconds", "pluralizes the remaining lockout seconds", "does not lock a
+ * different email from the same ip").
+ */
+
+it('locks the sixth attempt, even with the right password, and reports the remaining seconds', function () {
+    $est = newEstablecimiento('2001');
+    usuarioConMembresia($est, 'activa', ['correo' => 'ana@example.test']);
+
+    foreach (range(1, 5) as $_) {
+        intentarLogin('ana@example.test', 'mal')->assertHasErrors('credenciales');
+    }
+
+    $bloqueado = intentarLogin('ana@example.test', 'password')->assertHasErrors('bloqueo');
+
+    $this->assertGuest();
+    expect($bloqueado->errors()->has('correo'))->toBeFalse()
+        ->and($bloqueado->errors()->first('bloqueo'))->toMatch('/^Demasiados intentos\. .* \d+ segundos?\.$/');
+    $bloqueado->assertJs("document.getElementById('alerta-login').focus()");
+});
+
+it('pluralizes the remaining lockout seconds', function (int $transcurridos, string $esperado) {
+    $est = newEstablecimiento('2001');
+    usuarioConMembresia($est, 'activa', ['correo' => 'ana@example.test']);
+    $this->freezeTime();
+    foreach (range(1, 5) as $_) {
+        intentarLogin('ana@example.test', 'mal');
+    }
+
+    $this->travel($transcurridos)->seconds();
+
+    expect(intentarLogin('ana@example.test', 'password')->errors()->first('bloqueo'))->toEndWith(' '.$esperado.'.');
+})->with([[59, '1 segundo'], [58, '2 segundos'], [30, '30 segundos']]);
+
+it('does not lock a different email from the same ip', function () {
+    $est = newEstablecimiento('2001');
+    usuarioConMembresia($est, 'activa', ['correo' => 'ana@example.test']);
+    $otro = usuarioConMembresia($est, 'activa', ['correo' => 'beto@example.test']);
+    foreach (range(1, 5) as $_) {
+        intentarLogin('ana@example.test', 'mal');
+    }
+
+    intentarLogin('beto@example.test')->assertHasNoErrors()->assertRedirect(route('panel'));
+
+    $this->assertAuthenticatedAs($otro);
+    RateLimiter::clear('beto@example.test|127.0.0.1');
+});

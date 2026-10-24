@@ -231,15 +231,22 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
      */
     private function terminar(EstadoImportacion $estado, array $valores): void
     {
-        ImportacionUsuario::query()
+        // Los valores pasan por los casts del modelo (enum y JSON) antes de la sentencia; el builder de Eloquent
+        // agrega updated_at.
+        $cierre = (new ImportacionUsuario)->forceFill([...$valores, 'estado' => $estado])->getAttributes();
+
+        $cerradas = ImportacionUsuario::query()
             ->whereKey($this->importacionId)
             ->where('estado', EstadoImportacion::Procesando->value)
-            ->update([
-                ...$valores,
-                'estado' => $estado->value,
-                'errores' => json_encode($valores['errores']),
-                'updated_at' => now(),
+            ->update($cierre);
+
+        if ($cerradas === 0) {
+            Log::warning('Una carga masiva ya estaba terminada por otro intento; no se cambió su resultado.', [
+                'establecimiento_id' => $this->establecimientoId,
+                'importacion_id' => $this->importacionId,
+                'estado_descartado' => $estado->value,
             ]);
+        }
     }
 
     private static function mensajeSinAdministrador(): string

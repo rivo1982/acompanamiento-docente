@@ -12,6 +12,12 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
+    <groups>
+        <!-- Real Vite build (slow, needs node_modules); see tests/Feature/Ui/FundacionUiTest.php -->
+        <exclude>
+            <group>build</group>
+        </exclude>
+    </groups>
     <source>
         <include>
             <directory>app</directory>
