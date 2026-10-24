@@ -118,7 +118,7 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
                 ->whereIn('estado', [EstadoImportacion::Pendiente->value, EstadoImportacion::Procesando->value])
                 ->update([
                     'estado' => EstadoImportacion::Fallida->value,
-                    'errores' => json_encode([['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Súbala nuevamente.']]]),
+                    'errores' => json_encode([['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Volver a subirla.']]]),
                     'updated_at' => now(),
                 ]);
         });
@@ -215,7 +215,7 @@ class ProcesarImportacion implements ShouldBeUnique, ShouldQueueAfterCommit
                 'excepcion' => $e::class,
             ]);
 
-            return 'No se pudo procesar esta fila. Inténtelo nuevamente más tarde.';
+            return 'No se pudo procesar esta fila. Volver a intentarlo más tarde.';
         }
     }
 

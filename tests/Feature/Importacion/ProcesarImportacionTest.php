@@ -147,7 +147,7 @@ it('deja la carga fallida y borra la planilla si su proceso no se pudo encolar',
 
     expect($importacion->fresh())
         ->estado->toBe(EstadoImportacion::Fallida)
-        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo programar el proceso de la planilla. Súbala nuevamente.']]])
+        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo programar el proceso de la planilla. Volver a subirla.']]])
         ->and(planillasGuardadas())->toBe([]);
 });
 
@@ -237,7 +237,7 @@ it('falla la carga si el archivo no es una planilla legible y la borra igual', f
 
     expect(ImportacionUsuario::query()->sole())
         ->estado->toBe(EstadoImportacion::Fallida)
-        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo leer la planilla. Guárdela de nuevo como .xlsx desde Excel e inténtelo otra vez.']]])
+        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo leer la planilla. Guardarla de nuevo como .xlsx desde Excel y volver a subirla.']]])
         ->and(planillasGuardadas())->toBe([]);
 });
 
@@ -257,7 +257,7 @@ it('una excepción inesperada en una fila deja un error genérico, registra solo
     $importacion = ImportacionUsuario::query()->sole();
     expect($importacion->estado)->toBe(EstadoImportacion::Completada)
         ->and($importacion->only(['total', 'creados', 'con_error']))->toBe(['total' => 2, 'creados' => 1, 'con_error' => 1])
-        ->and($importacion->errores)->toBe([['fila' => 2, 'mensajes' => ['No se pudo procesar esta fila. Inténtelo nuevamente más tarde.']]])
+        ->and($importacion->errores)->toBe([['fila' => 2, 'mensajes' => ['No se pudo procesar esta fila. Volver a intentarlo más tarde.']]])
         ->and(planillasGuardadas())->toBe([]);
     Log::shouldHaveReceived('error')->once()->with('Una fila de una carga masiva falló de forma inesperada.', [
         'establecimiento_id' => $this->a,
@@ -278,7 +278,7 @@ it('cuenta como error la fila cuya invitación quedó registrada pero no se pudo
     expect(ImportacionUsuario::query()->sole())
         ->creados->toBe(0)
         ->con_error->toBe(1)
-        ->errores->toBe([['fila' => 2, 'mensajes' => ['La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.']]]);
+        ->errores->toBe([['fila' => 2, 'mensajes' => ['La invitación quedó registrada, pero su correo no pudo programarse. Reenviarla más tarde desde las invitaciones pendientes.']]]);
 });
 
 it('volver a procesar una carga terminada no hace nada', function () {
@@ -351,7 +351,7 @@ it('el fallo definitivo del trabajo marca la carga como fallida, borra la planil
 
     expect(ImportacionUsuario::query()->sole())
         ->estado->toBe(EstadoImportacion::Fallida)
-        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Súbala nuevamente.']]])
+        ->errores->toBe([['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Volver a subirla.']]])
         ->and(planillasGuardadas())->toBe([]);
     Log::shouldHaveReceived('error')->once()->with('Una carga masiva de funcionarios falló definitivamente.', [
         'establecimiento_id' => $this->a,
@@ -364,7 +364,7 @@ it('no pisa con completada una carga que otro intento ya dejó fallida mientras 
     Log::spy();
     iniciarImportacion(planillaSubida($this->temporal, [ENCABEZADO_DE_IMPORTACION, filaDeFuncionario(30000100, 'tardio@example.com')]), administradorDe($this->a));
     $trabajo = trabajoDeImportacion();
-    $mensajeDelOtroIntento = [['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Súbala nuevamente.']]];
+    $mensajeDelOtroIntento = [['fila' => null, 'mensajes' => ['No se pudo terminar de procesar la planilla. Volver a subirla.']]];
     Membresia::created(function () use ($trabajo, $mensajeDelOtroIntento): void {
         DB::table('importaciones_usuarios')->where('id', $trabajo->importacionId)->update([
             'estado' => EstadoImportacion::Fallida->value,

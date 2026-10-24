@@ -134,7 +134,12 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     Advisory pending (C4.2.1): prove timestamps/expiry ordering under America/Santiago (raw CASE
     vs now() string) with a test; anular() re-check that the link is still live between confirm
     and action (relies on AnularInvitacion today).
-  - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
+  - [x] C4.2.1 Advisories: expiry ordering/badges proven under America/Santiago (midnight + September DST
+    tests; the SQL no longer compares with now()); anular() re-checks invitada + live link before acting;
+    "usted" copy in the import domain messages replaced (infinitive).
+  - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación. Implemented and tested; NOT checked:
+    needs_brief (estado badges) pending and the back-link from the invitations views is outside the writer's surface
+    (see Progress). Visual check pending (no browser).
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
 
@@ -476,6 +481,62 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
 - Parent (inline): ProcesarImportacionTest:185 copy updated; config/app.php timezone aligned with
   Vinkured (`env('APP_TIMEZONE', 'America/Santiago')`, technical alignment under the user's
   "adopt Vinkured conventions" decision). Full suite: 595 passed (8499 assertions); public 54/54.
+
+- C4.2.1+C4.3 route: delegated writer (trigger: 2+ non-trivial files).
+- C4.2.1 done:
+  - Zone proof: `invitacion_expira_en` is `timestamp without time zone` written in app-local time and the old CASE compared
+    it with `now()->toDateTimeString()` (also local), so it was consistent; the CASE was redundant with ascending expiry
+    anyway. Simplified to `CASE WHEN expira IS NULL THEN 1 ELSE 0 END, expira, id` (no zone-dependent SQL). Tests: local
+    23:59:30 with expiries 23:59:00 (Vencida hoy, Peligro) and 00:00:30 next day (En plazo (1 día hábil), Neutro; a UTC
+    comparison would call it expired); 06-09-2026 01:30 right after the DST jump (Vencida / Vence hoy). Both passed before
+    and after the simplification (proof tests, no RED by construction).
+  - anular(): re-reads the invitation and, if it is no longer `invitada` with a live link, shows Aviso "Esta invitación ya
+    no tiene un enlace que anular." and calls nothing (AnularInvitacion is idempotent, so before this a link cancelled in
+    another tab was reported as a success). RED: 2 failed (cancelled in between -> 'exito'; accepted in between -> other
+    copy) -> GREEN. Residual: a tiny window between this read and AnularInvitacion's row lock (idempotent, harmless).
+  - Copy (tests first, RED 6+3 failed -> GREEN): "Volver a subirla." (IniciarImportacion, ProcesarImportacion::failed),
+    "Volver a intentarlo más tarde." (unexpected row error), PlanillaIlegible ("Quitar la contraseña y guardarla como
+    .xlsx." / "Guardarla de nuevo como .xlsx desde Excel y volver a subirla."), InvitacionNoEncolada ("Reenviarla más
+    tarde desde las invitaciones pendientes."; it is shown as a row error). PENDING (outside surface:
+    tests/Unit/Importacion/ValidadorDePlanillaTest.php:120): ValidadorDePlanilla "Divídala en archivos más pequeños." ->
+    proposal "Dividirla en archivos más pequeños."
+- C4.3 done (not checked, see task):
+  - Routes (auth + establecimiento.activo + can:invitar-funcionarios): `importaciones.index` GET /usuarios/importaciones
+    (CargaMasiva), `importaciones.plantilla` GET /usuarios/importaciones/plantilla (PlantillaDePlanilla, streamed),
+    `importaciones.show` GET /usuarios/importaciones/{importacion} (whereNumber; ResultadoDeImportacion).
+  - Upload: WithFileUploads; accept=".xlsx,<xlsx MIME>"; server rules bail|required|file|extensions:xlsx|max:<config
+    importaciones.tamano_maximo_kb = 2048>|mimes:xlsx; x-campo with help (format, size) and the column list (ol, in order,
+    opcional marked) + accepted Función values + 2.000-row limit above it; "Cargando archivo…" while uploading, submit
+    disabled during upload/submit ("Subiendo planilla…"); focus to #archivo on error. IniciarImportacion stores it, then
+    the Livewire temp file AND its `.json` metadata (holds the original name; TemporaryUploadedFile::delete() leaves it)
+    are deleted, also on validation failure; redirect to the result.
+  - Template: headers only (decision: an example row left in the file would be processed and invited); generated on the fly
+    with openspout to php://output, `plantilla-carga-masiva.xlsx`, Cache-Control no-store.
+  - Result: wire:poll.5s only while pendiente/procesando (attribute removed when terminal; Livewire pauses a poll whose
+    directive is gone). One role="status" whose text is identical while pending/processing and changes once on finish
+    (announced once). Completada: counters (dl: Filas en la planilla / Personas invitadas / Filas con error) + table Fila |
+    Mensajes; fallida: file-level messages (fila null) in an Aviso block without its own role (the status region already
+    announces). "Ver invitaciones pendientes" only when creados > 0. Gate re-checked on every render (poll).
+  - List: this establecimiento's imports, newest first, 20/page clamped like InvitacionesPendientes, host x-paginacion
+    (focus to h2 "Cargas recientes (N)"); columns Archivo, Subida el (FormatoDelPanel::fechaYHora — several uploads per day
+    are otherwise indistinguishable), Estado (plain text, see needs_brief), Resultado ("N de M invitadas"), Ver resultado
+    (x-button fantasma, sr-only file name). Empty: "Aún no hay cargas masivas en este establecimiento." (the form above is
+    the action).
+  - Tenancy: ImportacionUsuario global scope -> another establecimiento's id = 404; malformed id = 404; non-admin 403.
+  - Brief tokens used: layout app, page-header (text-titulo), card (+ max-w-3xl = forms up to 768 px), text-subtitulo,
+    campo (borde-campo, peligro, texto-atenuado), button primario/secundario/fantasma, tabla, paginacion, Aviso (texto +
+    fondo + borde), borde, radius control, spacing 1/2/3/4/6 (gap-1, mt-2, p-3, gap-4, mb-6, pl-6), tabular-nums.
+  - RED: PantallaCargaMasivaTest + PantallaResultadoDeImportacionTest 23 tests, 0 passed (route/component missing).
+    GREEN: 22/22 (one test dropped: the invitations-list back-link, outside surface).
+  - needs_brief:
+    1. Estado badges for imports (not in the brief's mapping). Shown as plain text meanwhile. Proposal: Pendiente Neutro,
+       Procesando Información, Completada Éxito, Fallida Peligro (or Aviso, matching the page-level Aviso decision).
+  - Outside surface / integration notes: add "Carga masiva" link (route importaciones.index) to
+    resources/views/livewire/invitaciones/{invitaciones-pendientes,nueva-invitacion}.blade.php headers; nav entry in the
+    host layout. A file chosen but never submitted stays in livewire-tmp until Livewire's 24 h cleanup (a smaller
+    temporary_file_upload max via config/livewire.php would affect all host uploads; not done).
+- Verification (C4.2.1+C4.3): public tables 54 before / 54 after; vendor/bin/pest --compact: 626 passed (8690
+  assertions); vendor/bin/pint --dirty --format agent: fixed 1 unused import, re-run passed; npm run build: OK.
 
 ## Next step
 Read-only auditor for C4.2 (form + list), ≤1 correction pass, native review, then C4.3.

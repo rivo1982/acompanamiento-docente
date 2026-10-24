@@ -1,11 +1,14 @@
 <?php
 
+use App\Livewire\Importaciones\CargaMasiva;
+use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\AceptarInvitacion;
 use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Invitaciones\NuevaInvitacion;
 use App\Livewire\Login;
 use App\Livewire\SeleccionarEstablecimiento;
 use App\Support\EstablecimientoActual;
+use App\Support\Importacion\PlantillaDePlanilla;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -40,6 +43,14 @@ Route::middleware('auth')->group(function () {
         Route::middleware('can:invitar-funcionarios')->group(function () {
             Route::get('/usuarios/invitaciones', InvitacionesPendientes::class)->name('invitaciones.index');
             Route::get('/usuarios/invitaciones/nueva', NuevaInvitacion::class)->name('invitaciones.create');
+
+            // Carga masiva (Q18): subir la planilla, ver las cargas recientes y el resultado de cada una.
+            Route::get('/usuarios/importaciones', CargaMasiva::class)->name('importaciones.index');
+            Route::get('/usuarios/importaciones/plantilla', fn (PlantillaDePlanilla $plantilla) => $plantilla->descargar())
+                ->name('importaciones.plantilla');
+            Route::get('/usuarios/importaciones/{importacion}', ResultadoDeImportacion::class)
+                ->whereNumber('importacion')
+                ->name('importaciones.show');
         });
     });
 });

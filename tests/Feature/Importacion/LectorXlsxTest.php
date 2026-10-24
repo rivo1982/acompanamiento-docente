@@ -94,7 +94,7 @@ it('rechaza un archivo con extensión .xlsx que no es una planilla', function ()
     file_put_contents($ruta, 'esto no es una planilla');
 
     iterator_to_array((new LectorXlsx)->filas($ruta));
-})->throws(PlanillaIlegible::class, 'No se pudo leer la planilla. Guárdela de nuevo como .xlsx desde Excel e inténtelo otra vez.');
+})->throws(PlanillaIlegible::class, 'No se pudo leer la planilla. Guardarla de nuevo como .xlsx desde Excel y volver a subirla.');
 
 it('rechaza un .xlsx dañado', function () {
     $ruta = $this->directorio.'/danado.xlsx';
@@ -108,7 +108,7 @@ it('rechaza una planilla protegida con contraseña', function () {
     file_put_contents($ruta, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1".str_repeat("\0", 504));
 
     iterator_to_array((new LectorXlsx)->filas($ruta));
-})->throws(PlanillaIlegible::class, 'La planilla está protegida con contraseña o en un formato antiguo de Excel. Quite la contraseña y guárdela como .xlsx.');
+})->throws(PlanillaIlegible::class, 'La planilla está protegida con contraseña o en un formato antiguo de Excel. Quitar la contraseña y guardarla como .xlsx.');
 
 it('rechaza un archivo que no existe', function () {
     iterator_to_array((new LectorXlsx)->filas($this->directorio.'/no-existe.xlsx'));

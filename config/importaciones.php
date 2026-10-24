@@ -17,4 +17,16 @@ return [
 
     'directorio' => 'importaciones',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum spreadsheet size (kilobytes)
+    |--------------------------------------------------------------------------
+    |
+    | Checked by the "Carga masiva" screen before the file is stored. 2 MB is
+    | far above a 2,000-row staff spreadsheet (the row limit of the validator).
+    |
+    */
+
+    'tamano_maximo_kb' => (int) env('IMPORTACIONES_TAMANO_MAXIMO_KB', 2048),
+
 ];

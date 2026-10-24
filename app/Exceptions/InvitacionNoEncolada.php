@@ -13,6 +13,6 @@ final class InvitacionNoEncolada extends RuntimeException
 {
     public function __construct(public readonly int $membresiaId)
     {
-        parent::__construct('La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.');
+        parent::__construct('La invitación quedó registrada, pero su correo no pudo programarse. Reenviarla más tarde desde las invitaciones pendientes.');
     }
 }

@@ -18,11 +18,11 @@ final class PlanillaIlegible extends RuntimeException
 
     public static function protegidaOAntigua(): self
     {
-        return new self('La planilla está protegida con contraseña o en un formato antiguo de Excel. Quite la contraseña y guárdela como .xlsx.');
+        return new self('La planilla está protegida con contraseña o en un formato antiguo de Excel. Quitar la contraseña y guardarla como .xlsx.');
     }
 
     public static function noSePuedeLeer(?Throwable $causa = null): self
     {
-        return new self('No se pudo leer la planilla. Guárdela de nuevo como .xlsx desde Excel e inténtelo otra vez.', 0, $causa);
+        return new self('No se pudo leer la planilla. Guardarla de nuevo como .xlsx desde Excel y volver a subirla.', 0, $causa);
     }
 }

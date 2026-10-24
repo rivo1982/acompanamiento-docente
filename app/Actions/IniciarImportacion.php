@@ -87,7 +87,7 @@ class IniciarImportacion
 
             $importacion->forceFill([
                 'estado' => EstadoImportacion::Fallida,
-                'errores' => [['fila' => null, 'mensajes' => ['No se pudo programar el proceso de la planilla. Súbala nuevamente.']]],
+                'errores' => [['fila' => null, 'mensajes' => ['No se pudo programar el proceso de la planilla. Volver a subirla.']]],
             ])->save();
 
             Storage::disk((string) config('importaciones.disco'))->delete(ProcesarImportacion::rutaDe($archivoId));
