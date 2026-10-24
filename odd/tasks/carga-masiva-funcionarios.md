@@ -64,7 +64,17 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     fallback or record as deploy note for Vinkured (WARNING).
   - Mail::send inside the DB transaction: if commit fails after send, the mailed link is dead
     until the retry mails a fresh one — accepted tradeoff, document it (SUGGESTION).
-- [ ] C4 UI (Livewire, Vinkured UI skills) for invite, import and results.
+- [ ] C4 UI (Livewire, Vinkured UI skills) for invite, import and results. Livewire 4 install
+  APPROVED by user (2026-10-24). Process per .agents/skills/vinkured-ui/SKILL.md: per screen one
+  writer → one read-only auditor (web-design-guidelines) → ≤1 correction pass → visual check
+  375/768/1280 (if a browser tool is available; otherwise reported as pending) → tests → commit.
+  - [ ] C4.0 UI foundation (+ C3.1 fixes): Livewire 4 + Tailwind 4.3 + Vite matching Vinkured
+    versions; copy Vinkured design assets as @host-owned (docs/diseno.md, CONTEXT.md,
+    resources/css/app.css tokens, Inter font, Blade components, layouts), host Login +
+    establecimiento selection + routes/middleware wiring.
+  - [ ] C4.1 Screen: aceptar invitación (guest, token link, set password / log in).
+  - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
+  - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
 
