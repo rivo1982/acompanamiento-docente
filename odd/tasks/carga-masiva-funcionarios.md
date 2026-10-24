@@ -587,7 +587,7 @@ Local demo to see the screens in a browser with FICTITIOUS data only, in schema 
 - Setup (idempotent, re-run any time; recalculates invitation deadlines from the seeding moment): `composer demo:setup`
   = `CREATE SCHEMA IF NOT EXISTS acompanamiento_demo` (psql) + `php artisan migrate --force` (the 0000 migration loads
   the host schema snapshot into the demo schema) + `php artisan db:seed --class=DemoSeeder --force`.
-- Serve: `composer demo:serve` (`php artisan serve --host=127.0.0.1 --port=8000`), then http://127.0.0.1:8000.
+- Serve: `composer demo:serve` (`php artisan serve --host=127.0.0.1 --port=8765`), then http://127.0.0.1:8765.
 - Env overrides: script `demo:env` uses Composer `@putenv` (APP_ENV=local, DB_CONNECTION=pgsql,
   DB_HOST=/var/run/postgresql, DB_PORT=5432, DB_DATABASE=roberto_dev, DB_USERNAME=roberto, DB_PASSWORD=,
   DB_SEARCH_PATH=acompanamiento_demo, QUEUE_CONNECTION=sync, MAIL_MAILER=log, SESSION_DRIVER=database,
