@@ -88,6 +88,13 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
       "Modo oscuro" rows → report upstream to Vinkured.
   - [x] C4.1 Screen: aceptar invitación (guest, token link, set password / log in). Visual check 375/768/1280:
     pending (no browser in this environment).
+    Audit (web-design-guidelines, read-only): 0 blockers, 3 findings, 1 needs_brief.
+    needs_brief DECIDED (user, 2026-10-24): page-level error for an unusable invitation link uses
+    the Aviso state (amarillo: "algo no está bien, pero tiene solución") — propose adding this rule
+    to Vinkured's docs/diseno.md "Mensajes y estados" (host-owned, not edited here).
+    Correction pass (parent, inline): per-state page title (Invitación no válida / Sesión de otra
+    cuenta / Aceptar invitación) via layoutData; translate="no" on VINKURED; removed duplicated
+    logout control (copy points to the header button). PantallaAceptarInvitacionTest 23/23.
   - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit

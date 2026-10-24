@@ -70,6 +70,7 @@ it('shows a new account the password form with the rule before submitting, witho
         ->assertHeader('Referrer-Policy', 'no-referrer')
         ->assertSee('<title>Aceptar invitación - VINKURED</title>', false)
         ->assertSee('Colegio Ficticio A')
+        ->assertSee('<span translate="no">VINKURED</span>', false)
         ->assertSee('Contraseña nueva (obligatorio)')
         ->assertSee('Confirmar contraseña (obligatorio)')
         ->assertSee('Mínimo 12 caracteres, con letras y números.')
@@ -249,8 +250,9 @@ it('asks a different logged-in user to log out first, without data about the inv
 
     $this->actingAs($otro)->get(route('invitaciones.aceptar', $token))
         ->assertOk()
+        ->assertSee('<title>Sesión de otra cuenta - VINKURED</title>', false)
         ->assertSee('La sesión iniciada es de otra cuenta.')
-        ->assertSee('Cerrar sesión y volver a abrir el enlace de la invitación.')
+        ->assertSee('Cerrar sesión con el botón de la parte superior y volver a abrir el enlace de la invitación.')
         ->assertDontSee('Colegio Ficticio A')
         ->assertDontSee('ya.existe@example.test')
         ->assertDontSee('Contraseña nueva');
@@ -276,4 +278,21 @@ it('does not require an active establecimiento from a logged-in user', function 
     $this->actingAs($u)->get(route('invitaciones.aceptar', str_repeat('a', 43)))
         ->assertOk()
         ->assertSee(MENSAJE_DE_ENLACE_INVALIDO);
+});
+
+it('names the problem in the page title when the link is not usable', function () {
+    $this->get(route('invitaciones.aceptar', 'enlace-que-no-existe'))
+        ->assertOk()
+        ->assertSee('<title>Invitación no válida - VINKURED</title>', false)
+        ->assertSee('Invitación no válida')
+        ->assertSee('La invitación no es válida o ya venció.');
+});
+
+it('renders a single logout control for a different logged-in user', function () {
+    invitacionPendiente($this->a, ['correo' => 'otra.persona@example.test']);
+    $token = tokenDeLaUltimaInvitacion();
+
+    $html = $this->actingAs(usuarioConMembresia($this->b))->get(route('invitaciones.aceptar', $token))->getContent();
+
+    expect(substr_count($html, 'action="'.route('logout').'"'))->toBe(1);
 });

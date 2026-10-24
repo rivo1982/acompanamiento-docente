@@ -122,11 +122,26 @@ class AceptarInvitacion extends Component
         $this->js("document.getElementById('estado-invitacion').focus()");
     }
 
+    /**
+     * Título de la página según el estado: un error de página nombra el problema (brief, §Estados).
+     */
+    public function tituloDePagina(): string
+    {
+        return match ($this->estado) {
+            self::INVALIDA => 'Invitación no válida',
+            self::OTRA_CUENTA => 'Sesión de otra cuenta',
+            default => 'Aceptar invitación',
+        };
+    }
+
     public function render(): View
     {
+        $titulo = $this->tituloDePagina();
+
         return view('livewire.invitaciones.aceptar-invitacion', [
             'reglaDeContrasena' => 'Mínimo 12 caracteres, con letras y números.',
-        ])->response(function (Response $respuesta): void {
+            'titulo' => $titulo,
+        ])->layoutData(['titulo' => $titulo])->response(function (Response $respuesta): void {
             $respuesta->headers->set('Referrer-Policy', 'no-referrer');
             $respuesta->headers->set('Cache-Control', 'no-store, private');
         });

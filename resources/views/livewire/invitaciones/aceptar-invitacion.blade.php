@@ -1,7 +1,7 @@
 {{-- Pantalla del enlace de invitación. Nunca muestra el token, el correo ni el RUT de la persona invitada. --}}
 <div>
     <x-page-header
-        titulo="Aceptar invitación"
+        :titulo="$titulo"
         :descripcion="$establecimiento ? 'Establecimiento: '.$establecimiento.'.' : null"
     />
 
@@ -9,7 +9,7 @@
         @if ($estado === \App\Livewire\Invitaciones\AceptarInvitacion::NUEVA_CONTRASENA)
             {{-- Requiere JavaScript, como el inicio de sesión: method="post" evita que la contraseña viaje en la URL. --}}
             <form method="post" wire:submit="aceptar" wire:loading.attr="aria-busy" wire:target="aceptar" class="flex flex-col gap-6" novalidate>
-                <p class="text-base text-pretty">Crear una contraseña para entrar a VINKURED con el correo de la invitación.</p>
+                <p class="text-base text-pretty">Crear una contraseña para entrar a <span translate="no">VINKURED</span> con el correo de la invitación.</p>
 
                 <x-campo
                     id="contrasena"
@@ -75,12 +75,8 @@
             <div class="flex flex-col gap-6">
                 <div id="estado-invitacion" role="alert" tabindex="-1" class="rounded-control border border-aviso bg-aviso-fondo p-3 text-tabla text-aviso focus:outline-none">
                     <p>La sesión iniciada es de otra cuenta.</p>
-                    <p>Cerrar sesión y volver a abrir el enlace de la invitación.</p>
+                    <p>Cerrar sesión con el botón de la parte superior y volver a abrir el enlace de la invitación.</p>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <x-button type="submit">Cerrar sesión</x-button>
-                </form>
             </div>
         @else
             <div id="estado-invitacion" role="alert" tabindex="-1" class="rounded-control border border-aviso bg-aviso-fondo p-3 text-tabla text-aviso focus:outline-none">
