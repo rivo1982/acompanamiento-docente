@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Exceptions\InvitacionEnConflicto;
+use App\Exceptions\InvitacionNoEncolada;
 use App\Jobs\EnviarInvitacion;
 use App\Models\Funcion;
 use App\Models\Funcionario;
@@ -15,6 +16,7 @@ use App\Support\Invitaciones\AdministradorDelEstablecimiento;
 use App\Support\Invitaciones\InvitacionRegistrada;
 use App\Support\Invitaciones\TokenDeInvitacion;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use LogicException;
@@ -45,53 +47,84 @@ class InvitarFuncionario
 
     /**
      * @throws AuthorizationException si $administrador no es Administrador vigente del establecimiento activo
-     * @throws InvitacionEnConflicto si la persona o el correo ya tienen una membresía en este establecimiento
+     * @throws InvitacionEnConflicto si la persona o el correo ya tienen una membresía en este establecimiento, o si
+     *                               otra escritura simultánea chocó con esta
+     * @throws InvitacionNoEncolada si la invitación quedó guardada pero su correo no se pudo encolar
      */
     public function invitar(Membresia $administrador, FilaDePlanilla $fila): InvitacionRegistrada
     {
         $establecimientoId = $this->administradores->exigir($administrador);
         $funcion = $this->funcionGenerica($fila->categoriaFuncion);
 
-        $membresia = DB::transaction(function () use ($establecimientoId, $fila, $funcion): Membresia {
-            // Persona está filtrada por establecimiento: el mismo RUT en otro colegio es otra persona (ADR-0004).
-            $persona = Persona::query()
-                ->where('tipo_documento', 'rut')
-                ->where('numero_documento', $fila->rut->paraAlmacenar())
-                ->lockForUpdate()
-                ->first();
+        try {
+            $membresia = DB::transaction(fn (): Membresia => $this->registrar($establecimientoId, $fila, $funcion));
+        } catch (UniqueConstraintViolationException) {
+            // Sin encadenar: el mensaje de la base trae el correo o el RUT.
+            throw InvitacionEnConflicto::simultanea();
+        }
 
-            $usuario = Usuario::query()
-                ->whereRaw('lower(correo) = ?', [$fila->correo])
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->first();
-
-            $this->rechazarConflictos($establecimientoId, $persona, $usuario);
-
-            $usuario ??= $this->crearUsuario($fila->correo);
-            $persona ??= $this->crearPersona($fila);
-
-            $funcionario = Funcionario::query()->firstOrCreate(['persona_id' => $persona->getKey()]);
-            FuncionarioFuncion::query()->firstOrCreate(['funcionario_id' => $funcionario->getKey(), 'funcion_id' => $funcion->getKey()]);
-
-            $membresia = new Membresia;
-            $membresia->forceFill([
-                'usuario_id' => $usuario->getKey(),
-                'establecimiento_id' => $establecimientoId,
-                'persona_id' => $persona->getKey(),
-                'es_administrador' => false,
-                'estado' => 'invitada',
-                'invitada_en' => now(),
-                'invitacion_hash' => TokenDeInvitacion::hashSinEnlace(),
-                'invitacion_expira_en' => TokenDeInvitacion::vencimientoDesdeAhora(),
-            ])->save();
-
-            return $membresia;
-        });
-
-        EnviarInvitacion::encolar($establecimientoId, (int) $membresia->getKey());
+        EnviarInvitacion::encolar($establecimientoId, $membresia);
 
         return new InvitacionRegistrada((int) $membresia->getKey());
+    }
+
+    /**
+     * Escribe la invitación. Antes de leer, toma bloqueos consultivos de la transacción por establecimiento+RUT y por
+     * correo (siempre en ese orden, para no generar abrazos mortales): dos invitaciones simultáneas de la misma persona
+     * o del mismo correo se ejecutan una después de la otra, y la segunda ve lo que la primera confirmó (un
+     * `lockForUpdate` sobre filas que aún no existen no bloquea nada). La violación de unicidad que aún pudiera
+     * ocurrir (otra escritura del anfitrión) la traduce invitar().
+     */
+    private function registrar(int $establecimientoId, FilaDePlanilla $fila, Funcion $funcion): Membresia
+    {
+        $this->bloquear("rut:{$establecimientoId}:{$fila->rut->paraAlmacenar()}");
+        $this->bloquear("correo:{$fila->correo}");
+
+        // Persona está filtrada por establecimiento: el mismo RUT en otro colegio es otra persona (ADR-0004).
+        $persona = Persona::query()
+            ->where('tipo_documento', 'rut')
+            ->where('numero_documento', $fila->rut->paraAlmacenar())
+            ->lockForUpdate()
+            ->first();
+
+        $usuario = Usuario::query()
+            ->whereRaw('lower(correo) = ?', [$fila->correo])
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first();
+
+        $this->rechazarConflictos($establecimientoId, $persona, $usuario);
+
+        $usuario ??= $this->crearUsuario($fila->correo);
+        $persona ??= $this->crearPersona($fila);
+
+        $funcionario = Funcionario::query()->firstOrCreate(['persona_id' => $persona->getKey()]);
+        FuncionarioFuncion::query()->firstOrCreate(['funcionario_id' => $funcionario->getKey(), 'funcion_id' => $funcion->getKey()]);
+
+        $membresia = new Membresia;
+        $membresia->forceFill([
+            'usuario_id' => $usuario->getKey(),
+            'establecimiento_id' => $establecimientoId,
+            'persona_id' => $persona->getKey(),
+            'es_administrador' => false,
+            'estado' => 'invitada',
+            'invitada_en' => now(),
+            'invitacion_hash' => TokenDeInvitacion::hashSinEnlace(),
+            'invitacion_expira_en' => TokenDeInvitacion::vencimientoDesdeAhora(),
+        ])->save();
+
+        return $membresia;
+    }
+
+    /**
+     * pg_advisory_xact_lock con una clave numérica derivada en PHP: ni el RUT ni el correo viajan en la consulta
+     * (los mensajes de error de la base la incluyen). Se libera sola al terminar la transacción.
+     */
+    private function bloquear(string $recurso): void
+    {
+        $clave = unpack('q', substr(hash('sha256', 'invitaciones:'.$recurso, true), 0, 8))[1];
+
+        DB::statement('select pg_advisory_xact_lock(?)', [$clave]);
     }
 
     private function rechazarConflictos(int $establecimientoId, ?Persona $persona, ?Usuario $usuario): void

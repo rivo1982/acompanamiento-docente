@@ -4,12 +4,15 @@ use App\Actions\ReenviarInvitacion;
 use App\Exceptions\EnvioDeInvitacionFallido;
 use App\Exceptions\InvitacionImposible;
 use App\Jobs\EnviarInvitacion;
+use App\Mail\InvitacionAVinkured;
+use App\Models\Membresia;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -68,26 +71,113 @@ it('envía un correo de texto que trata de usted, con el establecimiento, el ven
         ->assertDontSeeInText($membresia->invitacion_hash);
 });
 
-it('encola un trabajo único por membresía que lleva solo ids', function () {
+it('encola un trabajo con ids y un sello opaco de la versión de la invitación, sin datos personales', function () {
     Queue::fake();
     $administrador = administradorDe($this->a);
     $membresia = invitar($administrador);
 
     app(ReenviarInvitacion::class)->reenviar($administrador, $membresia->id);
 
-    Queue::assertPushed(EnviarInvitacion::class, 1);
-    $trabajo = Queue::pushed(EnviarInvitacion::class)->first();
+    Queue::assertPushed(EnviarInvitacion::class, 2);
+    $trabajo = Queue::pushed(EnviarInvitacion::class)->last();
     $datos = collect((new ReflectionClass($trabajo))->getConstructor()->getParameters())->map->getName()->all();
+    $hashVigente = $membresia->fresh()->invitacion_hash;
 
-    expect($datos)->toBe(['establecimientoId', 'membresiaId'])
+    expect($datos)->toBe(['establecimientoId', 'membresiaId', 'sello'])
         ->and($trabajo->establecimientoId)->toBe($this->a)
         ->and($trabajo->membresiaId)->toBe($membresia->id)
-        ->and($trabajo->uniqueId())->toBe("{$this->a}:{$membresia->id}")
+        ->and($trabajo->sello)->toBe(EnviarInvitacion::selloDe($hashVigente))
+        ->and($trabajo->sello)->not->toBe($hashVigente)
         ->and($trabajo)->toBeInstanceOf(ShouldQueueAfterCommit::class)
-        ->and($trabajo)->toBeInstanceOf(ShouldBeUnique::class)
+        ->and($trabajo)->not->toBeInstanceOf(ShouldBeUnique::class)
         ->and($trabajo->tries)->toBe(3)
         ->and($trabajo->backoff())->toBe([60, 300])
-        ->and(serialize($trabajo))->not->toContain('ana@ejemplo.cl');
+        ->and(serialize($trabajo))->not->toContain('ana@ejemplo.cl')
+        ->and(serialize($trabajo))->not->toContain($hashVigente);
+});
+
+it('un trabajo reemplazado por un reenvío no envía nada y el último envía el enlace vigente', function () {
+    Queue::fake();
+    Mail::fake();
+    $administrador = administradorDe($this->a);
+    $membresia = invitar($administrador);
+    app(ReenviarInvitacion::class)->reenviar($administrador, $membresia->id);
+    [$primero, $segundo] = Queue::pushed(EnviarInvitacion::class)->all();
+
+    app()->call([$primero, 'handle']);
+    Mail::assertNothingSent();
+
+    app()->call([$segundo, 'handle']);
+    Mail::assertSentCount(1);
+    expect($membresia->fresh()->invitacion_hash)->toBe(hash('sha256', tokenDeLaUltimaInvitacion()));
+});
+
+it('un reenvío en medio de un envío deja vigente el último enlace enviado', function () {
+    Queue::fake();
+    Mail::fake();
+    $administrador = administradorDe($this->a);
+    $membresia = invitar($administrador);
+    $enCurso = Queue::pushed(EnviarInvitacion::class)->first();
+
+    // The resend lands after the in-flight job rotated the token and before its mail leaves. In production the
+    // resend waits for the job's row lock (held until the mail is sent); here it runs on the same connection.
+    $reenviado = false;
+    Event::listen('eloquent.saved: '.Membresia::class, function () use (&$reenviado, $administrador, $membresia): void {
+        if (! $reenviado) {
+            $reenviado = true;
+            app(ReenviarInvitacion::class)->reenviar($administrador, $membresia->id);
+        }
+    });
+
+    app()->call([$enCurso, 'handle']);
+    $pendientes = Queue::pushed(EnviarInvitacion::class)->slice(1);
+    expect($reenviado)->toBeTrue()->and($pendientes)->toHaveCount(1);
+    app()->call([$pendientes->first(), 'handle']);
+
+    Mail::assertSentCount(2);
+    expect($membresia->fresh()->invitacion_hash)->toBe(hash('sha256', tokenDeLaUltimaInvitacion()));
+});
+
+it('un trabajo repetido después de un envío exitoso no vuelve a enviar ni rota el enlace', function () {
+    Queue::fake();
+    Mail::fake();
+    $membresia = invitar(administradorDe($this->a));
+    $trabajo = Queue::pushed(EnviarInvitacion::class)->first();
+
+    app()->call([$trabajo, 'handle']);
+    $hashEnviado = $membresia->fresh()->invitacion_hash;
+    app()->call([$trabajo, 'handle']);
+
+    Mail::assertSentCount(1);
+    expect($membresia->fresh()->invitacion_hash)->toBe($hashEnviado)
+        ->and($hashEnviado)->toBe(hash('sha256', tokenDeLaUltimaInvitacion()));
+});
+
+it('si el correo falla no rota el enlace guardado y el reintento lo envía', function () {
+    Queue::fake();
+    $membresia = invitar(administradorDe($this->a));
+    $hashAntes = $membresia->fresh()->invitacion_hash;
+    $trabajo = Queue::pushed(EnviarInvitacion::class)->first();
+    $intentos = 0;
+    $enviada = null;
+    Mail::shouldReceive('to')->andReturnUsing(function () use (&$intentos, &$enviada) {
+        if (++$intentos === 1) {
+            throw new RuntimeException('caído');
+        }
+
+        return Mockery::mock()->shouldReceive('send')->andReturnUsing(function (InvitacionAVinkured $correo) use (&$enviada): void {
+            $enviada = $correo;
+        })->getMock();
+    });
+
+    expect(fn () => app()->call([$trabajo, 'handle']))->toThrow(EnvioDeInvitacionFallido::class)
+        ->and($membresia->fresh()->invitacion_hash)->toBe($hashAntes);
+
+    app()->call([$trabajo, 'handle']);
+
+    $token = basename((string) parse_url($enviada->enlace, PHP_URL_PATH));
+    expect($intentos)->toBe(2)
+        ->and($membresia->fresh()->invitacion_hash)->toBe(hash('sha256', $token));
 });
 
 it('no encola nada si la transacción de la invitación falla', function () {
@@ -106,7 +196,7 @@ it('reemplaza el error del transporte sin la dirección, para reintentar', funct
     Mail::shouldReceive('to')->andThrow(new RuntimeException('No se pudo enviar a ana@ejemplo.cl'));
 
     try {
-        app()->call([new EnviarInvitacion($this->a, $membresia->id), 'handle']);
+        app()->call([Queue::pushed(EnviarInvitacion::class)->first(), 'handle']);
         $this->fail('Se esperaba EnvioDeInvitacionFallido.');
     } catch (EnvioDeInvitacionFallido $e) {
         expect($e->getMessage())->not->toContain('ana@ejemplo.cl')
@@ -120,7 +210,9 @@ it('no envía una invitación de otro establecimiento', function () {
     Mail::fake();
     $membresia = invitar(administradorDe($this->a));
 
-    expect(fn () => app()->call([new EnviarInvitacion($this->b, $membresia->id), 'handle']))
+    $trabajo = Queue::pushed(EnviarInvitacion::class)->first();
+
+    expect(fn () => app()->call([new EnviarInvitacion($this->b, $membresia->id, $trabajo->sello), 'handle']))
         ->toThrow(InvitacionImposible::class);
     Mail::assertNothingSent();
     expect($membresia->fresh()->invitacion_hash)->toBe($membresia->invitacion_hash);
@@ -129,7 +221,7 @@ it('no envía una invitación de otro establecimiento', function () {
 it('registra el fallo definitivo solo con ids', function () {
     Log::spy();
 
-    (new EnviarInvitacion(5, 9))->failed(new RuntimeException('ana@ejemplo.cl'));
+    (new EnviarInvitacion(5, 9, str_repeat('a', 64)))->failed(new RuntimeException('ana@ejemplo.cl'));
 
     Log::shouldHaveReceived('error')->once()->with('El envío de una invitación falló definitivamente.', [
         'establecimiento_id' => 5,

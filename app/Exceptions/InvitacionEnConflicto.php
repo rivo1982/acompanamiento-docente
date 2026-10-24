@@ -17,7 +17,7 @@ final class InvitacionEnConflicto extends RuntimeException
 
     public static function yaInvitada(): self
     {
-        return new self('Esta persona ya tiene una invitación en este establecimiento. Puede reenviarla o anularla.');
+        return new self('Esta persona ya tiene una invitación pendiente en este establecimiento. Puede reenviarla o anularla.');
     }
 
     public static function suspendida(): self
@@ -33,5 +33,14 @@ final class InvitacionEnConflicto extends RuntimeException
     public static function correoDeOtraPersona(): self
     {
         return new self('El correo ya está asociado a otra persona de este establecimiento.');
+    }
+
+    /**
+     * Otra operación escribió la misma persona o cuenta al mismo tiempo (violación de unicidad). No dice dónde ni
+     * quién: puede venir de otro establecimiento.
+     */
+    public static function simultanea(): self
+    {
+        return new self('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Inténtelo nuevamente.');
     }
 }

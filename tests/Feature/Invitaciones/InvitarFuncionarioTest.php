@@ -2,16 +2,21 @@
 
 use App\Actions\InvitarFuncionario;
 use App\Exceptions\InvitacionEnConflicto;
+use App\Exceptions\InvitacionNoEncolada;
 use App\Jobs\EnviarInvitacion;
 use App\Mail\InvitacionAVinkured;
 use App\Models\Membresia;
+use App\Models\Persona;
 use App\Models\Usuario;
 use App\Support\Invitaciones\InvitacionRegistrada;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
@@ -185,7 +190,7 @@ it('rechaza conflictos dentro del establecimiento sin escribir nada', function (
     }, 'Esta persona ya tiene acceso activo en este establecimiento.'],
     'ya está invitada' => [function (int $est): void {
         newMembresia($est, newUsuario(['correo' => 'ana@ejemplo.cl'])->id, newPersona($est, '12345678-5'), ['estado' => 'invitada']);
-    }, 'Esta persona ya tiene una invitación en este establecimiento. Puede reenviarla o anularla.'],
+    }, 'Esta persona ya tiene una invitación pendiente en este establecimiento. Puede reenviarla o anularla.'],
     'está suspendida' => [function (int $est): void {
         newMembresia($est, newUsuario(['correo' => 'ana@ejemplo.cl'])->id, newPersona($est, '12345678-5'), ['estado' => 'suspendida']);
     }, 'Esta persona tiene su acceso suspendido en este establecimiento.'],
@@ -247,3 +252,76 @@ it('siembra las funciones genéricas de forma idempotente', function () {
         ['clave' => 'profesional_apoyo', 'nombre' => 'Profesional de apoyo', 'categoria' => 'profesional_apoyo'],
     ]);
 });
+
+it('serializa las invitaciones del mismo RUT y del mismo correo con bloqueos de la transacción', function () {
+    Queue::fake();
+    $administrador = administradorDe($this->a);
+    $bloqueosAntes = bloqueosConsultivos();
+
+    invitar($administrador);
+
+    expect(bloqueosConsultivos() - $bloqueosAntes)->toBe(2);
+});
+
+it('traduce a un conflicto de este establecimiento el choque con una invitación simultánea', function (string $evento, Closure $insertar) {
+    Queue::fake();
+    $administrador = administradorDe($this->a);
+    $antes = filasDeInvitacion();
+    $hecho = false;
+    // Another invitation commits the same row right before ours writes it (what the advisory locks prevent
+    // between invitations, but a host process could still do).
+    Event::listen($evento, function () use (&$hecho, $insertar): void {
+        if (! $hecho) {
+            $hecho = true;
+            $insertar($this->a);
+        }
+    });
+
+    try {
+        invitar($administrador);
+        $this->fail('Se esperaba InvitacionEnConflicto.');
+    } catch (InvitacionEnConflicto $e) {
+        expect($e->getMessage())->toBe('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Inténtelo nuevamente.')
+            ->and($e->getPrevious())->toBeNull();
+    }
+
+    expect($hecho)->toBeTrue()
+        ->and(filasDeInvitacion())->toBe($antes);
+    Queue::assertNothingPushed();
+})->with([
+    'mismo correo' => ['eloquent.creating: '.Usuario::class, function (int $est): void {
+        DB::table('usuarios')->insert(['correo' => 'ana@ejemplo.cl', 'password' => 'x', 'created_at' => now(), 'updated_at' => now()]);
+    }],
+    'mismo RUT' => ['eloquent.creating: '.Persona::class, function (int $est): void {
+        newPersona($est, '12345678-5');
+    }],
+]);
+
+it('informa que la invitación quedó registrada pero su correo no se pudo encolar', function () {
+    Log::spy();
+    $administrador = administradorDe($this->a);
+    Bus::shouldReceive('dispatch')->andThrow(new RuntimeException('cola caída con ana@ejemplo.cl'));
+
+    try {
+        invitar($administrador);
+        $this->fail('Se esperaba InvitacionNoEncolada.');
+    } catch (InvitacionNoEncolada $e) {
+        $membresia = Membresia::query()->findOrFail($e->membresiaId);
+        expect($e->getMessage())->toBe('La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.')
+            ->and($e->getMessage())->not->toContain('ana@ejemplo.cl')
+            ->and($e->getPrevious())->toBeNull()
+            ->and($membresia->estado)->toBe('invitada')
+            ->and($membresia->establecimiento_id)->toBe($this->a);
+        Log::shouldHaveReceived('error')->once()->with('No se pudo encolar el envío de una invitación.', [
+            'establecimiento_id' => $this->a,
+            'membresia_id' => $e->membresiaId,
+            'excepcion' => RuntimeException::class,
+        ]);
+    }
+});
+
+/** Advisory locks held by this session (xact locks stay until the test transaction ends). */
+function bloqueosConsultivos(): int
+{
+    return (int) DB::scalar("select count(*) from pg_locks where locktype = 'advisory' and pid = pg_backend_pid() and granted");
+}

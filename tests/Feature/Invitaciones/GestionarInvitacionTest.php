@@ -4,6 +4,7 @@ use App\Actions\AceptarInvitacion;
 use App\Actions\AnularInvitacion;
 use App\Actions\ReenviarInvitacion;
 use App\Exceptions\InvitacionInvalida;
+use App\Exceptions\InvitacionNoEncolada;
 use App\Exceptions\InvitacionNoPendiente;
 use App\Jobs\EnviarInvitacion;
 use App\Models\Membresia;
@@ -11,6 +12,7 @@ use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -106,7 +108,7 @@ it('el trabajo pendiente no envía una invitación anulada', function () {
     $membresia = invitar($administrador);
 
     anular($administrador, $membresia->id);
-    app()->call([new EnviarInvitacion($this->a, $membresia->id), 'handle']);
+    app()->call([Queue::pushed(EnviarInvitacion::class)->first(), 'handle']);
 
     Mail::assertNothingSent();
     expect($membresia->fresh()->invitacion_hash)->toBeNull();
@@ -155,4 +157,17 @@ it('la gate invitar-funcionarios solo deja pasar al Administrador del establecim
         ->and(puede($administrador, $this->b, 'invitar-funcionarios'))->toBeFalse()
         ->and(puede($directivo, $this->a, 'invitar-funcionarios'))->toBeFalse()
         ->and(puede($comun, $this->a, 'invitar-funcionarios'))->toBeFalse();
+});
+
+it('reenviar informa si el correo no se pudo encolar, con el enlace anterior ya cortado', function () {
+    Mail::fake();
+    $administrador = administradorDe($this->a);
+    $membresia = invitar($administrador);
+    $tokenViejo = tokenDeLaUltimaInvitacion();
+    Bus::shouldReceive('dispatch')->andThrow(new RuntimeException('cola caída'));
+
+    expect(fn () => reenviar($administrador, $membresia->id))
+        ->toThrow(InvitacionNoEncolada::class, 'La invitación quedó registrada, pero su correo no pudo programarse. Reenvíela más tarde.')
+        ->and(fn () => aceptarCon($tokenViejo))->toThrow(InvitacionInvalida::class)
+        ->and($membresia->fresh()->estado)->toBe('invitada');
 });
