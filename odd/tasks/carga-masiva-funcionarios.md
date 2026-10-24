@@ -72,6 +72,20 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     versions; copy Vinkured design assets as @host-owned (docs/diseno.md, CONTEXT.md,
     resources/css/app.css tokens, Inter font, Blade components, layouts), host Login +
     establecimiento selection + routes/middleware wiring.
+  - [ ] C4.0.1 Review follow-ups (C3.1+C4.0, commits 4cd1878..ae517fa; first review base 3a2c6ee
+    ESCALATED "incomplete candidate" because host copies were outside the range; re-reviewed with
+    base 4cd1878 incl. host copies → 4 lenses, approved + acknowledged. Note: START hit a
+    gentle-ai 4.0.0 internal error "unsupported negotiated START risk reason dangerous_sink";
+    lineage-bound STATUS recovered it):
+    - ProcesarImportacion::terminar raw update bypasses casts/timestamps and ignores affected
+      rows → use a conditional Eloquent/query that keeps casts and log ids when the race is lost.
+    - FundacionUiTest host-tag list misses AriaCurrent/FormatoDelPanel; move the Vite build test
+      out of the default suite (group/skip when node_modules absent).
+    - Untested host-copied paths (login lockout, SelectorDeEstablecimiento::cambiar 403/success,
+      SeleccionarEstablecimiento mount 0/1 memberships): port the corresponding Vinkured tests.
+    - Copied app layout/paginacion reference host-only concepts (Alertas/Avisos, FiltraPorEstado):
+      document as integration notes (copies stay identical). diseno.md has two contradictory
+      "Modo oscuro" rows → report upstream to Vinkured.
   - [ ] C4.1 Screen: aceptar invitación (guest, token link, set password / log in).
   - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
