@@ -50,6 +50,14 @@ would make integration costly and risky.
   tampered/foreign/suspended session establecimiento (refrescar → null); HostSchemaLoader:
   track tagged dollar quotes ($_$, $tag$), fail closed on empty/headerless snapshot; prove the
   setUpTraits guard wiring runs before RefreshDatabase and covers non-default connections.
+- [ ] A2.2 Review follow-ups (A2b review base 59b6e7a, 4 lenses, approved + acknowledged):
+  RespuestaAcompanamiento write guard — reject indicador not in snapshot and writes after
+  finalizado (R4/R3 WARNING); observer eligibility on AsignacionAcompanamiento (R1-001
+  WARNING, fold into A3); remove estado/finalizado_en/duracion_minutos/pauta_snapshot from
+  fillable (R1-002); single source for congratulation text in NivelLogro (R2-001); null-safe
+  creating hook when pauta not visible (R4); default estado via enum (R2-002); named constant
+  for factory school year (R2-003); distinct exception for incomplete snapshot entry (R2-004);
+  truncate iniciado_en to seconds before computing duration (R3).
 - [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
