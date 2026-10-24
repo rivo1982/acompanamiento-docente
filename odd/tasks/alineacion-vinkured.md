@@ -357,6 +357,14 @@ would make integration costly and risky.
 - A3.1+A4 commit 7624006. Native review: assessed base b7d8b05 → medium / under_budget (234 lines),
   pending in slice until the next commit reaches the delivery budget. Last reviewed boundary 78d7544.
 
+## Decisions for A5 (user, 2026-10-24)
+- The module is ALWAYS linked to Vinkured (no standalone mode). Establishments that buy only this
+  module still use Vinkured for login and staff.
+- Bulk staff import (Vinkured Q18, table `importaciones_usuarios`, unit flow = invitation by
+  email) is built BY US, "a la medida de Vinkured": host tables + importaciones_usuarios + the
+  membresia invitation flow, packaged to be handed to the Vinkured team. Must be coordinated with
+  them to avoid duplicate work.
+
 ## Next step
 A5: resume the original plan T4+ (odd/tasks/acompanamiento-docente.md) on the aligned base. Changes
 because Vinkured owns establecimientos/funcionarios: T4 "school setup + Excel staff import" is
