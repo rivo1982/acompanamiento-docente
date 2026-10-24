@@ -126,6 +126,14 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     skeleton precedent (no wire:loading skeleton in Alertas/Avisos index) — not implemented.
     Tests: +4 pendientes (badge, single announcement, count not live, hint), invitar asserts select
     name and no aria-live. Evidence: public 54/54; pest 599 passed; pint passed; npm run build ok.
+    Table skeleton stays PENDING (needs_brief for Vinkured: brief names it but defines no tokens/
+    shape and Vinkured has no implementation) — reported, not looped (vinkured-ui decision gate).
+    Native review (base 89c4ffc incl. host business-day copies; commits a82b26b..0c96634):
+    approved + acknowledged. Advisory fixed inline by parent: Plazos test helper restored UTC after
+    the timezone switch → now restores APP_TIMEZONE/America/Santiago; added a test; 600 passed.
+    Advisory pending (C4.2.1): prove timestamps/expiry ordering under America/Santiago (raw CASE
+    vs now() string) with a test; anular() re-check that the link is still live between confirm
+    and action (relies on AnularInvitacion today).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.

@@ -18,8 +18,8 @@ if (! function_exists('diaNoHabil')) {
 }
 
 /**
- * Vinkured runs with config('app.timezone') = America/Santiago (its config/app.php); this repository still uses UTC.
- * The ported tests assume the host zone, so they switch to it (config + PHP default) and back.
+ * Vinkured and this module both run with config('app.timezone') = America/Santiago (config/app.php). The ported
+ * tests pin the zone explicitly and restore the module default afterwards, so no test leaves a foreign zone behind.
  */
 function usarZonaDeVinkured(): void
 {
@@ -29,6 +29,8 @@ function usarZonaDeVinkured(): void
 
 function restaurarZonaDelModulo(): void
 {
-    config(['app.timezone' => 'UTC']);
-    date_default_timezone_set('UTC');
+    $zona = (string) env('APP_TIMEZONE', 'America/Santiago');
+
+    config(['app.timezone' => $zona]);
+    date_default_timezone_set($zona);
 }

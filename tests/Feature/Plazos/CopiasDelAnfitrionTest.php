@@ -2,6 +2,8 @@
 
 use App\Support\DiasHabiles;
 
+require_once __DIR__.'/helpers.php';
+
 /*
  * The business-day classes are copies of Vinkured's (@host-owned): tagged, and bound like Vinkured's
  * AppServiceProvider (scoped: one memoized calendar per request or job).
@@ -20,4 +22,14 @@ it('binds DiasHabiles as scoped, like Vinkured', function () {
     app()->forgetScopedInstances();
 
     expect(app(DiasHabiles::class))->not->toBe($primera);
+});
+
+it('runs the module in the same timezone as Vinkured and restores it after the ported tests', function () {
+    expect(config('app.timezone'))->toBe('America/Santiago');
+
+    usarZonaDeVinkured();
+    restaurarZonaDelModulo();
+
+    expect(config('app.timezone'))->toBe('America/Santiago')
+        ->and(date_default_timezone_get())->toBe('America/Santiago');
 });
