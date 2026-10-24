@@ -58,6 +58,11 @@ would make integration costly and risky.
   creating hook when pauta not visible (R4); default estado via enum (R2-002); named constant
   for factory school year (R2-003); distinct exception for incomplete snapshot entry (R2-004);
   truncate iniciado_en to seconds before computing duration (R3). R1-001 deferred to A3.
+- [ ] A2.3 Review follow-ups (A2.1+A2.2 review base a60b468, approved + acknowledged):
+  enforce "no respuesta writes on finalizado acompanamiento / indicador outside snapshot" at the
+  database level (trigger, like Vinkured's integrity triggers) so concurrent finalizar() and
+  query-builder bulk writes cannot bypass it (R3-001, R3-002); make the truncation test
+  discriminating or drop it (R3-003); remove vacuous try/catch assertion (R3-004).
 - [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
   DECIDED (user, 2026-10-24): module admin = any funcionario with a función of categoria
   'directivo' (RolesDelUsuario::esDirectivo). Jefe de UTP will be added upstream in Vinkured's
