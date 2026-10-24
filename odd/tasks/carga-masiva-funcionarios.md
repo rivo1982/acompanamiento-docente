@@ -72,7 +72,7 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     versions; copy Vinkured design assets as @host-owned (docs/diseno.md, CONTEXT.md,
     resources/css/app.css tokens, Inter font, Blade components, layouts), host Login +
     establecimiento selection + routes/middleware wiring.
-  - [ ] C4.0.1 Review follow-ups (C3.1+C4.0, commits 4cd1878..ae517fa; first review base 3a2c6ee
+  - [x] C4.0.1 Review follow-ups (C3.1+C4.0, commits 4cd1878..ae517fa; first review base 3a2c6ee
     ESCALATED "incomplete candidate" because host copies were outside the range; re-reviewed with
     base 4cd1878 incl. host copies → 4 lenses, approved + acknowledged. Note: START hit a
     gentle-ai 4.0.0 internal error "unsupported negotiated START risk reason dangerous_sink";
@@ -86,7 +86,8 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     - Copied app layout/paginacion reference host-only concepts (Alertas/Avisos, FiltraPorEstado):
       document as integration notes (copies stay identical). diseno.md has two contradictory
       "Modo oscuro" rows → report upstream to Vinkured.
-  - [ ] C4.1 Screen: aceptar invitación (guest, token link, set password / log in).
+  - [x] C4.1 Screen: aceptar invitación (guest, token link, set password / log in). Visual check 375/768/1280:
+    pending (no browser in this environment).
   - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
@@ -273,6 +274,63 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   FundacionUiTest "renders the host app layout for an active user" → 32/32 passed. `/` welcome
   page kept for now (ExampleTest); align with Vinkured redirect at integration.
 
+- C4.0.1+C4.1 route: delegated writer (trigger: 2+ non-trivial files).
+- C4.0.1 done:
+  - ProcesarImportacion::terminar: values go through the model casts
+    (`(new ImportacionUsuario)->forceFill([...])->getAttributes()`: enum -> value, errores -> JSON), then ONE Eloquent
+    builder `update` WHERE id AND estado='procesando' (the builder adds updated_at). Affected rows = 0 -> race lost ->
+    `Log::warning` with ids + discarded estado only. RED: "no pisa con completada..." now spies the log -> failed
+    ("warning ... called 0 times"); GREEN after the change. New characterization test: cast JSON errores + renewed
+    updated_at (passed before and after; structural).
+  - FundacionUiTest: host-tag list includes app/Support/AriaCurrent.php and app/Support/FormatoDelPanel.php. The
+    two real Vite build cases are in Pest group `build`, excluded from the default run in phpunit.xml
+    (`<groups><exclude>`), and skipped when node_modules/.bin/vite is absent. Run them with
+    `vendor/bin/pest --group=build` after `npm install` (9 passed). Source-token and vite.config checks stay in the
+    default run.
+  - Ported host tests (characterization of copied host code, so no RED): tests/Feature/Acceso/LoginTest.php +3 (+2
+    dataset rows) from Vinkured tests/Feature/Acceso/LoginTest.php (lockout on the 6th attempt with focus JS,
+    pluralized seconds, other email not locked); tests/Feature/Acceso/SeleccionDeEstablecimientoTest.php from Vinkured
+    tests/Feature/Acceso/EstablecimientoActivoTest.php (selector mount with 1 membership -> panel; 0 active ->
+    logout + login; SelectorDeEstablecimiento::cambiar success sets context + flash; 403 for foreign or only-invited
+    establecimiento, context unchanged).
+  - Integration notes (copies stay identical): layouts/app.blade.php shows Alertas/Avisos entries behind
+    `can('viewAny', Alerta/Aviso::class)` (no policy here -> hidden); paginacion.blade.php relies on host
+    FormatoDelPanel. docs/diseno.md has two contradictory "Modo oscuro" rows (lines 13-14): upstream report to
+    Vinkured PENDING (human action).
+- C4.1 done (no visual check: no browser here):
+  - Route `invitaciones.aceptar` GET /invitaciones/{token} -> full-page Livewire App\Livewire\Invitaciones\
+    AceptarInvitacion on the host `simple` layout, outside auth/establecimiento.activo; `throttle:invitaciones`
+    (AppServiceProvider limiter: 10/min by IP). EnlaceDeInvitacion now uses route(). Response headers
+    `Referrer-Policy: no-referrer` and `Cache-Control: no-store, private` (Livewire view ->response()).
+  - Token: stored encrypted (Crypt, APP_KEY) in a #[Locked] property, decrypted only in memory on submit; never in
+    component data or visible text. The single copy in the HTML is Livewire's memo `path` (= page URL), unavoidable
+    for a full-page component; pinned by a test.
+  - States: invalid (one generic message "La invitación no es válida o ya venció." + "Pedir una nueva invitación al
+    Administrador del establecimiento.", no form, no establecimiento); new account (contraseña nueva + confirmar,
+    rule shown before submit as campo ayuda, autocomplete new-password); established account as guest (Aviso + link
+    to login); same user logged in (one "Aceptar invitación" button -> activates, selects the new establecimiento
+    -> panel, else selection page); different user logged in (Aviso + "Cerrar sesión" form, no invitation data);
+    accepted (Éxito role=status + "Iniciar sesión" link). Only the inviting establecimiento's name is shown (not in
+    invalid/other-account states); never correo/RUT.
+  - Decisions: after a new account accepts, NO auto-login: an in-page Éxito state with a link to login (the host
+    Login shows flashes only in Aviso style, which would contradict "el éxito usa Éxito"). Host Login ignores the
+    intended URL (redirects to panel/selection), so the established-account copy asks to log in and reopen the
+    link instead of promising a return (host-owned, not changed). Copy uses infinitives per the brief's internal-UI
+    rule ("Iniciar sesión con esa cuenta y volver a abrir el enlace de la invitación."), not "Inicie sesión".
+    Password rules = ReglasDeContrasena + `confirmed` ("Las contraseñas no coinciden."), all errors at once; the
+    action re-validates. Errors inline via campo (aria-invalid, aria-describedby ayuda+error); focus moves to the
+    password field on error and to the status message on state changes.
+  - Brief tokens used: fondo/superficie via layout+card, texto, texto-atenuado (ayuda, descripción), acento (primary
+    button), borde-campo, estados Aviso (aviso/aviso-fondo) and Éxito (exito/exito-fondo), text-titulo/text-base/
+    text-tabla, radius control/tarjeta, spacing steps 4/8/12/24 (gap-1, gap-6, p-3), alto-control (40 px, 44 px on
+    coarse pointers). No needs_brief.
+  - RED: PantallaAceptarInvitacionTest 21 tests, 0 passed, 21 errors (class/route missing). GREEN: 21 passed;
+    tests/Feature/Invitaciones 87 passed.
+- Verification (C4.0.1+C4.1): vendor/bin/pest --compact: 442 passed (1846 assertions), build group excluded;
+  vendor/bin/pest --compact --group=build: 9 passed; vendor/bin/pint --dirty --format agent: passed (fixed imports
+  /spacing in 3 test files, re-run passed); npm run build: OK; public tables 54 before / 54 after (first count taken
+  right after the first focused RED run, which only touches acompanamiento_test).
+
 ## Next step
-C4.1 — screen "aceptar invitación" (vinkured-ui process: writer → auditor → ≤1 correction → visual
-check → tests → commit).
+Parent: commit C4.0.1+C4.1, run the read-only auditor for C4.1 (vinkured-ui process), then C4.2 — invitar
+funcionario + invitaciones pendientes.

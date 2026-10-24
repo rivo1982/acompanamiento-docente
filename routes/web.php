@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Invitaciones\AceptarInvitacion;
 use App\Livewire\Login;
 use App\Livewire\SeleccionarEstablecimiento;
 use App\Support\EstablecimientoActual;
@@ -12,6 +13,12 @@ Route::get('/', function () {
 // Acceso: mismas rutas y nombres que Vinkured (login, logout, establecimientos.seleccionar, panel), para que los
 // componentes y layouts copiados (@host-owned) funcionen sin cambios y se reemplacen por los del host al integrar.
 Route::get('/login', Login::class)->middleware('guest')->name('login');
+
+// Enlace del correo de invitación (Q18): invitados y usuarios con sesión, sin establecimiento activo. Limitado por IP
+// (limitador `invitaciones`, AppServiceProvider) para frenar a quien prueba tokens.
+Route::get('/invitaciones/{token}', AceptarInvitacion::class)
+    ->middleware('throttle:invitaciones')
+    ->name('invitaciones.aceptar');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', function (EstablecimientoActual $actual) {

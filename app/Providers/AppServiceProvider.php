@@ -20,8 +20,11 @@ use App\Support\Importacion\LectorDePlanilla;
 use App\Support\Importacion\LectorXlsx;
 use App\Support\RolesDelModulo;
 use App\Support\RolesDelUsuario;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -51,6 +54,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Vinkured no define Password::defaults(): propuesta del módulo, mínimo 12 caracteres con letras y números.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
+
+        // Pantalla del enlace de invitación: 10 por minuto por IP, para frenar a quien prueba tokens.
+        RateLimiter::for('invitaciones', fn (Request $request): Limit => Limit::perMinute(10)->by('invitaciones:'.$request->ip()));
 
         $this->registrarPermisos();
     }
