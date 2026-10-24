@@ -49,6 +49,31 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "demo:env": [
+            "@putenv APP_ENV=local",
+            "@putenv DB_CONNECTION=pgsql",
+            "@putenv DB_HOST=/var/run/postgresql",
+            "@putenv DB_PORT=5432",
+            "@putenv DB_DATABASE=roberto_dev",
+            "@putenv DB_USERNAME=roberto",
+            "@putenv DB_PASSWORD=",
+            "@putenv DB_SEARCH_PATH=acompanamiento_demo",
+            "@putenv QUEUE_CONNECTION=sync",
+            "@putenv MAIL_MAILER=log",
+            "@putenv SESSION_DRIVER=database",
+            "@putenv CACHE_STORE=database"
+        ],
+        "demo:setup": [
+            "@demo:env",
+            "psql -v ON_ERROR_STOP=1 -h /var/run/postgresql -U roberto -d roberto_dev -c \"CREATE SCHEMA IF NOT EXISTS acompanamiento_demo\"",
+            "@php artisan migrate --force --no-interaction",
+            "@php artisan db:seed --class=DemoSeeder --force --no-interaction"
+        ],
+        "demo:serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@demo:env",
+            "@php artisan serve --host=127.0.0.1 --port=8000"
+        ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"

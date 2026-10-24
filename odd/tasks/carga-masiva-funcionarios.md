@@ -580,5 +580,37 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   assertions); vendor/bin/pint --dirty --format agent: passed; npm run build: OK. Visual check pending (no browser).
 - Proposal for the Vinkured brief (badge mapping): import estados as above.
 
+## Demo environment
+
+Local demo to see the screens in a browser with FICTITIOUS data only, in schema `acompanamiento_demo` of roberto_dev.
+
+- Setup (idempotent, re-run any time; recalculates invitation deadlines from the seeding moment): `composer demo:setup`
+  = `CREATE SCHEMA IF NOT EXISTS acompanamiento_demo` (psql) + `php artisan migrate --force` (the 0000 migration loads
+  the host schema snapshot into the demo schema) + `php artisan db:seed --class=DemoSeeder --force`.
+- Serve: `composer demo:serve` (`php artisan serve --host=127.0.0.1 --port=8000`), then http://127.0.0.1:8000.
+- Env overrides: script `demo:env` uses Composer `@putenv` (APP_ENV=local, DB_CONNECTION=pgsql,
+  DB_HOST=/var/run/postgresql, DB_PORT=5432, DB_DATABASE=roberto_dev, DB_USERNAME=roberto, DB_PASSWORD=,
+  DB_SEARCH_PATH=acompanamiento_demo, QUEUE_CONNECTION=sync, MAIL_MAILER=log, SESSION_DRIVER=database,
+  CACHE_STORE=database). Real environment variables win over `.env`, so `.env` is neither read nor changed.
+- Credentials: `admin@demo.example.cl` / `Demo2026demo` (Administrador, directivo => module administrator and
+  observer). Active docentes `{beatriz,carlos,daniela}.docente@demo.example.cl`, same password (Beatriz is jefe of 1° A).
+- Data (database/seeders/Demo/EscenarioDemo.php): "Colegio Demostración" (RBD 999001, fictitious region/comuna),
+  current anio escolar, 1° A/1° B; invitations En plazo (+5 days), Vence hoy (end of today), Vencida (−3 days) and
+  Anulada (no hash/expiry), hashes = SHA-256 of random tokens nobody knows, no mail sent; imports completada (5 rows,
+  2 row errors), fallida (file-level error) and pendiente (created now: the result page polls until the 10-minute
+  limit). RUTs 11111111-1…88888888-8 (valid check digit, fake), emails @demo.example.cl.
+- Safety: DemoSeeder::asegurarEsquemaDemo() refuses (before any write) unless the default connection is pgsql with
+  search_path exactly `acompanamiento_demo` AND the live session's `current_schema()` is `acompanamiento_demo`.
+  HostSchemaLoader still refuses a search_path that includes public. Nothing reads or writes `public`.
+- Tests: tests/Feature/Demo/DemoSeederTest.php (refusal under acompanamiento_test, public, `acompanamiento_demo,public`,
+  empty, non-pgsql, config/session mismatch; nothing written on refusal; admin login/gate; every badge rendered by the
+  list; three import results; second run = same row counts and refreshed deadlines). Scenario tested directly in the
+  test schema (EscenarioDemo), the guard through DemoSeeder.
+- Evidence (2026-10-24): public tables 54 before / 54 after; tests/Feature/Demo 11/11; vendor/bin/pest --compact: 663
+  passed (8817 assertions); pint: passed; `composer demo:setup`: migrations DONE + DemoSeeder DONE; acompanamiento_demo
+  holds 64 tables (53 host + migrations + 10 module); seeded usuarios=8 membresias=8 (4 invitadas) importaciones=3
+  cursos=2 funciones=4 indicadores=60; admin found (es_administrador, activa); re-run of `composer demo:setup`: same
+  counts (8/8/3). Server not started by the writer.
+
 ## Next step
 Read-only auditor for C4.2 (form + list), ≤1 correction pass, native review, then C4.3.
