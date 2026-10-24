@@ -139,7 +139,11 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     "usted" copy in the import domain messages replaced (infinitive).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación. Implemented and tested; NOT checked:
     needs_brief (estado badges) pending and the back-link from the invitations views is outside the writer's surface
-    (see Progress). Visual check pending (no browser).
+    (see Progress). Visual check pending (no browser). Commits 3d0a215 (C4.2.1) + 7681853 (C4.3).
+    needs_brief DECIDED (user, 2026-10-24): import estado badges — Pendiente Neutro, Procesando
+    Información, Completada Éxito, Fallida Aviso (consistent with Aviso for recoverable page-level
+    problems) → propose to Vinkured brief. Correction pass will add badges, "Carga masiva" links in
+    the invitations views, the ValidadorDePlanilla "Divídala" copy fix, and audit findings.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
 
