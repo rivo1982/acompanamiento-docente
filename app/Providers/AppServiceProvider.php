@@ -23,6 +23,7 @@ use App\Support\RolesDelUsuario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -48,6 +49,9 @@ class AppServiceProvider extends ServiceProvider
     {
         DB::prohibitDestructiveCommands(! $this->app->environment('testing'));
 
+        // Vinkured no define Password::defaults(): propuesta del módulo, mínimo 12 caracteres con letras y números.
+        Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
+
         $this->registrarPermisos();
     }
 
@@ -59,6 +63,13 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::define('ver-reportes-establecimiento', fn (Usuario $usuario): bool => app(ReportePolicy::class)->verReportesEstablecimiento($usuario));
         Gate::define('ver-reporte-docente', fn (Usuario $usuario, Funcionario $docente): bool => app(ReportePolicy::class)->verReporteDocente($usuario, $docente));
+
+        // Como `ver-panel-usuarios` de Vinkured: solo el Administrador del establecimiento activo.
+        Gate::define('invitar-funcionarios', function (Usuario $usuario): bool {
+            $roles = app(RolesDelUsuario::class);
+
+            return $roles->esDelUsuario($usuario) && $roles->esAdministrador();
+        });
 
         Gate::policy(Pauta::class, PautaPolicy::class);
         Gate::policy(PautaBase::class, PautaBasePolicy::class);

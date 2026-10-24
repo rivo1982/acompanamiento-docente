@@ -199,6 +199,20 @@ it('marca los RUT y correos repetidos en las filas posteriores', function () {
         ]);
 });
 
+it('rechaza una fila con datos más allá de la columna 7', function (mixed $extra) {
+    $resultado = (new ValidadorDePlanilla)->validar(conEncabezado([[...filaValida(), null, $extra]]));
+
+    expect($resultado->filasValidas)->toBe([])
+        ->and($resultado->erroresPorFila)->toBe([2 => ['La fila tiene datos fuera de las 7 columnas de la planilla.']]);
+})->with(['texto' => 'Jefe UTP', 'número' => 0]);
+
+it('acepta celdas vacías más allá de la columna 7', function () {
+    $resultado = (new ValidadorDePlanilla)->validar(conEncabezado([[...filaValida(), '', null, '  ']]));
+
+    expect($resultado->esValido())->toBeTrue()
+        ->and($resultado->filasValidas)->toHaveCount(1);
+});
+
 it('no menciona otros establecimientos ni cuentas en los errores', function () {
     $resultado = (new ValidadorDePlanilla)->validar(conEncabezado([
         filaValida(),

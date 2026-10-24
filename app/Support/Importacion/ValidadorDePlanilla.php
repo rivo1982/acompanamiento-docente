@@ -104,6 +104,10 @@ final class ValidadorDePlanilla
     {
         [$rutEscrito, $nombres, $primerApellido, $segundoApellido, $correoEscrito, $telefono, $funcion] = array_pad($celdas, count(self::ENCABEZADO), '');
 
+        if (implode('', array_slice($celdas, count(self::ENCABEZADO))) !== '') {
+            $errores[] = 'La fila tiene datos fuera de las '.count(self::ENCABEZADO).' columnas de la planilla.';
+        }
+
         $rut = null;
         try {
             $rut = Rut::desde($rutEscrito);
