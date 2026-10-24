@@ -95,6 +95,12 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     Correction pass (parent, inline): per-state page title (Invitación no válida / Sesión de otra
     cuenta / Aceptar invitación) via layoutData; translate="no" on VINKURED; removed duplicated
     logout control (copy points to the header button). PantallaAceptarInvitacionTest 23/23.
+  - [ ] C4.1.1 Review follow-ups (C4.0.1+C4.1 commits 8b5fdf3..58b1186, review base 38536d9,
+    approved + acknowledged): invitation page throttle 10/min per IP will block staff of one school
+    behind a shared NAT right after a bulk import (WARNING) → key the limiter by IP + token hash
+    (or a higher per-IP ceiling plus a strict per-token limit); fix the test's RateLimiter clear
+    (named limiter key is hashed); test the establecimiento-selection fallback redirect; build
+    terminar() columns without model defaults.
   - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
