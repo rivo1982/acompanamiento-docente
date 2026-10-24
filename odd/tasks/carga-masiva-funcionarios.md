@@ -42,6 +42,16 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
 - [x] C2 Unit invitation: invite one person (persona + funcionario + funcion + usuario +
   membresia invitada), token generation (hashed at rest) + expiry, plain-text mail via queued
   job, accept route + set password → membresia activa; resend/revoke; anti-enumeration.
+- [ ] C2.1 Review follow-ups (C2 commit f011507, review base cd21406, approved + acknowledged;
+  do BEFORE/with C3 because bulk import multiplies them):
+  - ReenviarInvitacion vs ShouldBeUnique: a resend while a send job holds the unique lock is
+    dropped, and the in-flight job may send an already-superseded link → invitee may end with
+    no working link (WARNING). Make send/resend converge on "latest token is the one mailed".
+  - Concurrent invitations for the same new correo/RUT: lockForUpdate on missing rows locks
+    nothing → raw unique violation (WARNING). Translate to the domain conflict exception (or
+    advisory lock per establecimiento+RUT/correo).
+  - EnviarInvitacion::encolar swallows queueing failures (SUGGESTION) → surface a failure the
+    caller/import can record; test the branch.
 - [ ] C3 Bulk import: ImportacionUsuario model + estado values, upload, per-row processing
   reusing C2, summary (total/creados/con_error/errores without enumeration leaks).
 - [ ] C4 UI (Livewire, Vinkured UI skills) for invite, import and results.
