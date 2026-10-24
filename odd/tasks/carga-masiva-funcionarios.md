@@ -588,6 +588,11 @@ Local demo to see the screens in a browser with FICTITIOUS data only, in schema 
   = `CREATE SCHEMA IF NOT EXISTS acompanamiento_demo` (psql) + `php artisan migrate --force` (the 0000 migration loads
   the host schema snapshot into the demo schema) + `php artisan db:seed --class=DemoSeeder --force`.
 - Serve: `composer demo:serve` (`php artisan serve --host=127.0.0.1 --port=8765`), then http://127.0.0.1:8765.
+  Port 8000 is taken on this server by another, unrelated application — do not use it.
+- Both scripts run `php artisan config:clear` first (review R3 WARNING, commits f91df72..4ef4191,
+  approved + acknowledged): a cached config would ignore the @putenv overrides and point migrate at
+  the cached connection. Pending advisory: test the full DemoSeeder::run path twice (catalog +
+  funciones included) for idempotency.
 - Env overrides: script `demo:env` uses Composer `@putenv` (APP_ENV=local, DB_CONNECTION=pgsql,
   DB_HOST=/var/run/postgresql, DB_PORT=5432, DB_DATABASE=roberto_dev, DB_USERNAME=roberto, DB_PASSWORD=,
   DB_SEARCH_PATH=acompanamiento_demo, QUEUE_CONNECTION=sync, MAIL_MAILER=log, SESSION_DRIVER=database,

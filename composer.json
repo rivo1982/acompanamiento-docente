@@ -65,6 +65,7 @@
         ],
         "demo:setup": [
             "@demo:env",
+            "@php artisan config:clear --no-interaction",
             "psql -v ON_ERROR_STOP=1 -h /var/run/postgresql -U roberto -d roberto_dev -c \"CREATE SCHEMA IF NOT EXISTS acompanamiento_demo\"",
             "@php artisan migrate --force --no-interaction",
             "@php artisan db:seed --class=DemoSeeder --force --no-interaction"
@@ -72,6 +73,7 @@
         "demo:serve": [
             "Composer\\Config::disableProcessTimeout",
             "@demo:env",
+            "@php artisan config:clear --no-interaction",
             "@php artisan serve --host=127.0.0.1 --port=8765"
         ],
         "test": [
