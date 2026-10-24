@@ -95,13 +95,14 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     Correction pass (parent, inline): per-state page title (Invitación no válida / Sesión de otra
     cuenta / Aceptar invitación) via layoutData; translate="no" on VINKURED; removed duplicated
     logout control (copy points to the header button). PantallaAceptarInvitacionTest 23/23.
-  - [ ] C4.1.1 Review follow-ups (C4.0.1+C4.1 commits 8b5fdf3..58b1186, review base 38536d9,
+  - [x] C4.1.1 Review follow-ups (C4.0.1+C4.1 commits 8b5fdf3..58b1186, review base 38536d9,
     approved + acknowledged): invitation page throttle 10/min per IP will block staff of one school
     behind a shared NAT right after a bulk import (WARNING) → key the limiter by IP + token hash
     (or a higher per-IP ceiling plus a strict per-token limit); fix the test's RateLimiter clear
     (named limiter key is hashed); test the establecimiento-selection fallback redirect; build
     terminar() columns without model defaults.
-  - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular).
+  - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular). PARTIAL: invite form done;
+    pending list/reenviar/anular blocked by needs_brief (see Progress).
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
@@ -344,6 +345,59 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   /spacing in 3 test files, re-run passed); npm run build: OK; public tables 54 before / 54 after (first count taken
   right after the first focused RED run, which only touches acompanamiento_test).
 
+- C4.1.1+C4.2 route: delegated writer (trigger: 2+ non-trivial files).
+- C4.1.1 done:
+  - Limiter `invitaciones` = two limits: 10/min by `enlace:{ip}:{sha256(token)}` + 120/min by `ip:{ip}` (school behind one
+    NAT can open many different links; one link hammered gets 429). Tests: 20 different valid links from one IP all load;
+    same link 11th request 429 while another link and another IP still load; 121st distinct link from one IP 429.
+  - Test limiter reset: named limiter keys are md5(name+key), so `RateLimiter::clear('invitaciones:127.0.0.1')` cleared
+    nothing; beforeEach now flushes the (array) cache store.
+  - Selection fallback tested: membresia suspended right after acceptance (eloquent.saved listener) -> redirect to
+    establecimientos.seleccionar, no establecimiento in session.
+  - ProcesarImportacion::terminar(): UPDATE columns = Arr::only(model-cast attributes, requested keys + estado); model
+    defaults (total/creados/con_error = 0) no longer enter the fallida UPDATE. Test checks counters kept + SQL columns.
+  - RED: terminar test failed ("0 is identical to 4"); 3 throttle tests failed (429 on links 11+); fallback test first
+    errored (final class not mockable) and was rewritten as characterization (passes against existing code). GREEN.
+- C4.2 PARTIAL (not checked):
+  - ValidadorDePlanilla::validarFuncionario(array $celdas): ValidacionDeFuncionario (new readonly class: ?FilaDePlanilla
+    + errores por campo, keys ValidadorDePlanilla::CAMPOS, `fila` for extra columns; mensajes() flattens in column
+    order). validar() now uses it internally: same messages/order (all Importacion + Unit tests unchanged and green).
+  - Route `invitaciones.create` GET /usuarios/invitaciones/nueva (auth + establecimiento.activo +
+    can:invitar-funcionarios) -> App\Livewire\Invitaciones\NuevaInvitacion on host layouts/app (ancho formulario).
+    Gate re-checked in mount and in invitar(); the action re-reads the admin membresia (EstablecimientoActual::membresia()).
+  - Form: RUT, Nombres, Primer apellido, Segundo apellido, Correo (type email), Teléfono (type tel), Función (select
+    Docente/Directivo/Asistente de la educación/Profesional de apoyo; values = spreadsheet values). One column, two from lg.
+    Errors inline via x-campo (all at once, focus to first invalid). Button "Enviar invitación"/"Enviando invitación…".
+  - Decisions: separate page for the form (brief: forms up to 768 px, tables full width); success stays on the form
+    (cleared) with Éxito role=status "Invitación enviada a <nombres> <primer apellido>." built from the typed data (same
+    text whether the correo has an account elsewhere; never echoes the correo). Conflict (InvitacionEnConflicto) =
+    form error -> Peligro role=alert, data kept. InvitacionNoEncolada -> Aviso role=alert "La invitación quedó
+    registrada, pero su correo no se pudo programar. Reenviarla más tarde desde las invitaciones pendientes.", form
+    cleared. Focus moves to #mensaje-invitacion.
+  - Brief tokens used: layout app (fondo/superficie/borde), card, page-header (text-titulo), campo (borde-campo,
+    peligro, texto-atenuado ayuda, text-tabla/text-base), button primario (acento/acento-hover/sobre-acento), estados
+    Éxito/Aviso/Peligro (texto + fondo), radius control/tarjeta, spacing 4/12/24 (gap-6, p-3, mb-6), alto-control.
+  - Tests: PantallaInvitarFuncionarioTest 19 (RED 19 errors -> GREEN 19); Unit validarFuncionario +2 (written after the
+    refactor: no RED).
+  - needs_brief (blocks the "Invitaciones pendientes" list, reenviar, anular, pagination, empty state):
+    1. Badge for an anulada invitation (membresia invitada with hash+expiry null): text and variant are not in the
+       brief's badge mapping. Host Panel/Usuarios shows null expiry as "Sin vencimiento" (Neutro), which would be
+       misleading here (the link is dead). Proposal: "Anulada", Neutro.
+    2. Vigente badge "En plazo (N días hábiles)" requires business days (host DiasHabiles + EstadoDePlazo +
+       DiaNoHabil model over dias_no_habiles); none exists in this repo and copying them as @host-owned is outside
+       the allowed surfaces (app/Support/*.php root, app/Models). Needs either authorization to copy them, or a brief
+       decision for invitations (e.g. calendar date "Vence el dd-mm-aaaa" without a day count).
+  - Copy issue for upstream (app/Exceptions outside surface): InvitacionEnConflicto messages use "usted" ("Puede
+    reenviarla o anularla.", "Inténtelo nuevamente."), shown as-is on the form; brief's internal-UI rule is infinitive.
+  - Integration notes: no navigation entry (layouts/app nav is @host-owned and built from host policies; an
+    "Invitar funcionario"/"Usuarios" entry must be added in Vinkured). Overlap: host Panel/Usuarios lists invitada +
+    suspendida (read-only, shows correo, LIMITE_FILAS, vencidas first); the pending list should reuse its ordering and
+    be linked from that panel block at integration.
+- Verification (C4.1.1+C4.2 partial): vendor/bin/pest --compact: 469 passed (2241 assertions); vendor/bin/pint --dirty
+  --format agent: fixed ordered_imports in one test, re-run passed; npm run build: OK; public tables 54 before / 54
+  after. Visual check: pending (no browser).
+
 ## Next step
-Parent: commit C4.0.1+C4.1, run the read-only auditor for C4.1 (vinkured-ui process), then C4.2 — invitar
-funcionario + invitaciones pendientes.
+Parent: commit C4.1.1 and the C4.2 invite form; resolve the two C4.2 needs_brief items (anulada badge; business-day
+count or alternative for vigente invitations), then a writer finishes the pending list (reenviar, anular with modal,
+pagination 20, empty state); then the read-only auditor for C4.2.

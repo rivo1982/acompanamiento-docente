@@ -23,6 +23,12 @@ final class ValidadorDePlanilla
     /** Columnas obligatorias de la fila 1, en orden. */
     public const ENCABEZADO = ['RUT', 'Nombres', 'Primer apellido', 'Segundo apellido', 'Correo', 'Teléfono', 'Función'];
 
+    /** Nombre de campo de cada columna de ENCABEZADO, en el mismo orden (claves de ValidacionDeFuncionario). */
+    public const CAMPOS = ['rut', 'nombres', 'primer_apellido', 'segundo_apellido', 'correo', 'telefono', 'funcion'];
+
+    /** Clave de los errores que no son de una columna (datos fuera de las columnas de la planilla). */
+    public const CAMPO_FILA = 'fila';
+
     /** Función escrita en la planilla (normalizada) => funciones.categoria de Vinkured. */
     private const CATEGORIAS = [
         'docente' => 'docente',
@@ -68,13 +74,12 @@ final class ValidadorDePlanilla
                 return ResultadoDeValidacion::conErrorDelArchivo('La planilla tiene más de '.number_format(self::MAXIMO_DE_FILAS, 0, ',', '.').' funcionarios. Divídala en archivos más pequeños.');
             }
 
-            $errores = [];
-            $fila = $this->validarFila($numeroDeFila, $celdas, $errores, $primeraFilaDelRut, $primeraFilaDelCorreo);
+            $validacion = $this->validarFila($numeroDeFila, $celdas, $primeraFilaDelRut, $primeraFilaDelCorreo);
 
-            if ($fila === null) {
-                $erroresPorFila[$numeroDeFila] = $errores;
+            if ($validacion->fila === null) {
+                $erroresPorFila[$numeroDeFila] = $validacion->mensajes();
             } else {
-                $filasValidas[] = $fila;
+                $filasValidas[] = $validacion->fila;
             }
         }
 
@@ -89,6 +94,25 @@ final class ValidadorDePlanilla
         return new ResultadoDeValidacion([], $filasValidas, $erroresPorFila);
     }
 
+    /**
+     * Valida UN funcionario con las mismas reglas y mensajes que una fila de la planilla (carga unitaria, Q18). Las
+     * celdas van en el orden de ENCABEZADO; los errores quedan por campo (CAMPOS) para mostrarlos junto a cada uno.
+     *
+     * @param  array<int, mixed>  $celdas
+     */
+    public function validarFuncionario(array $celdas): ValidacionDeFuncionario
+    {
+        $primeraFilaDelRut = [];
+        $primeraFilaDelCorreo = [];
+
+        return $this->validarFila(
+            ValidacionDeFuncionario::SIN_FILA,
+            array_map($this->texto(...), array_values($celdas)),
+            $primeraFilaDelRut,
+            $primeraFilaDelCorreo,
+        );
+    }
+
     public static function mensajeDeEncabezado(): string
     {
         return 'El encabezado de la planilla no corresponde. La fila 1 debe tener estas columnas, en este orden: '.implode(' | ', self::ENCABEZADO).'.';
@@ -96,16 +120,17 @@ final class ValidadorDePlanilla
 
     /**
      * @param  list<string>  $celdas
-     * @param  list<string>  $errores
      * @param  array<string, int>  $primeraFilaDelRut
      * @param  array<string, int>  $primeraFilaDelCorreo
      */
-    private function validarFila(int $numeroDeFila, array $celdas, array &$errores, array &$primeraFilaDelRut, array &$primeraFilaDelCorreo): ?FilaDePlanilla
+    private function validarFila(int $numeroDeFila, array $celdas, array &$primeraFilaDelRut, array &$primeraFilaDelCorreo): ValidacionDeFuncionario
     {
+        /** @var array<string, list<string>> $errores */
+        $errores = [];
         [$rutEscrito, $nombres, $primerApellido, $segundoApellido, $correoEscrito, $telefono, $funcion] = array_pad($celdas, count(self::ENCABEZADO), '');
 
         if (implode('', array_slice($celdas, count(self::ENCABEZADO))) !== '') {
-            $errores[] = 'La fila tiene datos fuera de las '.count(self::ENCABEZADO).' columnas de la planilla.';
+            $errores[self::CAMPO_FILA][] = 'La fila tiene datos fuera de las '.count(self::ENCABEZADO).' columnas de la planilla.';
         }
 
         $rut = null;
@@ -113,45 +138,47 @@ final class ValidadorDePlanilla
             $rut = Rut::desde($rutEscrito);
             $primeraFila = $primeraFilaDelRut[$rut->paraAlmacenar()] ??= $numeroDeFila;
             if ($primeraFila !== $numeroDeFila) {
-                $errores[] = "El RUT ya aparece en la fila {$primeraFila}.";
+                $errores['rut'][] = "El RUT ya aparece en la fila {$primeraFila}.";
             }
         } catch (RutInvalido $e) {
-            $errores[] = $e->getMessage();
+            $errores['rut'][] = $e->getMessage();
         }
 
-        $this->exigirTexto($nombres, 'Los nombres son obligatorios.', 'Los nombres no pueden superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.', $errores);
-        $this->exigirTexto($primerApellido, 'El primer apellido es obligatorio.', 'El primer apellido no puede superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.', $errores);
+        $this->exigirTexto($nombres, 'Los nombres son obligatorios.', 'Los nombres no pueden superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.', $errores['nombres']);
+        $this->exigirTexto($primerApellido, 'El primer apellido es obligatorio.', 'El primer apellido no puede superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.', $errores['primer_apellido']);
 
         if (mb_strlen($segundoApellido) > self::MAXIMO_DEL_NOMBRE) {
-            $errores[] = 'El segundo apellido no puede superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.';
+            $errores['segundo_apellido'][] = 'El segundo apellido no puede superar los '.self::MAXIMO_DEL_NOMBRE.' caracteres.';
         }
 
-        $correo = $this->correo($correoEscrito, $errores);
+        $correo = $this->correo($correoEscrito, $errores['correo']);
         if ($correo !== null) {
             $primeraFila = $primeraFilaDelCorreo[$correo] ??= $numeroDeFila;
             if ($primeraFila !== $numeroDeFila) {
-                $errores[] = "El correo ya aparece en la fila {$primeraFila}.";
+                $errores['correo'][] = "El correo ya aparece en la fila {$primeraFila}.";
             }
         }
 
         if (mb_strlen($telefono) > self::MAXIMO_DEL_TELEFONO) {
-            $errores[] = 'El teléfono no puede superar los '.self::MAXIMO_DEL_TELEFONO.' caracteres.';
+            $errores['telefono'][] = 'El teléfono no puede superar los '.self::MAXIMO_DEL_TELEFONO.' caracteres.';
         } elseif ($telefono !== '' && preg_match('/^[0-9 +\-()]+$/', $telefono) !== 1) {
-            $errores[] = 'El teléfono solo puede tener números, espacios y los signos + - ( ).';
+            $errores['telefono'][] = 'El teléfono solo puede tener números, espacios y los signos + - ( ).';
         }
 
         $categoria = self::CATEGORIAS[$this->normalizar($funcion)] ?? null;
         if ($funcion === '') {
-            $errores[] = 'La función es obligatoria.';
+            $errores['funcion'][] = 'La función es obligatoria.';
         } elseif ($categoria === null) {
-            $errores[] = 'La función debe ser docente, directivo, asistente o profesional de apoyo.';
+            $errores['funcion'][] = 'La función debe ser docente, directivo, asistente o profesional de apoyo.';
         }
+
+        $errores = array_filter($errores);
 
         if ($errores !== [] || $rut === null || $correo === null || $categoria === null) {
-            return null;
+            return new ValidacionDeFuncionario(null, $errores);
         }
 
-        return new FilaDePlanilla(
+        return new ValidacionDeFuncionario(new FilaDePlanilla(
             numeroDeFila: $numeroDeFila,
             rut: $rut,
             nombres: $nombres,
@@ -160,13 +187,13 @@ final class ValidadorDePlanilla
             correo: $correo,
             telefono: $telefono === '' ? null : $telefono,
             categoriaFuncion: $categoria,
-        );
+        ), []);
     }
 
     /**
-     * @param  list<string>  $errores
+     * @param  list<string>|null  $errores
      */
-    private function exigirTexto(string $valor, string $siFalta, string $siEsLargo, array &$errores): void
+    private function exigirTexto(string $valor, string $siFalta, string $siEsLargo, ?array &$errores): void
     {
         if ($valor === '') {
             $errores[] = $siFalta;
@@ -179,9 +206,9 @@ final class ValidadorDePlanilla
      * Mismo criterio que ReglasDeRespuesta::correoParaEnviar de Vinkured (recortado y válido según FILTER_VALIDATE_EMAIL),
      * más minúsculas para detectar repetidos y guardar una sola forma.
      *
-     * @param  list<string>  $errores
+     * @param  list<string>|null  $errores
      */
-    private function correo(string $correoEscrito, array &$errores): ?string
+    private function correo(string $correoEscrito, ?array &$errores): ?string
     {
         if ($correoEscrito === '') {
             $errores[] = 'El correo es obligatorio.';

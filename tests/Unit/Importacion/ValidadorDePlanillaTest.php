@@ -242,3 +242,25 @@ function rutDv(int $cuerpo): string
         default => (string) $resto,
     };
 }
+
+it('valida un funcionario suelto con las reglas de la planilla y deja los errores por campo', function () {
+    $validacion = (new ValidadorDePlanilla)->validarFuncionario(['12.345.678-9', '', 'Pérez', null, 'no-es-correo', '9 abc', 'Bibliotecario']);
+
+    expect($validacion->fila)->toBeNull()
+        ->and(array_keys($validacion->erroresPorCampo))->toBe(['rut', 'nombres', 'correo', 'telefono', 'funcion'])
+        ->and($validacion->erroresPorCampo['nombres'])->toBe(['Los nombres son obligatorios.'])
+        ->and($validacion->erroresPorCampo['correo'])->toBe(['El correo no es válido.'])
+        ->and($validacion->erroresPorCampo['funcion'])->toBe(['La función debe ser docente, directivo, asistente o profesional de apoyo.'])
+        ->and($validacion->mensajes())->toHaveCount(5);
+});
+
+it('normaliza un funcionario suelto válido igual que una fila de la planilla', function () {
+    $validacion = (new ValidadorDePlanilla)->validarFuncionario([' 12.345.678-5 ', 'Ana María', 'Pérez', '', 'Ana@Ejemplo.CL', '', 'Profesional de apoyo']);
+
+    expect($validacion->erroresPorCampo)->toBe([])
+        ->and($validacion->fila->rut->paraAlmacenar())->toBe('12345678-5')
+        ->and($validacion->fila->correo)->toBe('ana@ejemplo.cl')
+        ->and($validacion->fila->segundoApellido)->toBeNull()
+        ->and($validacion->fila->telefono)->toBeNull()
+        ->and($validacion->fila->categoriaFuncion)->toBe('profesional_apoyo');
+});
