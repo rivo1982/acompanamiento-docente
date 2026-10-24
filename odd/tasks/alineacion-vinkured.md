@@ -68,6 +68,14 @@ would make integration costly and risky.
   'directivo' (RolesDelUsuario::esDirectivo). Jefe de UTP will be added upstream in Vinkured's
   FuncionesBaseSeeder as clave 'jefe_utp', categoria 'directivo' (proposal sent by user), so it
   is covered automatically; the module adds no UTP data of its own.
+- [ ] A3.1 Review follow-ups (A2.3+A3 commit 9dac0df, review base 9129755, approved +
+  acknowledged): trigger FOR SHARE on parent can deadlock when two transactions write respuestas
+  then update the same acompanamiento — lock with FOR UPDATE or document single-writer (R3-001
+  WARNING); assert trigger messages to tell its two branches apart (R3-002); test an expired
+  observador from the `observadores` table, not a directivo (R3-003); null ids in the
+  assignment guard must report missing input (R3-004).
+  PRODUCT QUESTION pending: may an observer who loses the observer flag still finish an
+  acompanamiento already en_curso? (current behavior: yes, as in the old matrix).
 - [ ] A4 Port tests to Pest, port policies, catalog seeder on new tables.
 - [ ] A5 Resume original plan (T4+) on the aligned base.
 
