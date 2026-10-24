@@ -6,7 +6,8 @@ use RuntimeException;
 
 /**
  * La invitación choca con lo que YA hay en este establecimiento. Los mensajes solo hablan de este establecimiento:
- * nunca dicen si el correo tiene cuenta en otro (ADR-0005). Se pueden mostrar tal cual al Administrador.
+ * nunca dicen si el correo tiene cuenta en otro (ADR-0005). Se pueden mostrar tal cual al Administrador: están en
+ * infinitivo o impersonal, sin usted (regla del brief para la interfaz interna).
  */
 final class InvitacionEnConflicto extends RuntimeException
 {
@@ -17,7 +18,7 @@ final class InvitacionEnConflicto extends RuntimeException
 
     public static function yaInvitada(): self
     {
-        return new self('Esta persona ya tiene una invitación pendiente en este establecimiento. Puede reenviarla o anularla.');
+        return new self('Esta persona ya tiene una invitación pendiente en este establecimiento. Se puede reenviar o anular desde las invitaciones pendientes.');
     }
 
     public static function suspendida(): self
@@ -41,6 +42,6 @@ final class InvitacionEnConflicto extends RuntimeException
      */
     public static function simultanea(): self
     {
-        return new self('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Inténtelo nuevamente.');
+        return new self('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Volver a intentarlo.');
     }
 }

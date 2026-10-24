@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Invitaciones\AceptarInvitacion;
+use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Invitaciones\NuevaInvitacion;
 use App\Livewire\Login;
 use App\Livewire\SeleccionarEstablecimiento;
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
         // Invitaciones de funcionarios (Q18): solo el Administrador del establecimiento activo.
         Route::middleware('can:invitar-funcionarios')->group(function () {
+            Route::get('/usuarios/invitaciones', InvitacionesPendientes::class)->name('invitaciones.index');
             Route::get('/usuarios/invitaciones/nueva', NuevaInvitacion::class)->name('invitaciones.create');
         });
     });

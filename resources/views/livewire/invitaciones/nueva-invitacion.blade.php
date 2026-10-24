@@ -3,7 +3,11 @@
     <x-page-header
         titulo="Invitar funcionario"
         descripcion="La persona recibe un correo con un enlace para activar su acceso a este establecimiento."
-    />
+    >
+        <x-slot:acciones>
+            <x-button :href="route('invitaciones.index')" variante="secundario">Ver invitaciones pendientes</x-button>
+        </x-slot:acciones>
+    </x-page-header>
 
     {{-- Región del mensaje del último envío: Éxito como estado; aviso y error como alerta. Recibe el foco al cambiar. --}}
     <div aria-live="polite">

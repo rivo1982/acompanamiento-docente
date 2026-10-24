@@ -190,7 +190,7 @@ it('rechaza conflictos dentro del establecimiento sin escribir nada', function (
     }, 'Esta persona ya tiene acceso activo en este establecimiento.'],
     'ya está invitada' => [function (int $est): void {
         newMembresia($est, newUsuario(['correo' => 'ana@ejemplo.cl'])->id, newPersona($est, '12345678-5'), ['estado' => 'invitada']);
-    }, 'Esta persona ya tiene una invitación pendiente en este establecimiento. Puede reenviarla o anularla.'],
+    }, 'Esta persona ya tiene una invitación pendiente en este establecimiento. Se puede reenviar o anular desde las invitaciones pendientes.'],
     'está suspendida' => [function (int $est): void {
         newMembresia($est, newUsuario(['correo' => 'ana@ejemplo.cl'])->id, newPersona($est, '12345678-5'), ['estado' => 'suspendida']);
     }, 'Esta persona tiene su acceso suspendido en este establecimiento.'],
@@ -281,7 +281,7 @@ it('traduce a un conflicto de este establecimiento el choque con una invitación
         invitar($administrador);
         $this->fail('Se esperaba InvitacionEnConflicto.');
     } catch (InvitacionEnConflicto $e) {
-        expect($e->getMessage())->toBe('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Inténtelo nuevamente.')
+        expect($e->getMessage())->toBe('Los datos de esta persona cambiaron en este establecimiento mientras se registraba la invitación. Volver a intentarlo.')
             ->and($e->getPrevious())->toBeNull();
     }
 

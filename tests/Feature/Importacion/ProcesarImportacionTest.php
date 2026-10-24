@@ -182,7 +182,7 @@ it('procesa una planilla mixta: invita las filas válidas y resume los errores p
             ['fila' => 3, 'mensajes' => ['El dígito verificador del RUT no corresponde.']],
             ['fila' => 4, 'mensajes' => ['El RUT ya aparece en la fila 2.']],
             ['fila' => 5, 'mensajes' => ['Esta persona ya tiene acceso activo en este establecimiento.']],
-            ['fila' => 6, 'mensajes' => ['Esta persona ya tiene una invitación pendiente en este establecimiento. Puede reenviarla o anularla.']],
+            ['fila' => 6, 'mensajes' => ['Esta persona ya tiene una invitación pendiente en este establecimiento. Se puede reenviar o anular desde las invitaciones pendientes.']],
         ]);
 
     $invitadas = Membresia::query()->where('establecimiento_id', $this->a)->where('estado', 'invitada')

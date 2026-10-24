@@ -101,7 +101,7 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     (or a higher per-IP ceiling plus a strict per-token limit); fix the test's RateLimiter clear
     (named limiter key is hashed); test the establecimiento-selection fallback redirect; build
     terminar() columns without model defaults.
-  - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular). PARTIAL: invite form done;
+  - [x] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular). PARTIAL: invite form done;
     pending list/reenviar/anular blocked by needs_brief (see Progress). Form committed a82b26b/7a4c502.
     needs_brief DECIDED (user, 2026-10-24):
     1. Valid invitation badge follows the brief: "En plazo (N días hábiles)" — copy Vinkured's
@@ -402,7 +402,54 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   --format agent: fixed ordered_imports in one test, re-run passed; npm run build: OK; public tables 54 before / 54
   after. Visual check: pending (no browser).
 
+- C4.2 (list) route: delegated writer (trigger: 2+ non-trivial files).
+- C4.2 list done (NOT checked: one failing test outside the writer's surface, see below; visual check pending, no browser):
+  - Copied @host-owned (diff vs Vinkured = tag lines only): app/Support/DiasHabiles.php, app/Support/EstadoDePlazo.php,
+    app/Models/DiaNoHabil.php. Closure already present (EstablecimientoActual, SinEstablecimientoActivo, table
+    dias_no_habiles in the host schema). AppServiceProvider: `scoped(DiasHabiles::class)` as Vinkured.
+  - Ported tests: tests/Feature/Plazos/{DiasHabilesTest,EstadoDePlazoTest}.php from Vinkured tests/Feature/Plazos (+
+    tests/Feature/Plazos/helpers.php with `diaNoHabil` from Vinkured tests/Pest.php). FINDING: Vinkured's app timezone is
+    America/Santiago (config/app.php, env APP_TIMEZONE), this repo's is UTC; first run 72/100 (28 failed, all
+    zone-dependent). The ported tests and the list tests switch to America/Santiago (config + PHP default) and back.
+    Integration/decision note: config/app.php (outside surface) should match Vinkured, otherwise local dates/plazos are UTC.
+    CopiasDelAnfitrionTest (tags + scoped binding; RED by removing the binding: "same object" failed).
+  - Route `invitaciones.index` GET /usuarios/invitaciones (auth + establecimiento.activo + can:invitar-funcionarios) ->
+    App\Livewire\Invitaciones\InvitacionesPendientes on layouts/app (full width). Links both ways: list header
+    "Invitar funcionario" (primario) + empty-state action; form header "Ver invitaciones pendientes" (secundario).
+  - Rows: membresias `invitada` of the active establecimiento (incl. anuladas), columns Nombre, Correo (host Panel/Usuarios
+    shows it), Función (names of the persona's funciones, one query), Invitada el (FormatoDelPanel::fecha), Situación,
+    Acciones. Badges = Vinkured Panel\Usuarios::situacion mapping (Vencida / Vencida hoy Peligro, Vence hoy Aviso,
+    "En plazo (N días hábiles)" Neutro, Vencimiento no disponible Neutro) + "Anulada" Neutro instead of the host's "Sin
+    vencimiento". Order = host CASE (vencidas 0, vigentes 1) with anuladas as group 2 (host puts null expiry last inside
+    group 1 via ASC NULLS LAST, so the result is the same). 20/page, page clamped like host FiltraPorEstado::paginar,
+    host x-paginacion with focus to the card h2. Empty state "No hay invitaciones pendientes." + "Invitar funcionario".
+  - Actions: Reenviar (any invitada: vigente/vencida/anulada) and Anular (only with a live link) -> host x-modal
+    confirmation (Cancelar autofocus, "Anular invitación" peligro). Every action re-checks the gate, reads the admin
+    membresia, and loads the id only inside the active establecimiento (foreign or malformed id -> 404, nothing changes).
+    Messages: Éxito "Invitación reenviada a X." / "Invitación de X anulada. Su enlace ya no sirve."; Aviso for
+    InvitacionNoPendiente and for InvitacionNoEncolada ("El enlace anterior de X quedó sin efecto, pero el correo nuevo
+    no se pudo programar. Reenviar la invitación en unos minutos."). No Peligro case (no field/form errors here).
+    Focus to #mensaje-invitaciones after the action (setTimeout 0, after x-trap returns focus); wire:loading per row.
+  - InvitacionEnConflicto copy: "Se puede reenviar o anular desde las invitaciones pendientes." and "Volver a
+    intentarlo." (no usted). PENDING (outside surface): tests/Feature/Importacion/ProcesarImportacionTest.php:185 still
+    expects the old yaInvitada text -> replace "Puede reenviarla o anularla." with "Se puede reenviar o anular desde las
+    invitaciones pendientes.". Other "usted" copy outside surface: InvitacionNoEncolada ("Reenvíela más tarde.", not
+    shown by the screens) and ProcesarImportacion row error ("Inténtelo nuevamente más tarde.", shown in C4.3).
+  - Brief tokens used: layout app, page-header (text-titulo), card, text-subtitulo h2, tabla (text-tabla, filas 40 px,
+    superficie-atenuada header), badge Neutro/Aviso/Peligro, button primario/secundario/peligro, modal (max-w-md,
+    shadow-lg, velo), estados Éxito/Aviso (texto + fondo + borde), texto-atenuado, radius control, spacing 4/8/12/16/24
+    (py-1, gap-2, p-3, gap-4, mb-6), tabular-nums for dates. No needs_brief.
+  - RED: PantallaInvitacionesPendientesTest 22 tests, 0 passed, 22 errors (route/component missing). GREEN 22/22.
+    InvitarFuncionarioTest copy change: RED 3 failed -> GREEN.
+  - Integration note (nav): no layout edit; Vinkured must add a "Usuarios"/"Invitaciones pendientes" nav entry and link
+    it from the panel block "Usuarios por gestionar".
+- Verification (C4.2 list): public tables 54 before / 54 after; vendor/bin/pest --compact: 595 tests, 594 passed, 1
+  failed (ProcesarImportacionTest:185, outside surface, expected); vendor/bin/pint --dirty --format agent: passed;
+  npm run build: OK.
+
+- Parent (inline): ProcesarImportacionTest:185 copy updated; config/app.php timezone aligned with
+  Vinkured (`env('APP_TIMEZONE', 'America/Santiago')`, technical alignment under the user's
+  "adopt Vinkured conventions" decision). Full suite: 595 passed (8499 assertions); public 54/54.
+
 ## Next step
-Parent: commit C4.1.1 and the C4.2 invite form; resolve the two C4.2 needs_brief items (anulada badge; business-day
-count or alternative for vigente invitations), then a writer finishes the pending list (reenviar, anular with modal,
-pagination 20, empty state); then the read-only auditor for C4.2.
+Read-only auditor for C4.2 (form + list), ≤1 correction pass, native review, then C4.3.

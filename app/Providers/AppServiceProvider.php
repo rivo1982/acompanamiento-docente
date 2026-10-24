@@ -15,6 +15,7 @@ use App\Policies\IndicadorPolicy;
 use App\Policies\PautaBasePolicy;
 use App\Policies\PautaPolicy;
 use App\Policies\ReportePolicy;
+use App\Support\DiasHabiles;
 use App\Support\EstablecimientoActual;
 use App\Support\Importacion\LectorDePlanilla;
 use App\Support\Importacion\LectorXlsx;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(EstablecimientoActual::class);
         $this->app->scoped(RolesDelUsuario::class);
         $this->app->scoped(RolesDelModulo::class);
+        $this->app->scoped(DiasHabiles::class);
 
         $this->app->bind(LectorDePlanilla::class, LectorXlsx::class);
     }
