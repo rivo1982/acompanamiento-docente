@@ -354,6 +354,8 @@ would make integration costly and risky.
   - Unit/AchievementLevelTest 4/4 -> Unit/NivelLogroTest (+1 felicitación single-source test).
 - A3.1+A4 checks: `vendor/bin/pest --compact` 217 passed / 853 assertions; `vendor/bin/pint --dirty
   --format agent` passed; public tables before/after 54 / 54.
+- A3.1+A4 commit 7624006. Native review: assessed base b7d8b05 → medium / under_budget (234 lines),
+  pending in slice until the next commit reaches the delivery budget. Last reviewed boundary 78d7544.
 
 ## Next step
 A5: resume the original plan T4+ (odd/tasks/acompanamiento-docente.md) on the aligned base. Changes
