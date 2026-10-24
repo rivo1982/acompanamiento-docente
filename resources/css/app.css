@@ -1,9 +1,194 @@
+/* @host-owned Copied from Vinkured resources/css/app.css — do not modify here; replace with the host class at integration. */
 @import 'tailwindcss';
+@import '@fontsource-variable/inter';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/*
+ * Tokens de VINKURED. Fuente única: docs/diseno.md.
+ * Se vacían las escalas por defecto de Tailwind para color, tipografía,
+ * espaciado y radios: lo que no esté en el brief no existe como utilidad.
+ */
+@theme static {
+    --color-*: initial;
+    --color-transparent: transparent;
+    --color-current: currentColor;
+
+    /* Modo claro */
+    --color-fondo: #f8fafc;
+    --color-superficie: #ffffff;
+    --color-superficie-atenuada: #f1f5f9;
+    --color-texto: #0f172a;
+    --color-texto-atenuado: #475569;
+    --color-acento: #0f5c63;
+    --color-acento-hover: #0b4a50;
+    --color-acento-sutil: #e3f0f1;
+    --color-sobre-acento: #ffffff;
+    --color-borde: #e2e8f0;
+    --color-velo: rgb(15 23 42 / 0.4);
+    --color-borde-campo: #64748b;
+    --color-foco: #0f5c63;
+
+    /* Estados: texto y fondo, siempre acompañados de texto */
+    --color-exito: #166534;
+    --color-exito-fondo: #dcfce7;
+    --color-aviso: #92400e;
+    --color-aviso-fondo: #fef3c7;
+    --color-peligro: #b91c1c;
+    --color-peligro-fondo: #fee2e2;
+    --color-informacion: #1d4ed8;
+    --color-informacion-fondo: #dbeafe;
+    --color-neutro: #334155;
+    --color-neutro-fondo: #e2e8f0;
+
+    /* Tipografía: una sola familia, pesos 400 y 600 */
+    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-weight-*: initial;
+    --font-weight-normal: 400;
+    --font-weight-semibold: 600;
+
+    --text-*: initial;
+    --text-nota: 0.75rem;
+    --text-nota--line-height: calc(1 / 0.75);
+    --text-tabla: 0.875rem;
+    --text-tabla--line-height: calc(1.25 / 0.875);
+    --text-base: 1rem;
+    --text-base--line-height: 1.5;
+    --text-subtitulo: 1.125rem;
+    --text-subtitulo--line-height: calc(1.75 / 1.125);
+    --text-titulo: 1.5rem;
+    --text-titulo--line-height: calc(2 / 1.5);
+    --text-portada: 1.875rem;
+    --text-portada--line-height: calc(2.25 / 1.875);
+
+    /* Espaciado: base de 4 px, pasos 4, 8, 12, 16, 24, 32, 48 y 64 */
+    --spacing-*: initial;
+    --spacing-0: 0;
+    --spacing-px: 1px;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+
+    /* Radios por jerarquía */
+    --radius-*: initial;
+    --radius-control: 6px;
+    --radius-tarjeta: 8px;
+    --radius-modal: 12px;
+    --radius-insignia: 9999px;
+
+    /* Escala z-index del brief */
+    --z-contenido: 0;
+    --z-fijo: 10;
+    --z-menu: 20;
+    --z-modal: 40;
+    --z-aviso: 50;
+
+    /* Dimensiones de estructura del brief */
+    --ancho-barra-lateral: 256px;
+    --ancho-barra-lateral-colapsada: 64px;
+    --alto-barra-superior: 56px;
+    --alto-fila-tabla: 40px;
+}
+
+/*
+ * Modo oscuro: INCOMPLETO, no activar (no hay selector ni se debe añadir).
+ * Solo trae los valores que define el brief. Faltan en el brief: borde,
+ * acento-hover, foco, el par neutro, el botón de peligro y velo; esos tokens
+ * heredan el valor claro, que no cumple contraste sobre fondo oscuro.
+ * Activar solo cuando docs/diseno.md los defina.
+ */
+:root[data-theme='dark'] {
+    --color-fondo: #0b1220;
+    --color-superficie: #111a2b;
+    --color-superficie-atenuada: #172236;
+    --color-texto: #e5eaf2;
+    --color-texto-atenuado: #a9b4c6;
+    --color-acento: #5ec4cc;
+    --color-acento-sutil: #0f2a30;
+    --color-sobre-acento: #0b1220;
+    --color-borde-campo: #6b7a90;
+    --color-exito: #86efac;
+    --color-exito-fondo: #123524;
+    --color-aviso: #fcd34d;
+    --color-aviso-fondo: #3a2a0a;
+    --color-peligro: #fca5a5;
+    --color-peligro-fondo: #3b1215;
+    --color-informacion: #93c5fd;
+    --color-informacion-fondo: #14233f;
+}
+
+/* Alto de controles: 40 px con puntero fino, 44 px en pantallas táctiles */
+:root {
+    --alto-control: 40px;
+    --alto-control-tactil: 44px;
+}
+
+@media (pointer: coarse) {
+    :root {
+        --alto-control: 44px;
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: light;
+        scroll-padding-top: var(--alto-barra-superior);
+    }
+
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'] {
+        touch-action: manipulation;
+    }
+
+    :root[data-theme='dark'] {
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: var(--color-fondo);
+        color: var(--color-texto);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: var(--text-base--line-height);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-foco);
+        outline-offset: 2px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+    }
+}
+
+/*
+ * Antes de que Alpine arranque, la barra lateral solo se oculta bajo lg
+ * (donde es un cajón fuera de pantalla). Desde lg, y sin JavaScript, se ve.
+ * 63.99rem = un punto bajo el quiebre lg de Tailwind (64rem).
+ */
+@media (max-width: 63.99rem) {
+    aside[data-cloak-movil] {
+        display: none !important;
+    }
 }
