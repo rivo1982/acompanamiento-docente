@@ -71,8 +71,26 @@ it('shows the Administrador the upload form with the expected columns, accepted 
         ->assertSee(route('invitaciones.index'), false)
         ->assertSee('accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"', false)
         ->assertSee('aria-describedby="archivo-ayuda"', false)
-        ->assertSee('2 MB');
-    expect(substr_count($respuesta->getContent(), '<h1'))->toBe(1);
+        ->assertSee("Archivo Excel (.xlsx) de hasta 2\u{00A0}MB");
+    expect(substr_count($respuesta->getContent(), '<h1'))->toBe(1)
+        ->and($respuesta->getContent())->toMatch('/<p id="archivo-carga" role="status"[^>]*>\s*<span wire:loading wire:target="archivo">Cargando archivo…<\/span>/');
+});
+
+it('announces in the upload status region that the chosen file is ready, once the upload ends', function () {
+    administradorDe($this->a);
+
+    $html = Livewire::test(CargaMasiva::class)
+        ->set('archivo', planillaParaPantalla($this->temporal, 'Planilla de prueba.xlsx'))
+        ->html();
+
+    expect($html)->toMatch('/<p id="archivo-carga" role="status"[^>]*>.*Archivo listo para subir: Planilla de prueba\.xlsx\..*<\/p>/s')
+        ->and(substr_count($html, 'role="status"'))->toBe(1);
+});
+
+it('links the bulk upload to the pending invitations', function () {
+    administradorDe($this->a);
+
+    $this->get(route('importaciones.index'))->assertOk()->assertSee(route('invitaciones.index'), false);
 });
 
 it('is forbidden to members who are not the Administrador', function () {
@@ -141,7 +159,7 @@ it('rejects a file larger than the configured maximum', function () {
         ->set('archivo', UploadedFile::fake()->create('grande.xlsx', 2049))
         ->call('subir')
         ->assertHasErrors(['archivo'])
-        ->assertSee('La planilla no puede superar los 2 MB.');
+        ->assertSee("La planilla no puede superar los 2\u{00A0}MB.");
 
     expect(ImportacionUsuario::sinEstablecimiento()->count())->toBe(0)
         ->and(archivosTemporalesDeLivewire())->toBe([]);
@@ -178,11 +196,40 @@ it('lists the recent imports of this establecimiento only, newest first, with da
 
     $respuesta->assertOk()
         ->assertSeeInOrder(['Archivo', 'Subida el', 'Estado', 'Resultado'])
-        ->assertSeeInOrder(['nueva.xlsx', '20-10-2026 15:30', 'Fallida', 'vieja.xlsx', '01-10-2026 09:00', 'Completada', '2 de 3 invitadas'])
+        ->assertSeeInOrder(['nueva.xlsx', '20-10-2026 15:30', 'Fallida', 'No se completó', 'vieja.xlsx', '01-10-2026 09:00', 'Completada', '2 de 3 invitadas'])
         ->assertSee(route('importaciones.show', $nueva), false)
         ->assertSee(route('importaciones.show', $vieja), false)
-        ->assertSee('Cargas recientes (2)')
+        ->assertSee('Cargas masivas recientes (2)')
         ->assertDontSee('ajena.xlsx');
+});
+
+it('shows each state as a badge with the decided variant', function (string $estado, string $texto, string $fondo) {
+    importacionDePrueba(administradorDe($this->a), ['estado' => $estado]);
+
+    $html = $this->get(route('importaciones.index'))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<span class="[^"]*\\b'.$fondo.'\\b[^"]*">'.$texto.'<\/span>/');
+})->with([
+    ['pendiente', 'Pendiente', 'bg-neutro-fondo'],
+    ['procesando', 'Procesando', 'bg-informacion-fondo'],
+    ['completada', 'Completada', 'bg-exito-fondo'],
+    ['fallida', 'Fallida', 'bg-aviso-fondo'],
+]);
+
+it('says there is no result yet for an unfinished import and points to its result page for progress', function (string $estado) {
+    importacionDePrueba(administradorDe($this->a), ['estado' => $estado]);
+
+    $this->get(route('importaciones.index'))->assertOk()
+        ->assertSeeInOrder(['Sin resultado aún', 'Abrir el resultado para ver el avance.'])
+        ->assertDontSee('No se completó');
+})->with(['pendiente', 'procesando']);
+
+it('does not show the progress hint for finished imports', function () {
+    importacionDePrueba(administradorDe($this->a), ['estado' => 'completada', 'total' => 1, 'creados' => 1]);
+
+    $this->get(route('importaciones.index'))->assertOk()
+        ->assertSee('1 de 1 invitadas')
+        ->assertDontSee('Abrir el resultado para ver el avance.');
 });
 
 it('shows 20 imports per page with the host pagination', function () {
@@ -192,7 +239,7 @@ it('shows 20 imports per page with the host pagination', function () {
     }
 
     Livewire::test(CargaMasiva::class)
-        ->assertSee('Cargas recientes (23)')
+        ->assertSee('Cargas masivas recientes (23)')
         ->assertSee('Página 1 de 2')
         ->assertSee('planilla-23.xlsx')
         ->assertSee('planilla-04.xlsx')

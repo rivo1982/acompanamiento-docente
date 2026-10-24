@@ -1,39 +1,61 @@
-{{-- Resultado de una carga masiva. Consulta cada 5 s mientras está pendiente o procesando; al terminar deja de hacerlo. --}}
-<div @unless ($terminada) wire:poll.5s @endunless>
+{{--
+    Resultado de una carga masiva. Consulta cada 5 s mientras está pendiente o procesando; deja de hacerlo al terminar
+    o al pasar el límite de seguimiento (config/importaciones.php).
+--}}
+<div @if ($consultando) wire:poll.5s @endif>
     <x-page-header
-        titulo="Resultado de la importación"
+        titulo="Resultado de la carga masiva"
         descripcion="Planilla subida el {{ \App\Support\FormatoDelPanel::fechaYHora($importacion->created_at) }}."
     >
         <x-slot:acciones>
             @if ($importacion->creados > 0)
                 <x-button :href="route('invitaciones.index')">Ver invitaciones pendientes</x-button>
             @endif
-            <x-button :href="route('importaciones.index')" variante="secundario">Volver a carga masiva</x-button>
+            <x-button :href="route('importaciones.index')" variante="secundario">Volver a la carga masiva</x-button>
         </x-slot:acciones>
     </x-page-header>
 
     <x-card class="mb-6" aria-labelledby="titulo-carga">
         <h2 id="titulo-carga" class="mb-4 break-all text-subtitulo font-semibold text-balance">{{ $importacion->archivo }}</h2>
 
-        <p class="mb-4 text-base">Estado: <span class="font-semibold">{{ $estado }}</span></p>
+        <p class="mb-4 text-base">Estado: <x-badge :variante="$variante">{{ $estado }}</x-badge></p>
 
         {{--
             Única región de estado de la pantalla. Su texto es el mismo mientras la carga está pendiente o procesando
-            y cambia una sola vez al terminar: las consultas periódicas no repiten el anuncio.
+            y cambia una sola vez al terminar (o al dejar de consultar por demora): las consultas periódicas no repiten
+            el anuncio. Si la carga falló o se demoró, la región es un Aviso (qué pasó y qué hacer) y lleva los mensajes
+            del archivo completo (fila nula); sin otra región ni rol propio, para que se anuncie una sola vez.
         --}}
-        <p role="status" id="estado-importacion" class="text-base text-pretty">{{ $situacion }}</p>
+        <div
+            id="estado-importacion"
+            role="status"
+            @class([
+                'text-pretty',
+                'text-base' => ! $comoAviso,
+                'rounded-control border border-aviso bg-aviso-fondo p-3 text-tabla text-aviso' => $comoAviso,
+            ])
+        >
+            <p>{{ $situacion }}</p>
+            @if ($erroresDelArchivo !== [])
+                <ul class="mt-2 flex list-disc flex-col gap-1 pl-6">
+                    @foreach ($erroresDelArchivo as $mensaje)
+                        <li>{{ $mensaje }}</li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
 
         @if ($importacion->estado === \App\Enums\EstadoImportacion::Completada)
             <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div class="rounded-control border border-borde p-3">
+                <div class="rounded-tarjeta border border-borde p-3">
                     <dt class="text-tabla text-texto-atenuado">Filas en la planilla</dt>
                     <dd class="text-subtitulo font-semibold tabular-nums">{{ \App\Support\FormatoDelPanel::entero($importacion->total) }}</dd>
                 </div>
-                <div class="rounded-control border border-borde p-3">
+                <div class="rounded-tarjeta border border-borde p-3">
                     <dt class="text-tabla text-texto-atenuado">Personas invitadas</dt>
                     <dd class="text-subtitulo font-semibold tabular-nums">{{ \App\Support\FormatoDelPanel::entero($importacion->creados) }}</dd>
                 </div>
-                <div class="rounded-control border border-borde p-3">
+                <div class="rounded-tarjeta border border-borde p-3">
                     <dt class="text-tabla text-texto-atenuado">Filas con error</dt>
                     <dd class="text-subtitulo font-semibold tabular-nums">{{ \App\Support\FormatoDelPanel::entero($importacion->con_error) }}</dd>
                 </div>
@@ -41,19 +63,9 @@
         @endif
     </x-card>
 
-    {{-- Problema del archivo completo (fila nula): Aviso de página, sin rol propio (la región de estado ya lo anuncia). --}}
-    @if ($erroresDelArchivo !== [])
-        <div class="mb-6 rounded-control border border-aviso bg-aviso-fondo p-3 text-tabla text-aviso text-pretty">
-            @foreach ($erroresDelArchivo as $mensaje)
-                <p>{{ $mensaje }}</p>
-            @endforeach
-            <p class="mt-2">Corregir la planilla y volver a subirla desde la carga masiva.</p>
-        </div>
-    @endif
-
     @if ($erroresPorFila !== [])
         <x-card aria-labelledby="titulo-errores">
-            <h2 id="titulo-errores" class="mb-4 text-subtitulo font-semibold text-balance">Filas con error</h2>
+            <h2 id="titulo-errores" tabindex="-1" class="mb-4 text-subtitulo font-semibold text-balance focus:outline-none">Filas con error</h2>
             <p class="mb-4 text-tabla text-texto-atenuado text-pretty">Las demás filas se procesaron. Corregir estas filas y subirlas en una planilla nueva.</p>
 
             <x-tabla titulo="Filas con error">
@@ -77,6 +89,11 @@
                     </tr>
                 @endforeach
             </x-tabla>
+
+            {{-- 20 filas por página; sin controles cuando caben en una (x-paginacion solo se muestra si hay datos). --}}
+            @if ($paginador->hasPages())
+                <x-paginacion :paginador="$paginador" foco="titulo-errores" />
+            @endif
         </x-card>
     @endif
 </div>

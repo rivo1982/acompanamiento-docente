@@ -46,6 +46,17 @@ class CargaMasiva extends Component
         'fallida' => 'Fallida',
     ];
 
+    /**
+     * Variante de insignia de cada estado (decisión del usuario, 2026-10-24; propuesta para el mapeo de insignias del
+     * brief): Fallida va en Aviso, como los problemas recuperables de página.
+     */
+    public const VARIANTES = [
+        'pendiente' => 'neutro',
+        'procesando' => 'informacion',
+        'completada' => 'exito',
+        'fallida' => 'aviso',
+    ];
+
     /** Valores aceptados en la columna Función, como se escriben en la planilla. */
     public const FUNCIONES = 'docente, directivo, asistente o profesional de apoyo';
 
@@ -97,25 +108,29 @@ class CargaMasiva extends Component
             'paginador' => $paginador,
             'cargas' => $paginador->getCollection(),
             'tamanoMaximo' => self::tamanoLegible(),
+            'archivoListo' => $this->archivo instanceof TemporaryUploadedFile ? $this->archivo->getClientOriginalName() : null,
         ]);
     }
 
-    /** "2 MB" a partir de config/importaciones.php. */
+    /** "2 MB" (con espacio duro entre número y unidad) a partir de config/importaciones.php. */
     public static function tamanoLegible(): string
     {
         $kb = self::tamanoMaximoKb();
 
-        return $kb % 1024 === 0 ? ($kb / 1024).' MB' : $kb.' KB';
+        return $kb % 1024 === 0 ? ($kb / 1024)."\u{00A0}MB" : $kb."\u{00A0}KB";
     }
 
-    /** "2 de 3 invitadas" para una carga completada; vacío en las demás. */
+    /**
+     * Columna Resultado: "2 de 3 invitadas" para una carga completada, "No se completó" para una fallida y
+     * "Sin resultado aún" mientras está pendiente o procesando.
+     */
     public static function resumen(ImportacionUsuario $carga): string
     {
-        if ($carga->estado !== EstadoImportacion::Completada) {
-            return '';
-        }
-
-        return number_format($carga->creados, 0, ',', '.').' de '.number_format($carga->total, 0, ',', '.').' invitadas';
+        return match ($carga->estado) {
+            EstadoImportacion::Completada => number_format($carga->creados, 0, ',', '.').' de '.number_format($carga->total, 0, ',', '.').' invitadas',
+            EstadoImportacion::Fallida => 'No se completó',
+            default => 'Sin resultado aún',
+        };
     }
 
     private static function tamanoMaximoKb(): int

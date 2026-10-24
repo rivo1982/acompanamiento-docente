@@ -3,6 +3,7 @@
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -19,6 +20,10 @@ beforeEach(function () {
     $this->b = newEstablecimiento('2000', 'Colegio Ficticio B');
 });
 
+afterEach(function () {
+    Carbon::setTestNow();
+});
+
 function resultadoDe(int $id): Testable
 {
     return Livewire::test(ResultadoDeImportacion::class, ['importacion' => $id]);
@@ -30,10 +35,10 @@ it('shows a pending import with polling on and a single status region', function
     $respuesta = $this->get(route('importaciones.show', $id));
 
     $respuesta->assertOk()
-        ->assertSee('<title>Resultado de la importación - VINKURED</title>', false)
+        ->assertSee('<title>Resultado de la carga masiva - VINKURED</title>', false)
         ->assertSee('Planilla ficticia.xlsx')
         ->assertSee('wire:poll.5s', false)
-        ->assertSee('Procesando la planilla. Esta página se actualiza sola.')
+        ->assertSee('Procesando la carga masiva. Esta página se actualiza sola.')
         ->assertDontSee('Filas con error')
         ->assertDontSee('aria-live', false);
     expect(substr_count($respuesta->getContent(), '<h1'))->toBe(1)
@@ -57,7 +62,7 @@ it('stops polling and shows the counters and row errors once the import is compl
 
     // On the rendered HTML: after an update, Livewire's assertSee* also read the JSON payload, where "á" is escaped.
     expect($html)->not->toContain('wire:poll')
-        ->toContain('Importación terminada. Personas invitadas: 1.247. Filas con error: 3.')
+        ->toContain('Carga masiva terminada. Personas invitadas: 1.247. Filas con error: 3.')
         ->toContain('Completada')
         ->toContain(route('invitaciones.index'));
     textosEnOrden($html, ['Filas en la planilla', '1.250', 'Personas invitadas', '1.247', 'Filas con error', '3']);
@@ -73,7 +78,7 @@ it('does not offer the pending invitations link when nobody was invited', functi
     resultadoDe($id)->assertDontSee(route('invitaciones.index'), false)->assertSee('El correo no es válido.');
 });
 
-it('shows a failed import with its file-level message as an Aviso and no polling', function () {
+it('shows a failed import in the status region as an Aviso with what happened, the next step and its file-level messages, and no polling', function () {
     $id = importacionDePrueba(administradorDe($this->a), [
         'estado' => 'fallida',
         'errores' => [['fila' => null, 'mensajes' => ['La planilla está vacía.']]],
@@ -81,13 +86,100 @@ it('shows a failed import with its file-level message as an Aviso and no polling
 
     $html = resultadoDe($id)
         ->assertDontSee('wire:poll', false)
-        ->assertSee('La importación no se pudo completar.')
         ->assertSee('Fallida')
         ->assertDontSee('Filas con error')
         ->html();
 
-    expect($html)->toMatch('/<div[^>]*\bbg-aviso-fondo\b[^>]*>.*La planilla está vacía\..*<\/div>/s')
+    expect($html)->toMatch('/<div\s+id="estado-importacion"\s+role="status"[^>]*\\bbg-aviso-fondo\\b[^>]*>.*La carga masiva no se pudo completar\\. Revisar el archivo y volver a cargarlo\\..*La planilla está vacía\\..*<\/div>/s')
+        ->and(substr_count($html, 'role="status"'))->toBe(1)
+        ->and(substr_count($html, 'bg-aviso-fondo'))->toBe(2) // the region and the Fallida badge
         ->and($html)->not->toContain('bg-peligro-fondo');
+});
+
+it('shows a failed import without file-level messages with the same status text', function () {
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => 'fallida']);
+
+    resultadoDe($id)->assertSee('La carga masiva no se pudo completar. Revisar el archivo y volver a cargarlo.');
+});
+
+it('shows the state as a badge with the decided variant', function (string $estado, string $texto, string $fondo) {
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => $estado]);
+
+    expect(resultadoDe($id)->html())->toMatch('/<span class="[^"]*\\b'.$fondo.'\\b[^"]*">'.$texto.'<\/span>/');
+})->with([
+    ['pendiente', 'Pendiente', 'bg-neutro-fondo'],
+    ['procesando', 'Procesando', 'bg-informacion-fondo'],
+    ['completada', 'Completada', 'bg-exito-fondo'],
+    ['fallida', 'Fallida', 'bg-aviso-fondo'],
+]);
+
+it('draws the counter tiles as panels (8 px radius)', function () {
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => 'completada', 'total' => 1, 'creados' => 1]);
+
+    $html = resultadoDe($id)->html();
+
+    expect(substr_count($html, 'rounded-tarjeta border border-borde p-3'))->toBe(3)
+        ->and($html)->not->toContain('rounded-control border border-borde p-3');
+});
+
+it('stops polling after the configured time and tells what happened and what to do', function (string $estado) {
+    config(['importaciones.minutos_de_seguimiento' => 10]);
+    Carbon::setTestNow('2026-10-24 10:00:00');
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => $estado, 'created_at' => '2026-10-24 10:00:00']);
+
+    Carbon::setTestNow('2026-10-24 10:09:59');
+    $componente = resultadoDe($id)->assertSee('wire:poll.5s', false)->assertDontSee('VINKURED');
+
+    Carbon::setTestNow('2026-10-24 10:10:00');
+    $html = $componente->call('$refresh')->html();
+
+    expect($html)->not->toContain('wire:poll')
+        ->toMatch('/<div\s+id="estado-importacion"\s+role="status"[^>]*\\bbg-aviso-fondo\\b[^>]*>.*La carga masiva está demorando más de lo esperado y esta página dejó de actualizarse\\. Recargar la página más tarde o, si sigue sin terminar, contactar a soporte de VINKURED\\./s')
+        ->and(substr_count($html, 'role="status"'))->toBe(1);
+})->with(['pendiente', 'procesando']);
+
+it('reads the polling limit from the configuration', function () {
+    config(['importaciones.minutos_de_seguimiento' => 30]);
+    Carbon::setTestNow('2026-10-24 10:20:00');
+    $id = importacionDePrueba(administradorDe($this->a), ['created_at' => '2026-10-24 10:00:00']);
+
+    resultadoDe($id)->assertSee('wire:poll.5s', false)->assertSee('Procesando la carga masiva. Esta página se actualiza sola.');
+});
+
+it('shows the result normally when a delayed import finishes later', function () {
+    Carbon::setTestNow('2026-10-24 12:00:00');
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => 'completada', 'total' => 1, 'creados' => 1, 'created_at' => '2026-10-24 10:00:00']);
+
+    resultadoDe($id)->assertDontSee('demorando')->assertSee('Carga masiva terminada.');
+});
+
+it('paginates the row errors 20 per page with the host pagination', function () {
+    $errores = array_map(fn (int $fila): array => ['fila' => $fila, 'mensajes' => ['Mensaje de la fila '.$fila.'.']], range(2, 24));
+    $id = importacionDePrueba(administradorDe($this->a), ['estado' => 'completada', 'total' => 23, 'creados' => 0, 'con_error' => 23, 'errores' => $errores]);
+
+    $componente = resultadoDe($id);
+    $html = $componente->html();
+    expect($html)->toContain('Mensaje de la fila 21.')
+        ->not->toContain('Mensaje de la fila 22.')
+        ->toContain('Página 1 de 2')
+        ->toContain('data-foco="titulo-errores"')
+        ->toContain('<caption class="sr-only">Filas con error</caption>')
+        ->toContain('<th scope="col">Fila</th>');
+
+    $html = $componente->call('nextPage')->html();
+    expect($html)->toContain('Mensaje de la fila 22.')
+        ->toContain('Mensaje de la fila 24.')
+        ->not->toContain('Mensaje de la fila 21.')
+        ->toContain('Página 2 de 2');
+});
+
+it('does not paginate up to 20 row errors', function () {
+    $id = importacionDePrueba(administradorDe($this->a), [
+        'estado' => 'completada', 'total' => 1, 'creados' => 0, 'con_error' => 1,
+        'errores' => [['fila' => 2, 'mensajes' => ['El correo no es válido.']]],
+    ]);
+
+    resultadoDe($id)->assertDontSee('Página 1 de');
 });
 
 it('is forbidden to members who are not the Administrador', function () {

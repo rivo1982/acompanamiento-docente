@@ -6,6 +6,7 @@
     >
         <x-slot:acciones>
             <x-button :href="route('invitaciones.create')">Invitar funcionario</x-button>
+            <x-button :href="route('importaciones.index')" variante="secundario">Carga masiva</x-button>
         </x-slot:acciones>
     </x-page-header>
 

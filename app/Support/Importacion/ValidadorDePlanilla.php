@@ -71,7 +71,7 @@ final class ValidadorDePlanilla
             }
 
             if (++$cantidadDeDatos > self::MAXIMO_DE_FILAS) {
-                return ResultadoDeValidacion::conErrorDelArchivo('La planilla tiene más de '.number_format(self::MAXIMO_DE_FILAS, 0, ',', '.').' funcionarios. Divídala en archivos más pequeños.');
+                return ResultadoDeValidacion::conErrorDelArchivo('La planilla tiene más de '.number_format(self::MAXIMO_DE_FILAS, 0, ',', '.').' funcionarios. Dividirla en archivos más pequeños.');
             }
 
             $validacion = $this->validarFila($numeroDeFila, $celdas, $primeraFilaDelRut, $primeraFilaDelCorreo);

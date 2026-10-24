@@ -39,8 +39,18 @@
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 class="py-2"
             >
+                {{--
+                    Avance de la carga del archivo: un solo mecanismo, esta región de estado (el `pie` de x-campo queda
+                    fuera de su aria-describedby). Siempre presente y vacía en reposo; anuncia "Cargando archivo…" al
+                    empezar y, al terminar, el texto del servidor con el nombre del archivo listo.
+                --}}
                 <x-slot:pie>
-                    <p wire:loading wire:target="archivo" class="text-tabla text-texto-atenuado">Cargando archivo…</p>
+                    <p id="archivo-carga" role="status" class="text-tabla text-texto-atenuado text-pretty">
+                        <span wire:loading wire:target="archivo">Cargando archivo…</span>
+                        @if ($archivoListo !== null)
+                            <span wire:loading.remove wire:target="archivo">Archivo listo para subir: {{ $archivoListo }}.</span>
+                        @endif
+                    </p>
                 </x-slot:pie>
             </x-campo>
 
@@ -54,12 +64,12 @@
     </x-card>
 
     <x-card aria-labelledby="titulo-cargas">
-        <h2 id="titulo-cargas" tabindex="-1" class="mb-4 text-subtitulo font-semibold text-balance focus:outline-none">Cargas recientes ({{ \App\Support\FormatoDelPanel::entero($paginador->total()) }})</h2>
+        <h2 id="titulo-cargas" tabindex="-1" class="mb-4 text-subtitulo font-semibold text-balance focus:outline-none">Cargas masivas recientes ({{ \App\Support\FormatoDelPanel::entero($paginador->total()) }})</h2>
 
         @if ($cargas->isEmpty())
             <p class="text-base text-texto-atenuado text-pretty">Aún no hay cargas masivas en este establecimiento.</p>
         @else
-            <x-tabla titulo="Cargas recientes">
+            <x-tabla titulo="Cargas masivas recientes">
                 <x-slot:encabezado>
                     <tr>
                         <th scope="col">Archivo</th>
@@ -74,8 +84,14 @@
                     <tr wire:key="carga-{{ $carga->id }}">
                         <td class="break-all font-semibold">{{ $carga->archivo }}</td>
                         <td class="whitespace-nowrap tabular-nums">{{ \App\Support\FormatoDelPanel::fechaYHora($carga->created_at) }}</td>
-                        <td>{{ \App\Livewire\Importaciones\CargaMasiva::ESTADOS[$carga->estado->value] }}</td>
-                        <td class="tabular-nums">{{ \App\Livewire\Importaciones\CargaMasiva::resumen($carga) }}</td>
+                        <td><x-badge :variante="\App\Livewire\Importaciones\CargaMasiva::VARIANTES[$carga->estado->value]">{{ \App\Livewire\Importaciones\CargaMasiva::ESTADOS[$carga->estado->value] }}</x-badge></td>
+                        {{-- La lista no se actualiza sola: una carga sin terminar remite a su resultado, que sí lo hace. --}}
+                        <td class="tabular-nums">
+                            {{ \App\Livewire\Importaciones\CargaMasiva::resumen($carga) }}
+                            @unless ($carga->terminada())
+                                <span class="block text-texto-atenuado">Abrir el resultado para ver el avance.</span>
+                            @endunless
+                        </td>
                         <td>
                             <x-button :href="route('importaciones.show', $carga->id)" variante="fantasma">Ver resultado<span class="sr-only"> de {{ $carga->archivo }}</span></x-button>
                         </td>

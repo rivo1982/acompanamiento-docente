@@ -137,7 +137,8 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
   - [x] C4.2.1 Advisories: expiry ordering/badges proven under America/Santiago (midnight + September DST
     tests; the SQL no longer compares with now()); anular() re-checks invitada + live link before acting;
     "usted" copy in the import domain messages replaced (infinitive).
-  - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación. Implemented and tested; NOT checked:
+  - [x] C4.3 Screen: carga masiva (upload) + resultado de la carga masiva. Checked after the correction pass (all
+    items pass; visual check pending, no browser). Earlier note:
     needs_brief (estado badges) pending and the back-link from the invitations views is outside the writer's surface
     (see Progress). Visual check pending (no browser). Commits 3d0a215 (C4.2.1) + 7681853 (C4.3).
     needs_brief DECIDED (user, 2026-10-24): import estado badges — Pendiente Neutro, Procesando
@@ -541,6 +542,36 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     temporary_file_upload max via config/livewire.php would affect all host uploads; not done).
 - Verification (C4.2.1+C4.3): public tables 54 before / 54 after; vendor/bin/pest --compact: 626 passed (8690
   assertions); vendor/bin/pint --dirty --format agent: fixed 1 unused import, re-run passed; npm run build: OK.
+
+- C4.3 correction pass (delegated writer, single allowed pass; tests first: 29 RED -> GREEN):
+  1. Estado badges (host x-badge, CargaMasiva::VARIANTES): Pendiente Neutro, Procesando Información, Completada Éxito,
+     Fallida Aviso, in the list and on the result page (datasets test each variant on both screens).
+  2. tamanoLegible(): "2\u{00A0}MB" (help text and max error asserted with the no-break space).
+  3. Upload progress: one role="status" region `#archivo-carga` in the x-campo `pie` (outside the input's
+     aria-describedby, so announced by the live region only), always present; "Cargando archivo…" (wire:loading) at
+     start and, when the upload ends, server text "Archivo listo para subir: <nombre>." (wire:loading.remove).
+  4. Resultado column: "Sin resultado aún" (pendiente/procesando), "No se completó" (fallida), "N de M invitadas".
+  5. Staleness: chosen option = static hint "Abrir el resultado para ver el avance." under unfinished rows (no list
+     polling: avoids repeated re-renders/announcements on a paginated table; the result page already polls).
+  6. Polling bound: config importaciones.minutos_de_seguimiento (env IMPORTACIONES_MINUTOS_DE_SEGUIMIENTO, default 10)
+     since created_at; after it the poll attribute is removed and the status region becomes an Aviso: "La carga
+     masiva está demorando más de lo esperado y esta página dejó de actualizarse. Recargar la página más tarde o, si
+     sigue sin terminar, contactar a soporte de VINKURED." Frozen-time tests: 09:59 polls, 10:00 stops (both pending
+     states); limit read from config; a late-finished import renders normally.
+  7. Naming: "Resultado de la carga masiva" (title/h1), "Carga masiva terminada…", "Procesando la carga masiva…",
+     "Volver a la carga masiva", "Cargas masivas recientes (N)" (h2 + table caption).
+  8. Fallida: status text "La carga masiva no se pudo completar. Revisar el archivo y volver a cargarlo."; the single
+     role="status" region is styled as Aviso (fallida, demorada or file-level errors) and lists the file-level
+     messages inside it (the separate Aviso block was removed: one announced region).
+  9. Stat tiles: rounded-tarjeta.
+  10. Row errors: paginated in memory, 20/page (clamped), host x-paginacion only when >1 page, focus to
+      h2#titulo-errores (tabindex -1); caption "Filas con error" and th scope kept.
+  11. "Carga masiva" secondary x-button (route importaciones.index) in the page-header actions of
+      invitaciones-pendientes and nueva-invitacion (dataset test on both routes).
+  12. ValidadorDePlanilla: "Dividirla en archivos más pequeños." (unit test updated).
+- Verification (C4.3 correction pass): public tables 54 before / 54 after; vendor/bin/pest --compact: 649 passed (8772
+  assertions); vendor/bin/pint --dirty --format agent: passed; npm run build: OK. Visual check pending (no browser).
+- Proposal for the Vinkured brief (badge mapping): import estados as above.
 
 ## Next step
 Read-only auditor for C4.2 (form + list), ≤1 correction pass, native review, then C4.3.

@@ -117,7 +117,7 @@ it('rechaza un archivo con más de 2000 funcionarios', function () {
 
     $resultado = (new ValidadorDePlanilla)->validar($filas);
 
-    expect($resultado->erroresDelArchivo)->toBe(['La planilla tiene más de 2.000 funcionarios. Divídala en archivos más pequeños.'])
+    expect($resultado->erroresDelArchivo)->toBe(['La planilla tiene más de 2.000 funcionarios. Dividirla en archivos más pequeños.'])
         ->and($resultado->filasValidas)->toBe([])
         ->and($resultado->erroresPorFila)->toBe([]);
 });

@@ -136,6 +136,14 @@ it('links the invite form back to the pending invitations', function () {
     $this->get(route('invitaciones.create'))->assertOk()->assertSee(route('invitaciones.index'), false);
 });
 
+it('offers the bulk upload as a secondary action on the pending invitations and the invite form', function (string $ruta) {
+    administradorDe($this->a);
+
+    $html = $this->get(route($ruta))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<a[^>]*href="'.preg_quote(route('importaciones.index'), '/').'"[^>]*>\\s*Carga masiva\\s*<\/a>/');
+})->with(['invitaciones.index', 'invitaciones.create']);
+
 it('marks each invitation with the host deadline badge, counting business days, and cancelled ones as Anulada', function () {
     $admin = administradorDe($this->a);
     diaNoHabil(null, '2026-10-16'); // Friday holiday
