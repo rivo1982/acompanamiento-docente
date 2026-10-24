@@ -102,7 +102,12 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     (named limiter key is hashed); test the establecimiento-selection fallback redirect; build
     terminar() columns without model defaults.
   - [ ] C4.2 Screen: invitar funcionario + invitaciones pendientes (reenviar, anular). PARTIAL: invite form done;
-    pending list/reenviar/anular blocked by needs_brief (see Progress).
+    pending list/reenviar/anular blocked by needs_brief (see Progress). Form committed a82b26b/7a4c502.
+    needs_brief DECIDED (user, 2026-10-24):
+    1. Valid invitation badge follows the brief: "En plazo (N días hábiles)" — copy Vinkured's
+       business-day logic (DiasHabiles, EstadoDePlazo, DiaNoHabil model and what they need) as
+       @host-owned.
+    2. Cancelled invitation badge: "Anulada", Neutro (gris) — propose adding to Vinkured's brief.
   - [ ] C4.3 Screen: carga masiva (upload) + resultado de la importación.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
