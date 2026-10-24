@@ -54,6 +54,16 @@ file spec. Mapping evidence: Vinkured exploration of 2026-10-24 (see alineacion-
     caller/import can record; test the branch.
 - [x] C3 Bulk import: ImportacionUsuario model + estado values, upload, per-row processing
   reusing C2, summary (total/creados/con_error/errores without enumeration leaks).
+- [ ] C3.1 Review follow-ups (C2.1+C3 commit fb7a310, review base 41f922b, approved +
+  acknowledged):
+  - ProcesarImportacion final `completada` write is unconditional: a redelivered attempt (when
+    retry_after < processing time) can be overwritten/clobbered — make the final transition
+    conditional on estado=procesando and set retry_after guidance (WARNING).
+  - EnviarInvitacion gained a required `sello`: jobs queued before deploy would fail on
+    unserialize. Not applicable yet (never deployed, no persistent queue) — add a tolerant
+    fallback or record as deploy note for Vinkured (WARNING).
+  - Mail::send inside the DB transaction: if commit fails after send, the mailed link is dead
+    until the retry mails a fresh one — accepted tradeoff, document it (SUGGESTION).
 - [ ] C4 UI (Livewire, Vinkured UI skills) for invite, import and results.
 - [ ] C5 Hand-off package for Vinkured: ADRs, migration/CHECK proposals (estado values, audit
   allow-lists), CONTEXT.md glossary entries.
