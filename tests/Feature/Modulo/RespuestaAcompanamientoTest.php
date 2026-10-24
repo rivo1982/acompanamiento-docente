@@ -107,3 +107,74 @@ it('rechaza sacar una respuesta de un acompañamiento finalizado', function () {
 
     expect(fn () => $respuesta->update(['acompanamiento_id' => $abierto->id]))->toThrow(AcompanamientoYaFinalizado::class);
 });
+
+describe('en la base, sin pasar por Eloquent', function () {
+    it('acepta insertar una respuesta de un indicador del snapshot mientras sigue en curso', function () {
+        DB::table('respuestas_acompanamiento')->insert([
+            'establecimiento_id' => $this->establecimiento, 'acompanamiento_id' => $this->acompanamiento->id,
+            'indicador_id' => $this->indicador->id, 'nivel' => 'logrado',
+        ]);
+
+        expect(DB::table('respuestas_acompanamiento')->count())->toBe(1);
+    });
+
+    it('rechaza insertar un indicador ausente del snapshot', function () {
+        $ajeno = Indicador::factory()->create();
+
+        rejected(fn () => DB::table('respuestas_acompanamiento')->insert([
+            'establecimiento_id' => $this->establecimiento, 'acompanamiento_id' => $this->acompanamiento->id,
+            'indicador_id' => $ajeno->id, 'nivel' => 'logrado',
+        ]), '23514');
+    });
+
+    it('rechaza cambiar en bloque a un indicador ausente del snapshot', function () {
+        RespuestaAcompanamiento::factory()->for($this->acompanamiento)->create(['indicador_id' => $this->indicador->id]);
+        $ajeno = Indicador::factory()->create();
+
+        rejected(fn () => RespuestaAcompanamiento::query()->update(['indicador_id' => $ajeno->id]), '23514');
+
+        expect(DB::table('respuestas_acompanamiento')->value('indicador_id'))->toBe($this->indicador->id);
+    });
+
+    describe('con el acompañamiento finalizado', function () {
+        beforeEach(function () {
+            RespuestaAcompanamiento::factory()->for($this->acompanamiento)->create([
+                'indicador_id' => $this->indicador->id, 'nivel' => NivelLogro::EnDesarrollo,
+            ]);
+            $this->acompanamiento->finalizar();
+        });
+
+        it('rechaza insertar respuestas', function () {
+            rejected(fn () => DB::table('respuestas_acompanamiento')->insert([
+                'establecimiento_id' => $this->establecimiento, 'acompanamiento_id' => $this->acompanamiento->id,
+                'indicador_id' => $this->otroIndicador->id, 'nivel' => 'logrado',
+            ]), '23514');
+
+            expect(DB::table('respuestas_acompanamiento')->count())->toBe(1);
+        });
+
+        it('rechaza modificar respuestas en bloque', function () {
+            rejected(fn () => RespuestaAcompanamiento::query()
+                ->where('acompanamiento_id', $this->acompanamiento->id)
+                ->update(['nivel' => 'destacado']), '23514');
+
+            expect(DB::table('respuestas_acompanamiento')->value('nivel'))->toBe('en_desarrollo');
+        });
+
+        it('rechaza eliminar respuestas en bloque', function () {
+            rejected(fn () => RespuestaAcompanamiento::query()
+                ->where('acompanamiento_id', $this->acompanamiento->id)
+                ->delete(), '23514');
+
+            expect(DB::table('respuestas_acompanamiento')->count())->toBe(1);
+        });
+
+        it('rechaza sacar en bloque una respuesta hacia un acompañamiento abierto', function () {
+            $abierto = Acompanamiento::factory()->for(Pauta::find($this->acompanamiento->pauta_id))->create();
+
+            rejected(fn () => DB::table('respuestas_acompanamiento')
+                ->where('acompanamiento_id', $this->acompanamiento->id)
+                ->update(['acompanamiento_id' => $abierto->id]), '23514');
+        });
+    });
+});

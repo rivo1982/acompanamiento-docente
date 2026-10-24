@@ -32,10 +32,10 @@ it('keeps the migrations table owned by Laravel', function () {
 
 it('loads the host functions and triggers into the test schema', function () {
     $funciones = DB::scalar(
-        "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'acompanamiento_test'"
+        "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'acompanamiento_test' and p.proname not like 'respuestas_acompanamiento_%'"
     );
     $triggers = DB::scalar(
-        "select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'acompanamiento_test' and not t.tgisinternal"
+        "select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'acompanamiento_test' and not t.tgisinternal and c.relname not in ('pautas_base', 'ambitos', 'indicadores', 'apoyos_pedagogicos', 'pautas', 'indicador_pauta', 'observadores', 'asignaciones_acompanamiento', 'acompanamientos', 'respuestas_acompanamiento')"
     );
 
     expect($funciones)->toBe(15)->and($triggers)->toBe(19);

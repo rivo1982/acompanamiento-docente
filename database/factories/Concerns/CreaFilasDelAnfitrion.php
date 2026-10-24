@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Crea las filas del anfitrión (funcionarios, cursos, asignaturas) que necesitan las fábricas del
+ * Crea las filas del anfitrión (funcionarios, funciones, cursos, asignaturas) que necesitan las fábricas del
  * módulo, en el establecimiento ACTIVO. Usa DB::table porque Vinkured es dueño de esas tablas y sus
  * fábricas no se copian. Mismas filas que los ayudantes de tests/Pest.php, con documentos únicos de Faker.
  */
@@ -35,6 +35,33 @@ trait CreaFilasDelAnfitrion
         ]);
 
         return DB::table('funcionarios')->insertGetId(['establecimiento_id' => $establecimientoId, 'persona_id' => $personaId]);
+    }
+
+    /**
+     * Funcionario con una función de la categoría dada (catálogo global `funciones`, fila nueva).
+     */
+    protected static function nuevoFuncionarioConFuncion(string $categoria): int
+    {
+        $funcionarioId = self::nuevoFuncionario();
+        $funcionId = DB::table('funciones')->insertGetId([
+            'nombre' => 'Función '.fake()->unique()->numerify('#########'), 'categoria' => $categoria,
+        ]);
+        DB::table('funcionario_funciones')->insert([
+            'establecimiento_id' => self::establecimientoActivo(), 'funcionario_id' => $funcionarioId, 'funcion_id' => $funcionId,
+        ]);
+
+        return $funcionarioId;
+    }
+
+    /**
+     * Funcionario habilitado como observador en la tabla del módulo.
+     */
+    protected static function nuevoObservador(): int
+    {
+        $funcionarioId = self::nuevoFuncionarioConFuncion('docente');
+        DB::table('observadores')->insert(['establecimiento_id' => self::establecimientoActivo(), 'funcionario_id' => $funcionarioId]);
+
+        return $funcionarioId;
     }
 
     protected static function nuevoCurso(): int

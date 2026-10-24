@@ -1,10 +1,12 @@
 <?php
 
 /*
- * Ported from tests/Feature/Models/CoachingAssignmentTest.php (commit b3397fc). Observer
- * eligibility (directivo/UTP by derivation, flagged funcionarios) is rebuilt in A3.
+ * Ported from tests/Feature/Models/CoachingAssignmentTest.php (commit b3397fc). A3 (R1-001):
+ * the observador must be an observer (directivo or flagged in observadores) and the docente must
+ * qualify as docente, both vigentes in the active establecimiento, never the same funcionario.
  */
 
+use App\Exceptions\AsignacionAcompanamientoInvalida;
 use App\Models\AsignacionAcompanamiento;
 use App\Models\Funcionario;
 use App\Models\Observador;
@@ -20,9 +22,9 @@ beforeEach(function () {
 });
 
 it('vincula observador y docentes en ambos sentidos', function () {
-    $observador = newFuncionario($this->establecimiento);
-    $primerDocente = newFuncionario($this->establecimiento);
-    $segundoDocente = newFuncionario($this->establecimiento);
+    $observador = funcionarioConFuncion($this->establecimiento, 'directivo');
+    $primerDocente = funcionarioConFuncion($this->establecimiento, 'docente');
+    $segundoDocente = funcionarioConFuncion($this->establecimiento, 'docente');
 
     AsignacionAcompanamiento::factory()->create(['observador_id' => $observador, 'docente_id' => $primerDocente]);
     AsignacionAcompanamiento::factory()->create(['observador_id' => $observador, 'docente_id' => $segundoDocente]);
@@ -77,4 +79,68 @@ it('rechaza en la base un observador habilitado con un funcionario ajeno', funct
     rejected(fn () => DB::table('observadores')->insert([
         'establecimiento_id' => $this->establecimiento, 'funcionario_id' => $ajeno,
     ]), '23503');
+});
+
+it('acepta como observador a un funcionario habilitado y a un directivo', function () {
+    $habilitado = funcionarioConFuncion($this->establecimiento, 'docente');
+    habilitarObservador($this->establecimiento, $habilitado);
+    $directivo = funcionarioConFuncion($this->establecimiento, 'directivo');
+    $docente = funcionarioConFuncion($this->establecimiento, 'docente');
+
+    AsignacionAcompanamiento::factory()->create(['observador_id' => $habilitado, 'docente_id' => $docente]);
+    AsignacionAcompanamiento::factory()->create(['observador_id' => $directivo, 'docente_id' => $docente]);
+
+    expect(AsignacionAcompanamiento::count())->toBe(2);
+});
+
+it('crea con la fábrica por defecto una asignación elegible', function () {
+    expect(AsignacionAcompanamiento::factory()->create()->exists)->toBeTrue();
+});
+
+it('rechaza un observador que no es observador', function () {
+    expect(fn () => AsignacionAcompanamiento::factory()->create([
+        'observador_id' => funcionarioConFuncion($this->establecimiento, 'docente'),
+        'docente_id' => funcionarioConFuncion($this->establecimiento, 'docente'),
+    ]))->toThrow(AsignacionAcompanamientoInvalida::class, 'no es observador');
+
+    expect(AsignacionAcompanamiento::count())->toBe(0);
+});
+
+it('rechaza un observador habilitado cuya fecha de término ya venció', function () {
+    $vencido = funcionarioConFuncion($this->establecimiento, 'directivo');
+    DB::table('funcionarios')->where('id', $vencido)->update(['fecha_termino' => now()->subDay()->toDateString()]);
+
+    expect(fn () => AsignacionAcompanamiento::factory()->create([
+        'observador_id' => $vencido,
+        'docente_id' => funcionarioConFuncion($this->establecimiento, 'docente'),
+    ]))->toThrow(AsignacionAcompanamientoInvalida::class);
+});
+
+it('rechaza un docente que no califica como docente', function () {
+    expect(fn () => AsignacionAcompanamiento::factory()->create([
+        'observador_id' => funcionarioConFuncion($this->establecimiento, 'directivo'),
+        'docente_id' => funcionarioConFuncion($this->establecimiento, 'asistente'),
+    ]))->toThrow(AsignacionAcompanamientoInvalida::class, 'no califica como docente');
+});
+
+it('rechaza que un funcionario se asigne a sí mismo', function () {
+    $funcionario = funcionarioConFuncion($this->establecimiento, 'docente');
+    habilitarObservador($this->establecimiento, $funcionario);
+
+    expect(fn () => AsignacionAcompanamiento::factory()->create(['observador_id' => $funcionario, 'docente_id' => $funcionario]))
+        ->toThrow(AsignacionAcompanamientoInvalida::class, 'a sí mismo');
+});
+
+it('rechaza un docente de otro establecimiento antes de llegar a la base', function () {
+    expect(fn () => AsignacionAcompanamiento::factory()->create([
+        'observador_id' => funcionarioConFuncion($this->establecimiento, 'directivo'),
+        'docente_id' => funcionarioConFuncion(newEstablecimiento('2000', 'Colegio B'), 'docente'),
+    ]))->toThrow(AsignacionAcompanamientoInvalida::class);
+});
+
+it('revalida al cambiar el observador de una asignación', function () {
+    $asignacion = AsignacionAcompanamiento::factory()->create();
+
+    expect(fn () => $asignacion->update(['observador_id' => funcionarioConFuncion($this->establecimiento, 'asistente')]))
+        ->toThrow(AsignacionAcompanamientoInvalida::class);
 });

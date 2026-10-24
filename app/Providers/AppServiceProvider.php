@@ -2,9 +2,24 @@
 
 namespace App\Providers;
 
+use App\Models\Acompanamiento;
+use App\Models\AsignacionAcompanamiento;
+use App\Models\Funcionario;
+use App\Models\Indicador;
+use App\Models\Pauta;
+use App\Models\PautaBase;
+use App\Models\Usuario;
+use App\Policies\AcompanamientoPolicy;
+use App\Policies\AsignacionAcompanamientoPolicy;
+use App\Policies\IndicadorPolicy;
+use App\Policies\PautaBasePolicy;
+use App\Policies\PautaPolicy;
+use App\Policies\ReportePolicy;
 use App\Support\EstablecimientoActual;
+use App\Support\RolesDelModulo;
 use App\Support\RolesDelUsuario;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(EstablecimientoActual::class);
         $this->app->scoped(RolesDelUsuario::class);
+        $this->app->scoped(RolesDelModulo::class);
     }
 
     /**
@@ -27,5 +43,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DB::prohibitDestructiveCommands(! $this->app->environment('testing'));
+
+        $this->registrarPermisos();
+    }
+
+    /**
+     * Gates y políticas del módulo, como en Vinkured: solo se responde por el usuario autenticado en
+     * su establecimiento activo (RolesDelModulo); para cualquier otro la respuesta es no.
+     */
+    private function registrarPermisos(): void
+    {
+        Gate::define('ver-reportes-establecimiento', fn (Usuario $usuario): bool => app(ReportePolicy::class)->verReportesEstablecimiento($usuario));
+        Gate::define('ver-reporte-docente', fn (Usuario $usuario, Funcionario $docente): bool => app(ReportePolicy::class)->verReporteDocente($usuario, $docente));
+
+        Gate::policy(Pauta::class, PautaPolicy::class);
+        Gate::policy(PautaBase::class, PautaBasePolicy::class);
+        Gate::policy(Indicador::class, IndicadorPolicy::class);
+        Gate::policy(AsignacionAcompanamiento::class, AsignacionAcompanamientoPolicy::class);
+        Gate::policy(Acompanamiento::class, AcompanamientoPolicy::class);
     }
 }

@@ -181,12 +181,6 @@ it('falla la retroalimentación automática si la entrada del snapshot está inc
 
     expect(fn () => $respuesta->retroalimentacionAutomatica())
         ->toThrow(EntradaDeSnapshotIncompleta::class, 'falta [retro_que_significa, retro_para_logrado, fuentes]');
-
-    try {
-        $respuesta->retroalimentacionAutomatica();
-    } catch (EntradaDeSnapshotIncompleta $e) {
-        expect($e)->not->toBeInstanceOf(IndicadorFueraDelSnapshot::class);
-    }
 });
 
 it('permite una sola respuesta por indicador en cada acompañamiento', function () {
@@ -296,21 +290,6 @@ it('rechaza con un error de dominio una pauta que no es visible', function (Clos
         return $pauta->id;
     },
 ]);
-
-it('trunca el inicio a segundos para que la duración coincida con lo guardado', function () {
-    $this->travelTo(now()->setTime(10, 0, 0, 900000));
-    $acompanamiento = Acompanamiento::factory()->create(['iniciado_en' => now()]);
-
-    expect($acompanamiento->iniciado_en->micro)->toBe(0);
-
-    $this->travelTo(now()->setTime(10, 47, 0, 100000));
-    $acompanamiento->finalizar();
-
-    $guardado = $acompanamiento->fresh();
-    expect($guardado->iniciado_en->format('H:i:s.u'))->toBe('10:00:00.000000')
-        ->and($guardado->duracion_minutos)->toBe(47)
-        ->and($guardado->duracion_minutos)->toBe((int) floor($guardado->iniciado_en->diffInMinutes($guardado->finalizado_en, true)));
-});
 
 it('crea los cursos de las fábricas en el año escolar nombrado', function () {
     $acompanamiento = Acompanamiento::factory()->create();

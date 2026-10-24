@@ -5,6 +5,7 @@ use App\Support\EstablecimientoActual;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -236,4 +237,66 @@ function dosEstablecimientosConActivo(): array
     activar(usuarioConMembresia($a), $a);
 
     return [$a, $b];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Module helpers
+|--------------------------------------------------------------------------
+|
+| Module roles derived like Vinkured's (RolesDelModulo): a directivo función makes a module
+| administrator (and observer), a row in `observadores` makes an observer, a docente función or
+| an asignación docente makes a docente.
+|
+*/
+
+/** Funcionario of $estId with a new función of the given categoria. */
+function funcionarioConFuncion(int $estId, string $categoria): int
+{
+    $funcionarioId = newFuncionario($estId);
+    asignarFuncion($estId, $funcionarioId, newFuncion($categoria));
+
+    return $funcionarioId;
+}
+
+/** Flags a funcionario as observer in the module table, bypassing Eloquent. */
+function habilitarObservador(int $estId, int $funcionarioId): void
+{
+    DB::table('observadores')->insert(['establecimiento_id' => $estId, 'funcionario_id' => $funcionarioId]);
+}
+
+/**
+ * Active user of $estId with the given module role: administrador (directivo función), observador
+ * (docente función + observadores row), docente (docente función) or asistente (asistente función,
+ * staff without a module role). Returns [usuario, funcionarioId].
+ *
+ * @return array{0: Usuario, 1: int}
+ */
+function usuarioDelModulo(int $estId, string $rol, ?Usuario $usuario = null): array
+{
+    $categoria = match ($rol) {
+        'administrador' => 'directivo',
+        'observador', 'docente' => 'docente',
+        'asistente' => 'asistente',
+    };
+
+    [$usuario, $funcionarioId] = usuarioConRoles($estId, funciones: [newFuncion($categoria)], usuario: $usuario);
+
+    if ($rol === 'observador') {
+        habilitarObservador($estId, $funcionarioId);
+    }
+
+    return [$usuario, $funcionarioId];
+}
+
+/**
+ * Answers the gate as a fresh request would: forgets the per-request (scoped) instances, then makes
+ * $estId the active establecimiento of $usuario.
+ */
+function puede(Usuario $usuario, int $estId, string $habilidad, mixed $argumentos = []): bool
+{
+    app()->forgetScopedInstances();
+    activar($usuario, $estId);
+
+    return Gate::forUser($usuario)->allows($habilidad, $argumentos);
 }

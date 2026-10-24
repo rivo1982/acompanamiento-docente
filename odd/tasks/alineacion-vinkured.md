@@ -58,12 +58,12 @@ would make integration costly and risky.
   creating hook when pauta not visible (R4); default estado via enum (R2-002); named constant
   for factory school year (R2-003); distinct exception for incomplete snapshot entry (R2-004);
   truncate iniciado_en to seconds before computing duration (R3). R1-001 deferred to A3.
-- [ ] A2.3 Review follow-ups (A2.1+A2.2 review base a60b468, approved + acknowledged):
+- [x] A2.3 Review follow-ups (A2.1+A2.2 review base a60b468, approved + acknowledged):
   enforce "no respuesta writes on finalizado acompanamiento / indicador outside snapshot" at the
   database level (trigger, like Vinkured's integrity triggers) so concurrent finalizar() and
   query-builder bulk writes cannot bypass it (R3-001, R3-002); make the truncation test
   discriminating or drop it (R3-003); remove vacuous try/catch assertion (R3-004).
-- [ ] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
+- [x] A3 Roles derived from funciones/membresias (directivo, UTP, observador).
   DECIDED (user, 2026-10-24): module admin = any funcionario with a función of categoria
   'directivo' (RolesDelUsuario::esDirectivo). Jefe de UTP will be added upstream in Vinkured's
   FuncionesBaseSeeder as clave 'jefe_utp', categoria 'directivo' (proposal sent by user), so it
@@ -224,5 +224,70 @@ would make integration costly and risky.
   - RED: 14 failed + 1 error (tests/Feature/Modulo), 2 failed (tests/Unit/NivelLogroTest.php).
 - `vendor/bin/pest --compact`: 149 passed, 463 assertions. Pint: passed. public tables 54 / 54.
 
+- A2.3+A3 route: delegated writer (trigger: 2+ non-trivial files).
+- A2.3+A3 status: implemented, NOT checked off: 1 required test fails outside the writer's surface
+  (tests/Feature/Infra/HostSchemaLoadedTest.php counts every function/trigger in the test schema and
+  expects 15/19 host objects; the module trigger makes it 16/20). Needs a parent-authorized edit of
+  that Infra test to count only host objects (exclude the module function/trigger by name).
+- A2.3 evidence:
+  - database/migrations/2026_10_24_000420_create_respuestas_acompanamiento_integrity_trigger.php:
+    plpgsql `respuestas_acompanamiento_exigen_acompanamiento_en_curso()` BEFORE INSERT OR UPDATE OR
+    DELETE FOR EACH ROW (Vinkured style: unqualified names, ERRCODE check_violation = 23514, dropped
+    in down()). Rejects any write whose OLD or NEW acompanamiento is finalizado and any NEW
+    indicador_id absent from pauta_snapshot->'indicadores'. Race with finalizar(): the parent row is
+    read FOR SHARE (the FK only takes FOR KEY SHARE, which does not conflict with finalizar()'s
+    UPDATE); a concurrent finalizar() either waits for the respuesta commit or, if first, makes the
+    respuesta re-read the finalizado row under READ COMMITTED and fail. Concurrency itself is not
+    exercised by a test (RefreshDatabase runs everything in one transaction).
+  - Eloquent guard kept (friendly exceptions). New DB tests in RespuestaAcompanamientoTest: raw insert
+    accepted in curso (control); raw insert / bulk update to an indicador outside the snapshot, raw
+    insert, bulk update, bulk delete and moving out of a finalizado acompanamiento rejected with 23514.
+  - R3-003: truncation test removed. Reason: the datetime cast already formats assigned values with
+    `Y-m-d H:i:s` (micro dropped on assignment) and floor(minutes) of whole-second start vs a
+    fractional end never crosses a minute boundary, so no input can make startOfSecond() observable.
+  - R3-004: vacuous try/catch removed from the incomplete-snapshot test.
+- A3 evidence:
+  - app/Support/RolesDelModulo.php (scoped in AppServiceProvider), built on EstablecimientoActual +
+    RolesDelUsuario + `observadores`; current user's funcionarios = Funcionario::vigentes() with the
+    active membresia's persona_id (scoped models). No cache: evaluated at call time, so losing the
+    observer flag takes effect in the same request. Fail closed (other user, no active establecimiento).
+  - Roles: administrador = RolesDelUsuario::esDirectivo(). Vinkured `administrador`
+    (membresias.es_administrador) is NOT a module admin: the original spec gives school admin to
+    Principal/CurriculumHead roles only (both directivo), and Vinkured itself keeps its Administrador
+    out of functional panels (least privilege). observador = admin OR vigente funcionario in
+    `observadores`. docente = vigente funcionario with a función of categoria 'docente' OR any
+    asignacion_docente (Vinkured semantics: categoria 'docente' covers docente de aula; asignaciones
+    capture whoever teaches a curso). A directivo-only funcionario is not observable as docente.
+  - R1-001: AsignacionAcompanamiento saving guard (AsignacionAcompanamientoInvalida: mismoFuncionario,
+    observadorNoHabilitado, docenteNoHabilitado) + AsignacionAcompanamiento::esParElegible() used by
+    the policy. Foreign-establecimiento funcionarios are not found by scoped queries → invalid.
+    Factory default now builds an eligible pair (CreaFilasDelAnfitrion::nuevoObservador /
+    nuevoFuncionarioConFuncion).
+  - Policies (app/Policies, registered with Gate::policy, Spanish abilities): PautaPolicy
+    (verCualquiera/ver/exportar: any funcionario; crear/actualizar/eliminar: admin),
+    PautaBasePolicy/IndicadorPolicy (verCualquiera/ver: any funcionario; nothing else),
+    AsignacionAcompanamientoPolicy (verCualquiera/crear(observadorId, docenteId)/eliminar: admin,
+    eligible pair), AcompanamientoPolicy (crear(Funcionario docente): current observer with an
+    assignment to that docente; actualizar/responder/finalizar: its observer while en_curso;
+    ver/exportar: its observer, its docente only finalizado, admin). Gates ver-reportes-establecimiento
+    (admin) and ver-reporte-docente (self, admin, CURRENT observer with a finalizado acompanamiento of
+    that docente) via ReportePolicy. Every model check also requires the row's establecimiento_id to be
+    the active one. Sostenedor-level access not implemented (still an open question) → denied.
+  - Note: actualizar/responder/finalizar follow the old matrix (observer_id match only); an observer
+    who loses the flag can still finish an open acompanamiento — flag for product review if unwanted.
+  - Tests: tests/Feature/Modulo/RolesDelModuloTest.php, AsignacionAcompanamientoTest.php (eligibility),
+    tests/Feature/Politicas/{Pauta,Catalogo,AsignacionAcompanamiento,Acompanamiento}PolicyTest.php,
+    ReportesGateTest.php (allow + deny per role, cross-establecimiento, finalizado-only for docente,
+    ex-observer loses 6.4). Helpers added to tests/Pest.php: funcionarioConFuncion, habilitarObservador,
+    usuarioDelModulo, puede (forgets scoped instances like a fresh request).
+  - RED: 210 tests, 25 failed + 17 errors (missing RolesDelModulo/policies/trigger/guard).
+  - GREEN: `vendor/bin/pest --compact` 210 tests, 209 passed, 1 failed (Infra count above).
+  - `vendor/bin/pint --dirty --format agent`: passed. public tables before/after: 54 / 54.
+
+  - Parent fix (inline): HostSchemaLoadedTest now excludes module functions/triggers from the
+    host counts. Re-run: `vendor/bin/pest --compact` 210 passed / 812 assertions; public 54 / 54.
+
 ## Next step
-A3 — roles derived from funciones/membresias (directivo, UTP, observador) and policies.
+A4: policies and Pest port are done here; remaining is a final audit that every
+b3397fc test has a Pest counterpart (e.g. old SchoolPolicy view/manageStaff has no module equivalent:
+staff management is host-owned) and the catalog seeder check on the new tables. Then A5.
