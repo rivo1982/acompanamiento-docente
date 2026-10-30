@@ -13,8 +13,8 @@ use Illuminate\Support\Str;
 /**
  * Escenario ficticio del entorno de demostración: "Colegio Demostración", su Administrador, docentes activos,
  * invitaciones en cada estado de la lista (En plazo, Vence hoy, Vencida, Anulada), observadores con sus docentes
- * asignados y un historial de cargas masivas (completada con errores por fila, fallida con error del archivo y
- * pendiente).
+ * asignados, dos pautas de ejemplo y un historial de cargas masivas (completada con errores por fila, fallida con
+ * error del archivo y pendiente).
  *
  * Escribe filas directamente (sin enviar correos ni encolar trabajos) y es idempotente: cada fila se identifica por su
  * clave natural y se actualiza si ya existe. Los plazos se calculan desde `now()`, así que las insignias son
@@ -37,6 +37,12 @@ final class EscenarioDemo
         ['rut' => '22222222-2', 'nombres' => 'Beatriz Demo', 'primer_apellido' => 'Ficticia', 'correo' => 'beatriz.docente@demo.example.cl'],
         ['rut' => '33333333-3', 'nombres' => 'Carlos Demo', 'primer_apellido' => 'Ficticio', 'correo' => 'carlos.docente@demo.example.cl'],
         ['rut' => '44444444-4', 'nombres' => 'Daniela Demo', 'primer_apellido' => 'Ficticia', 'correo' => 'daniela.docente@demo.example.cl'],
+    ];
+
+    /** Pautas de ejemplo => números de los indicadores del catálogo que las forman (en orden del catálogo). */
+    public const PAUTAS = [
+        'Observación de aula (demo)' => [1, 2, 3, 4, 5, 6, 7, 8],
+        'Planificación y convivencia (demo)' => [12, 13, 14, 46, 47],
     ];
 
     /** Situación de cada invitación pendiente => datos de la persona invitada. */
@@ -63,6 +69,7 @@ final class EscenarioDemo
             $membresiaAdministrador = $this->administrador($establecimientoId);
             $docentes = $this->docentes($establecimientoId);
             $this->observadores($establecimientoId, $docentes);
+            $this->pautas($establecimientoId);
             $this->invitaciones($establecimientoId);
             $this->importaciones($establecimientoId, $membresiaAdministrador);
         });
@@ -166,6 +173,24 @@ final class EscenarioDemo
             $this->fila('asignaciones_acompanamiento', ['observador_id' => $observadorId, 'docente_id' => $docenteId], [
                 'establecimiento_id' => $establecimientoId,
             ]);
+        }
+    }
+
+    /**
+     * Pautas de ejemplo armadas con indicadores del catálogo (CatalogSeeder debe haber corrido antes); `posicion`
+     * sigue el orden del catálogo, como GuardarPauta.
+     */
+    private function pautas(int $establecimientoId): void
+    {
+        foreach (self::PAUTAS as $nombre => $numeros) {
+            $pautaId = $this->fila('pautas', ['establecimiento_id' => $establecimientoId, 'nombre' => $nombre], []);
+            $indicadores = DB::table('indicadores')->whereIn('numero', $numeros)->orderBy('numero')->pluck('id');
+
+            foreach ($indicadores as $indice => $indicadorId) {
+                $this->fila('indicador_pauta', ['pauta_id' => $pautaId, 'indicador_id' => $indicadorId], [
+                    'establecimiento_id' => $establecimientoId, 'posicion' => $indice + 1,
+                ]);
+            }
         }
     }
 

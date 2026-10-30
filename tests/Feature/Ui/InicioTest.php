@@ -29,12 +29,13 @@ it('links the account administrator to the invitation and bulk import screens', 
         ->assertSee(route('importaciones.index'), escape: false);
 });
 
-it('shows no screen links to a teacher', function () {
+it('links a teacher only to the rubrics screen', function () {
     [$docente] = usuarioDelModulo($this->establecimientoId, 'docente');
     activar($docente, $this->establecimientoId);
 
     $this->get(route('panel'))
         ->assertOk()
+        ->assertSee(route('pautas.index'), escape: false)
         ->assertDontSee(route('observadores.index'), escape: false)
         ->assertDontSee(route('invitaciones.index'), escape: false)
         ->assertDontSee(route('importaciones.index'), escape: false);

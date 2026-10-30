@@ -3,7 +3,9 @@
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Observadores\Observadores;
+use App\Livewire\Pautas\Pautas;
 use App\Models\Usuario;
+use Database\Seeders\CatalogSeeder;
 use Database\Seeders\Demo\EscenarioDemo;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\FuncionesGenericasSeeder;
@@ -34,13 +36,13 @@ function conteosDelEscenario(): array
     return collect([
         'regiones', 'comunas', 'establecimientos', 'anios_escolares', 'niveles_ensenanza', 'grados', 'cursos',
         'personas', 'funcionarios', 'funcionario_funciones', 'usuarios', 'membresias', 'asignaciones_docentes',
-        'importaciones_usuarios', 'observadores', 'asignaciones_acompanamiento',
+        'importaciones_usuarios', 'observadores', 'asignaciones_acompanamiento', 'pautas', 'indicador_pauta',
     ])->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->count()])->all();
 }
 
 function sembrarEscenarioDemo(): int
 {
-    test()->seed(FuncionesGenericasSeeder::class);
+    test()->seed([CatalogSeeder::class, FuncionesGenericasSeeder::class]);
     (new EscenarioDemo)->sembrar();
 
     return (int) DB::table('establecimientos')->where('rbd', EscenarioDemo::RBD)->value('id');
@@ -142,6 +144,19 @@ it('seeds an enabled observer and observer assignments shown on the observers sc
         ->assertSee('Alicia Demo')
         ->assertSee('Beatriz Demo')
         ->assertSee('Automático');
+});
+
+it('seeds two example rubrics built from the catalog, shown on the rubrics screen', function () {
+    $establecimientoId = sembrarEscenarioDemo();
+    activar(Usuario::query()->where('correo', EscenarioDemo::CORREO_ADMINISTRADOR)->sole(), $establecimientoId);
+
+    $pautas = DB::table('pautas')->where('establecimiento_id', $establecimientoId)->pluck('id', 'nombre');
+
+    expect($pautas->keys()->sort()->values()->all())->toBe(array_keys(EscenarioDemo::PAUTAS))
+        ->and(DB::table('indicador_pauta')->whereIn('pauta_id', $pautas->values())->count())
+        ->toBe(array_sum(array_map('count', EscenarioDemo::PAUTAS)));
+
+    Livewire::test(Pautas::class)->assertSee(array_keys(EscenarioDemo::PAUTAS));
 });
 
 it('is idempotent: a second run creates no duplicates and refreshes the invitation deadlines', function () {
