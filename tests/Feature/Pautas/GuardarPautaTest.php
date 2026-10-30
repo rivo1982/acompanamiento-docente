@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\GuardarPauta;
 use App\Models\Acompanamiento;
 use App\Models\Pauta;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -36,6 +37,14 @@ it('rechaza un nombre vacío o demasiado largo', function (string $nombre) {
 
     expect(Pauta::query()->count())->toBe(0);
 })->with(['vacío' => '', 'solo espacios' => "   \t ", 'largo' => str_repeat('a', 121)]);
+
+it('cuenta el largo del nombre en caracteres, no en bytes', function () {
+    $justo = str_repeat('ñ', GuardarPauta::NOMBRE_MAXIMO);
+
+    expect(crearPauta($this->administrador, $justo, [$this->ind[1001]])->nombre)->toBe($justo);
+    rechazaCampo(fn () => crearPauta($this->administrador, str_repeat('á', GuardarPauta::NOMBRE_MAXIMO + 1), [$this->ind[1001]]), 'nombre');
+    expect(Pauta::query()->count())->toBe(1);
+});
 
 it('rechaza un nombre repetido entre las pautas vigentes del establecimiento, sin distinguir mayúsculas', function () {
     crearPauta($this->administrador, 'Pauta de aula', [$this->ind[1001]]);

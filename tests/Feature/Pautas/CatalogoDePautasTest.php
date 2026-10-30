@@ -55,3 +55,12 @@ it('devuelve los ids de los indicadores de una pauta en su orden', function () {
 
     expect(app(CatalogoDePautas::class)->indicadoresDe($pauta))->toBe([$this->ind[1002], $this->ind[2001]]);
 });
+
+it('devuelve los indicadores en su posición tras una actualización que reescribe las posiciones', function () {
+    // Insertion order differs from posicion order: 2001 keeps its row (posicion 2) while 1002 is
+    // attached after it with posicion 1, so only an ORDER BY posicion returns 1002 first.
+    $pauta = crearPauta($this->administrador, 'Pauta', [$this->ind[1001], $this->ind[2001]]);
+    actualizarPauta($this->administrador, $pauta->id, 'Pauta', [$this->ind[2001], $this->ind[1002]]);
+
+    expect(app(CatalogoDePautas::class)->indicadoresDe($pauta->fresh()))->toBe([$this->ind[1002], $this->ind[2001]]);
+});
