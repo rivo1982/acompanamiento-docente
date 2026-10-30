@@ -44,15 +44,32 @@ ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + test
   RED observed (29 tests, 0 passing) → GREEN; full suite 692 passing.
   Review (base 4ef4191, medium, 725 lines incl. demo serve fixes): 1 lens (reliability), APPROVED
   and acknowledged (lineage review-5c62aa39c0415c8e). Reviewed boundary → fba3c04.
-- [ ] O1.1 Review follow-ups (advisory): R3-001 sincronizar checks puedeObservar outside the
-  transaction without locking the observer row → a concurrent QuitarObservador can leave stale
-  pairs; re-check/lock inside the transaction. R3-002 docentes_asignados counts non-observable
-  teachers while the checkbox list hides them (saving silently drops them) → count only observable
-  teachers or document. R3-003 demo:serve uses bare `php` instead of `@php`.
-- [ ] O2 Screen "Observadores" (Livewire, route under /usuarios or /acompanamiento), single-screen
-  layout decided above, vinkured-ui process. Route: delegated.
-- [ ] O3 Demo data: observers and assignments in EscenarioDemo; visual check by the user at
-  http://localhost:18765.
+- [x] O1.1 Review follow-ups (advisory): R3-001 sincronizar checks puedeObservar outside the
+  transaction without locking the observer row → FIXED: locks the `observadores` row
+  (lockForUpdate) and re-checks inside the transaction. R3-002 → FIXED: docentes_asignados counts
+  only observable teachers (shared query with the checkbox list). R3-003 demo:serve bare `php` →
+  KEPT: Composer only expands `@php` at the start of a script line, and `cd public` is required by
+  server.php. RED observed (2 failing) → GREEN. Commit 451df10. Route: delegated (same writer as O2).
+- [x] O2 Screen "Observadores": route `usuarios/observadores` (`observadores.index`, gate
+  `gestionar-observadores`), enable form, observer table ("Automático" badge Neutro, assigned count,
+  "Ver docentes"), detail card with teacher checkboxes + "Guardar docentes", "Quitar como
+  observador" with confirmation modal (non-automatic only). RED 13/13 → GREEN. Commit 40f11f3.
+  Route: delegated. Self-audit fixes: selected row not colour-only, touch target via
+  --alto-control, removed undefined quote style. Open guideline note: lists not paginated (school
+  size). needs_brief for the Vinkured team: "Automático" badge (Neutro) not in the brief's badge
+  table; no checkbox control in the brief; selected-row pattern; no navigation entry (host-owned
+  layout).
+- [x] O3 Demo data: Beatriz enabled observer; Alicia (directiva, automatic) → Carlos, Daniela;
+  Beatriz → Carlos. Test-first in DemoSeederTest (RED 0≠1 → GREEN). Commit 3295513. Route: inline.
+  Demo reseeded (acompanamiento_demo: 1 observer, 3 assignments; public still 54 tables).
+  Review (base fba3c04, medium, 813 lines): 1 lens (reliability), APPROVED and acknowledged
+  (lineage review-2a75dca3f3d7372b). Reviewed boundary → 3295513.
+- [ ] O3.1 User visual check at http://localhost:18765/usuarios/observadores (375/768/1280).
+- [ ] O2.1 Review follow-ups (advisory): R3-001 the comment in AsignarDocentesAObservador claims a
+  concurrent QuitarObservador always waits for the sync; that only holds if QuitarObservador locks
+  or deletes the `observadores` row BEFORE deleting assignments → make QuitarObservador lock the row
+  first, or fix the comment. R3-002 test the screen guard paths: quitar without confirmarQuita,
+  quitar/guardar with no observer selected.
 
 ## Acceptance criteria
 - Admin can enable, remove and assign; non-admins get 403; data never crosses establecimientos.
@@ -60,7 +77,8 @@ ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + test
 - Full Pest suite green.
 
 ## Progress / Evidence
-- 2026-10-30: branch feat/observadores created from 8ac7b4f.
+- 2026-10-30: branch feat/observadores created from 8ac7b4f. O1, O1.1, O2, O3 done; full suite
+  709 passing.
 
 ## Next step
-O1.
+O3.1 user visual check, then O2.1 follow-ups.
