@@ -6,6 +6,7 @@ use App\Livewire\Invitaciones\AceptarInvitacion;
 use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Invitaciones\NuevaInvitacion;
 use App\Livewire\Login;
+use App\Livewire\Observadores\Observadores;
 use App\Livewire\SeleccionarEstablecimiento;
 use App\Support\EstablecimientoActual;
 use App\Support\Importacion\PlantillaDePlanilla;
@@ -51,6 +52,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/usuarios/importaciones/{importacion}', ResultadoDeImportacion::class)
                 ->whereNumber('importacion')
                 ->name('importaciones.show');
+        });
+
+        // Observadores y sus docentes (T6): solo el administrador del módulo (directivo) del establecimiento activo.
+        Route::middleware('can:gestionar-observadores')->group(function () {
+            Route::get('/usuarios/observadores', Observadores::class)->name('observadores.index');
         });
     });
 });
