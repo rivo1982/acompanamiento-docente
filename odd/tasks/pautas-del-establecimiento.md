@@ -65,7 +65,9 @@ ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
   Route: inline. Suite 760 passing.
   Review (base 74f41e6, medium, 1047 lines): 1 lens (reliability), APPROVED and acknowledged
   (lineage review-f1312a57ad5bbf0f). Reviewed boundary → 05253f7.
-- [ ] P4.1 User visual check at http://localhost:18765/pautas (list, form, view, print preview).
+- [x] P4.1 User visual check: user approved (2026-10-30, "quedó perfecto"). Also fixed: site root showed
+  Laravel's welcome page whose "Dashboard" link 404'd → `/` redirects to `/panel` (commit c9536ef,
+  test-first; removed welcome view and framework ExampleTest). Assess: medium, under_budget.
 - [ ] P3.1 Review follow-ups (advisory): R3-001 VerPauta groups by ámbito relying on the relation's
   orderByPivot — add explicit ordering in the query and a view test where catalog order ≠ posicion
   order. R3-002 FormularioDePauta: filter non-scalar `indicadores` entries in render() and
@@ -83,4 +85,4 @@ ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
 - 2026-10-30: continuing on branch feat/observadores (pautas build on it; the user pushes).
 
 ## Next step
-P4.1 user visual check, then P3.1 follow-ups.
+P3.1 follow-ups; then T7 observation flow (acompañamiento).
