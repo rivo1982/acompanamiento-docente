@@ -64,7 +64,8 @@ ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + test
   Demo reseeded (acompanamiento_demo: 1 observer, 3 assignments; public still 54 tables).
   Review (base fba3c04, medium, 813 lines): 1 lens (reliability), APPROVED and acknowledged
   (lineage review-2a75dca3f3d7372b). Reviewed boundary → 3295513.
-- [ ] O3.1 User visual check at http://localhost:18765/usuarios/observadores (375/768/1280).
+- [x] O3.1 User visual check at http://localhost:18765/usuarios/observadores: user approved
+  (2026-10-30, "quedó muy bien"); design polish deferred to a later session by the user.
 - [ ] O2.1 Review follow-ups (advisory): R3-001 the comment in AsignarDocentesAObservador claims a
   concurrent QuitarObservador always waits for the sync; that only holds if QuitarObservador locks
   or deletes the `observadores` row BEFORE deleting assignments → make QuitarObservador lock the row
@@ -84,4 +85,4 @@ ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + test
   under_budget (pending in slice from 3295513).
 
 ## Next step
-O3.1 user visual check, then O2.1 follow-ups.
+O2.1 follow-ups; later: design polish (user), then T5 pautas configuration + PDF.
