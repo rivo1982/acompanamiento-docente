@@ -100,7 +100,7 @@ class GuardarPauta
         $errores = [];
 
         if ($nombre === '') {
-            $errores['nombre'] = 'Escribe un nombre para la pauta.';
+            $errores['nombre'] = 'Escribir un nombre para la pauta.';
         } elseif (mb_strlen($nombre) > self::NOMBRE_MAXIMO) {
             $errores['nombre'] = 'El nombre puede tener hasta '.self::NOMBRE_MAXIMO.' caracteres.';
         }
@@ -117,7 +117,7 @@ class GuardarPauta
             ->orderBy('numero')->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
 
         if ($ids === [] && ! $invalidos) {
-            $errores['indicadores'] = 'Elige al menos un indicador.';
+            $errores['indicadores'] = 'Elegir al menos un indicador.';
         } elseif ($invalidos || count($ordenados) !== count($ids)) {
             $errores['indicadores'] = 'Algunos indicadores elegidos no existen en el catálogo.';
         }

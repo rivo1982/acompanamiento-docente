@@ -7,6 +7,9 @@ use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Invitaciones\NuevaInvitacion;
 use App\Livewire\Login;
 use App\Livewire\Observadores\Observadores;
+use App\Livewire\Pautas\FormularioDePauta;
+use App\Livewire\Pautas\Pautas;
+use App\Livewire\Pautas\VerPauta;
 use App\Livewire\SeleccionarEstablecimiento;
 use App\Support\EstablecimientoActual;
 use App\Support\Importacion\PlantillaDePlanilla;
@@ -58,5 +61,12 @@ Route::middleware('auth')->group(function () {
         Route::middleware('can:gestionar-observadores')->group(function () {
             Route::get('/usuarios/observadores', Observadores::class)->name('observadores.index');
         });
+
+        // Pautas del establecimiento (T5): cada componente exige PautaPolicy al abrir y en cada acción (ver para cualquier
+        // funcionario; crear, editar y eliminar solo el administrador del módulo). Una pauta de otro establecimiento da 404.
+        Route::get('/pautas', Pautas::class)->name('pautas.index');
+        Route::get('/pautas/nueva', FormularioDePauta::class)->name('pautas.create');
+        Route::get('/pautas/{pauta}/editar', FormularioDePauta::class)->name('pautas.edit');
+        Route::get('/pautas/{pauta}', VerPauta::class)->name('pautas.show');
     });
 });
