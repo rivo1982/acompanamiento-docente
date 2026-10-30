@@ -3,7 +3,10 @@
 use App\Exceptions\AsignacionAcompanamientoInvalida;
 use App\Models\AsignacionAcompanamiento;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 require_once __DIR__.'/helpers.php';
 
@@ -75,4 +78,34 @@ it('niega sincronizar a quien no es administrador del módulo', function () {
     expect(fn () => sincronizarDocentes($observador, $observadorPropioId, [$this->docenteId]))
         ->toThrow(AuthorizationException::class)
         ->and(docentesDe($observadorPropioId))->toBe([]);
+});
+
+it('revisa al observador dentro de la transacción: si lo quitan antes de guardar, no deja pares', function () {
+    // Simulates a concurrent QuitarObservador that commits between the caller's view and the save.
+    $quitado = false;
+    Event::listen(TransactionBeginning::class, function () use (&$quitado): void {
+        if (! $quitado) {
+            $quitado = true;
+            DB::table('observadores')->where('funcionario_id', $this->observadorId)->delete();
+        }
+    });
+
+    expect(fn () => sincronizarDocentes($this->administrador, $this->observadorId, [$this->docenteId]))
+        ->toThrow(AsignacionAcompanamientoInvalida::class)
+        ->and($quitado)->toBeTrue()
+        ->and(docentesDe($this->observadorId))->toBe([]);
+});
+
+it('bloquea la habilitación del observador antes de escribir, para serializarse con QuitarObservador', function () {
+    DB::enableQueryLog();
+
+    sincronizarDocentes($this->administrador, $this->observadorId, [$this->docenteId]);
+
+    $consultas = array_column(DB::getQueryLog(), 'query');
+    $bloqueo = collect($consultas)->search(fn (string $sql): bool => (bool) preg_match('/from "observadores".* for update$/', $sql));
+    $insercion = collect($consultas)->search(fn (string $sql): bool => str_starts_with($sql, 'insert into "asignaciones_acompanamiento"'));
+
+    expect($bloqueo)->toBeInt()
+        ->and($insercion)->toBeInt()
+        ->and($bloqueo)->toBeLessThan($insercion);
 });

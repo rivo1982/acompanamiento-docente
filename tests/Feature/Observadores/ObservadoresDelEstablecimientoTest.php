@@ -66,3 +66,12 @@ it('devuelve los docentes asignados a un observador', function () {
         ->toEqualCanonicalizing([$this->docenteId, $this->otroDocenteId])
         ->and(app(ObservadoresDelEstablecimiento::class)->docentesAsignados($this->docenteAjenoId))->toBe([]);
 });
+
+it('cuenta solo los docentes asignados que hoy se pueden observar, como la lista de selección', function () {
+    DB::table('funcionarios')->where('id', $this->otroDocenteId)->update(['fecha_termino' => now()->subDay()->toDateString()]);
+
+    $habilitado = collect(app(ObservadoresDelEstablecimiento::class)->observadores())
+        ->first(fn (array $fila): bool => (int) $fila['funcionario']->id === $this->habilitadoId);
+
+    expect($habilitado['docentes_asignados'])->toBe(1);
+});

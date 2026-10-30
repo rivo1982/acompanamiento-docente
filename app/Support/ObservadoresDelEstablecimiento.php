@@ -22,7 +22,8 @@ final class ObservadoresDelEstablecimiento
     /**
      * Observadores automáticos (directivos) y habilitados (`observadores`), una fila por funcionario, ordenados
      * por nombre. Un directivo que además tiene fila en `observadores` sale una vez, como automático.
-     * `docentes_asignados` cuenta sus asignaciones observador → docente.
+     * `docentes_asignados` cuenta solo los docentes asignados que hoy se pueden observar (los mismos de
+     * docentesObservables(), la lista que la pantalla deja marcar): un docente que dejó de ser observable no cuenta.
      *
      * @return list<array{funcionario: Funcionario, automatico: bool, docentes_asignados: int}>
      */
@@ -42,6 +43,7 @@ final class ObservadoresDelEstablecimiento
 
         $asignados = AsignacionAcompanamiento::query()
             ->whereIn('observador_id', $funcionarios->modelKeys())
+            ->whereIn('docente_id', $this->consultaDeObservables()->select('id'))
             ->selectRaw('observador_id, count(*) as total')
             ->groupBy('observador_id')
             ->pluck('total', 'observador_id');
@@ -65,10 +67,7 @@ final class ObservadoresDelEstablecimiento
      */
     public function docentesObservables(): Collection
     {
-        return Funcionario::query()->vigentes()
-            ->where(fn (Builder $consulta) => $consulta
-                ->whereIn('id', $this->idsConFuncionDeCategoria(RolesDelModulo::CATEGORIA_DOCENTE))
-                ->orWhereIn('id', AsignacionDocente::query()->select('funcionario_id')))
+        return $this->consultaDeObservables()
             ->with('persona')
             ->get()
             ->sortBy(fn (Funcionario $funcionario): string => mb_strtolower((string) $funcionario->persona?->nombre_completo))
@@ -89,6 +88,19 @@ final class ObservadoresDelEstablecimiento
             ->map(fn (mixed $id): int => (int) $id)
             ->values()
             ->all();
+    }
+
+    /**
+     * Funcionarios vigentes observables: función de categoría docente o asignación docente.
+     *
+     * @return Builder<Funcionario>
+     */
+    private function consultaDeObservables(): Builder
+    {
+        return Funcionario::query()->vigentes()
+            ->where(fn (Builder $consulta) => $consulta
+                ->whereIn('id', $this->idsConFuncionDeCategoria(RolesDelModulo::CATEGORIA_DOCENTE))
+                ->orWhereIn('id', AsignacionDocente::query()->select('funcionario_id')));
     }
 
     /**

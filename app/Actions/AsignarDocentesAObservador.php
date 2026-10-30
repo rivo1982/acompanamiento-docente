@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Exceptions\AsignacionAcompanamientoInvalida;
 use App\Models\AsignacionAcompanamiento;
+use App\Models\Observador;
 use App\Models\Usuario;
 use App\Support\RolesDelModulo;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Gate;
  * faltan y borra los no elegidos. Solo el administrador del módulo (gate `gestionar-observadores`; cada par
  * nuevo pasa además por AsignacionAcompanamientoPolicy::crear y cada borrado por ::eliminar).
  *
- * Todo o nada, en UNA transacción: si un docente nuevo no forma un par elegible (no es docente vigente, es de
+ * Todo o nada, en UNA transacción que bloquea la habilitación del observador: si un docente nuevo no forma un par elegible (no es docente vigente, es de
  * otro establecimiento o es el propio observador) se lanza AsignacionAcompanamientoInvalida y no cambia nada.
  * Las asignaciones que se mantienen no se revalidan: el docente que dejó de ser observable sale cuando el
  * administrador lo desmarca.
@@ -36,13 +37,18 @@ class AsignarDocentesAObservador
         $gate = Gate::forUser($administrador);
         $gate->authorize('gestionar-observadores');
 
-        if (! $this->roles->puedeObservar($observadorId)) {
-            throw AsignacionAcompanamientoInvalida::observadorNoHabilitado($observadorId);
-        }
-
         $elegidos = array_values(array_unique(array_map('intval', $docenteIds)));
 
         return DB::transaction(function () use ($gate, $observadorId, $elegidos): array {
+            // R3-001: bloquea la fila de `observadores` y revisa al observador DENTRO de la transacción. Un
+            // QuitarObservador simultáneo espera a que esta termine (y luego borra también los pares nuevos), o ya
+            // la borró y aquí se rechaza: nunca quedan pares de un observador quitado.
+            Observador::query()->where('funcionario_id', $observadorId)->lockForUpdate()->get(['id']);
+
+            if (! $this->roles->puedeObservar($observadorId)) {
+                throw AsignacionAcompanamientoInvalida::observadorNoHabilitado($observadorId);
+            }
+
             $actuales = AsignacionAcompanamiento::query()
                 ->where('observador_id', $observadorId)
                 ->lockForUpdate()
