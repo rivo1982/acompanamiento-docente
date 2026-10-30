@@ -9,6 +9,10 @@ beforeEach(function () {
     $this->establecimientoId = newEstablecimiento('1000', 'Colegio A');
 });
 
+it('sends the site root to the provisional home instead of the framework welcome page', function () {
+    $this->get('/')->assertRedirect(route('panel'));
+});
+
 it('links the module administrator to the observers screen from the provisional home', function () {
     [$administrador] = usuarioDelModulo($this->establecimientoId, 'administrador');
     activar($administrador, $this->establecimientoId);

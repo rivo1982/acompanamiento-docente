@@ -15,9 +15,8 @@ use App\Support\EstablecimientoActual;
 use App\Support\Importacion\PlantillaDePlanilla;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// La raíz lleva al inicio provisional (que pide iniciar sesión si hace falta), no a la bienvenida de Laravel.
+Route::redirect('/', '/panel');
 
 // Acceso: mismas rutas y nombres que Vinkured (login, logout, establecimientos.seleccionar, panel), para que los
 // componentes y layouts copiados (@host-owned) funcionen sin cambios y se reemplacen por los del host al integrar.
