@@ -2,6 +2,7 @@
 
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\InvitacionesPendientes;
+use App\Livewire\Observadores\Observadores;
 use App\Models\Usuario;
 use Database\Seeders\Demo\EscenarioDemo;
 use Database\Seeders\DemoSeeder;
@@ -33,7 +34,7 @@ function conteosDelEscenario(): array
     return collect([
         'regiones', 'comunas', 'establecimientos', 'anios_escolares', 'niveles_ensenanza', 'grados', 'cursos',
         'personas', 'funcionarios', 'funcionario_funciones', 'usuarios', 'membresias', 'asignaciones_docentes',
-        'importaciones_usuarios',
+        'importaciones_usuarios', 'observadores', 'asignaciones_acompanamiento',
     ])->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->count()])->all();
 }
 
@@ -128,6 +129,19 @@ it('seeds a completed, a failed and a pending bulk import', function () {
         ->assertSee('El archivo no tiene las columnas esperadas.');
     Livewire::test(ResultadoDeImportacion::class, ['importacion' => $ids['pendiente']])
         ->assertSeeHtml('wire:poll');
+});
+
+it('seeds an enabled observer and observer assignments shown on the observers screen', function () {
+    $establecimientoId = sembrarEscenarioDemo();
+    activar(Usuario::query()->where('correo', EscenarioDemo::CORREO_ADMINISTRADOR)->sole(), $establecimientoId);
+
+    expect(DB::table('observadores')->where('establecimiento_id', $establecimientoId)->count())->toBe(1)
+        ->and(DB::table('asignaciones_acompanamiento')->where('establecimiento_id', $establecimientoId)->count())->toBe(3);
+
+    Livewire::test(Observadores::class)
+        ->assertSee('Alicia Demo')
+        ->assertSee('Beatriz Demo')
+        ->assertSee('Automático');
 });
 
 it('is idempotent: a second run creates no duplicates and refreshes the invitation deadlines', function () {

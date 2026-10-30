@@ -12,8 +12,9 @@ use Illuminate\Support\Str;
 
 /**
  * Escenario ficticio del entorno de demostración: "Colegio Demostración", su Administrador, docentes activos,
- * invitaciones en cada estado de la lista (En plazo, Vence hoy, Vencida, Anulada) y un historial de cargas masivas
- * (completada con errores por fila, fallida con error del archivo y pendiente).
+ * invitaciones en cada estado de la lista (En plazo, Vence hoy, Vencida, Anulada), observadores con sus docentes
+ * asignados y un historial de cargas masivas (completada con errores por fila, fallida con error del archivo y
+ * pendiente).
  *
  * Escribe filas directamente (sin enviar correos ni encolar trabajos) y es idempotente: cada fila se identifica por su
  * clave natural y se actualiza si ya existe. Los plazos se calculan desde `now()`, así que las insignias son
@@ -48,6 +49,9 @@ final class EscenarioDemo
 
     private Carbon $ahora;
 
+    /** Funcionario directivo de la Administradora (observadora automática). */
+    private int $directivoId;
+
     public function sembrar(): void
     {
         $this->ahora = Carbon::now();
@@ -57,7 +61,8 @@ final class EscenarioDemo
             $this->cursos($establecimientoId);
 
             $membresiaAdministrador = $this->administrador($establecimientoId);
-            $this->docentes($establecimientoId);
+            $docentes = $this->docentes($establecimientoId);
+            $this->observadores($establecimientoId, $docentes);
             $this->invitaciones($establecimientoId);
             $this->importaciones($establecimientoId, $membresiaAdministrador);
         });
@@ -101,7 +106,7 @@ final class EscenarioDemo
         $personaId = $this->persona($establecimientoId, [
             'rut' => '11111111-1', 'nombres' => 'Alicia Demo', 'primer_apellido' => 'Administradora', 'correo' => self::CORREO_ADMINISTRADOR,
         ]);
-        $this->funcionario($establecimientoId, $personaId, 'directivo');
+        $this->directivoId = $this->funcionario($establecimientoId, $personaId, 'directivo');
 
         return $this->membresia($establecimientoId, $personaId, self::CORREO_ADMINISTRADOR, Hash::make(self::CONTRASENA), [
             'es_administrador' => true,
@@ -113,15 +118,19 @@ final class EscenarioDemo
     }
 
     /**
-     * Docentes activos; el primero es profesor jefe del 1° A.
+     * Docentes activos; el primero es profesor jefe del 1° A. Devuelve sus ids de funcionario en el orden de DOCENTES.
+     *
+     * @return list<int>
      */
-    private function docentes(int $establecimientoId): void
+    private function docentes(int $establecimientoId): array
     {
         $contrasena = Hash::make(self::CONTRASENA);
+        $funcionarios = [];
 
         foreach (self::DOCENTES as $indice => $docente) {
             $personaId = $this->persona($establecimientoId, $docente);
             $funcionarioId = $this->funcionario($establecimientoId, $personaId, 'docente');
+            $funcionarios[] = $funcionarioId;
             $this->membresia($establecimientoId, $personaId, $docente['correo'], $contrasena, [
                 'es_administrador' => false,
                 'estado' => 'activa',
@@ -136,6 +145,27 @@ final class EscenarioDemo
                     'establecimiento_id' => $establecimientoId, 'funcionario_id' => $funcionarioId, 'asignatura_id' => null,
                 ]);
             }
+        }
+
+        return $funcionarios;
+    }
+
+    /**
+     * La primera docente queda habilitada como observadora. La Administradora (directiva, observadora automática)
+     * acompaña a la segunda y tercera docente, y la observadora habilitada a la segunda.
+     *
+     * @param  list<int>  $docentes
+     */
+    private function observadores(int $establecimientoId, array $docentes): void
+    {
+        [$beatriz, $carlos, $daniela] = $docentes;
+
+        $this->fila('observadores', ['establecimiento_id' => $establecimientoId, 'funcionario_id' => $beatriz], []);
+
+        foreach ([[$this->directivoId, $carlos], [$this->directivoId, $daniela], [$beatriz, $carlos]] as [$observadorId, $docenteId]) {
+            $this->fila('asignaciones_acompanamiento', ['observador_id' => $observadorId, 'docente_id' => $docenteId], [
+                'establecimiento_id' => $establecimientoId,
+            ]);
         }
     }
 
