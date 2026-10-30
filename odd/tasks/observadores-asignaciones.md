@@ -35,9 +35,20 @@ is no way to manage them.
 ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + tests) → slices per task.
 
 ## Tasks
-- [ ] O1 Backend: actions to enable/remove an observer and to sync an observer's teachers, with
+- [x] O1 Backend: actions to enable/remove an observer and to sync an observer's teachers, with
   authorization, tenancy and tests (Pest, test-first). Route: delegated (writer, 2+ non-trivial
-  files).
+  files). Commit 43c8e87. Actions HabilitarObservador / QuitarObservador /
+  AsignarDocentesAObservador; read helper App\Support\ObservadoresDelEstablecimiento; gate
+  `gestionar-observadores` (= RolesDelModulo::esAdministrador). Removing an observer deletes its
+  assignments (acompanamientos keep observador_id/docente_id directly, so history is kept).
+  RED observed (29 tests, 0 passing) → GREEN; full suite 692 passing.
+  Review (base 4ef4191, medium, 725 lines incl. demo serve fixes): 1 lens (reliability), APPROVED
+  and acknowledged (lineage review-5c62aa39c0415c8e). Reviewed boundary → fba3c04.
+- [ ] O1.1 Review follow-ups (advisory): R3-001 sincronizar checks puedeObservar outside the
+  transaction without locking the observer row → a concurrent QuitarObservador can leave stale
+  pairs; re-check/lock inside the transaction. R3-002 docentes_asignados counts non-observable
+  teachers while the checkbox list hides them (saving silently drops them) → count only observable
+  teachers or document. R3-003 demo:serve uses bare `php` instead of `@php`.
 - [ ] O2 Screen "Observadores" (Livewire, route under /usuarios or /acompanamiento), single-screen
   layout decided above, vinkured-ui process. Route: delegated.
 - [ ] O3 Demo data: observers and assignments in EscenarioDemo; visual check by the user at
