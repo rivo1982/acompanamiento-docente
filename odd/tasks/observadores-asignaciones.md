@@ -79,6 +79,9 @@ ask-on-risk. Forecast ~600–800 authored lines (backend actions + screen + test
 ## Progress / Evidence
 - 2026-10-30: branch feat/observadores created from 8ac7b4f. O1, O1.1, O2, O3 done; full suite
   709 passing.
+- 2026-10-30: user could not find the screen from /panel → provisional home now links the module
+  screens by permission (commit 2de45f2, test-first InicioTest RED→GREEN, suite 712). Assess: medium,
+  under_budget (pending in slice from 3295513).
 
 ## Next step
 O3.1 user visual check, then O2.1 follow-ups.
