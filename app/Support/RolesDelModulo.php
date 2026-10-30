@@ -100,9 +100,18 @@ final class RolesDelModulo
      */
     public function puedeObservar(int $funcionarioId): bool
     {
+        return $this->esObservadorAutomatico($funcionarioId)
+            || ($this->esVigente($funcionarioId) && Observador::query()->where('funcionario_id', $funcionarioId)->exists());
+    }
+
+    /**
+     * Si el funcionario dado, vigente en el establecimiento activo, observa por derivación de sus
+     * funciones (directivo, A3): no necesita fila en `observadores` y no se le puede quitar.
+     */
+    public function esObservadorAutomatico(int $funcionarioId): bool
+    {
         return $this->esVigente($funcionarioId)
-            && ($this->tieneFuncionDeCategoria($funcionarioId, Funcion::CATEGORIA_DIRECTIVO)
-                || Observador::query()->where('funcionario_id', $funcionarioId)->exists());
+            && $this->tieneFuncionDeCategoria($funcionarioId, Funcion::CATEGORIA_DIRECTIVO);
     }
 
     /**

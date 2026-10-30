@@ -85,6 +85,9 @@ class AppServiceProvider extends ServiceProvider
             return $roles->esDelUsuario($usuario) && $roles->esAdministrador();
         });
 
+        // Habilitar y quitar observadores y elegir sus docentes: el administrador del módulo (directivo).
+        Gate::define('gestionar-observadores', fn (Usuario $usuario): bool => app(RolesDelModulo::class)->esAdministrador($usuario));
+
         Gate::policy(Pauta::class, PautaPolicy::class);
         Gate::policy(PautaBase::class, PautaBasePolicy::class);
         Gate::policy(Indicador::class, IndicadorPolicy::class);
