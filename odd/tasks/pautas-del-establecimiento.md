@@ -37,9 +37,18 @@ edit, view or print one.
 ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
 
 ## Tasks
-- [ ] P1 Backend: actions to create, update and delete a pauta (name + catalog indicators, ordered
-  by catalog number), read helper for the catalog grouped by pauta base/ámbito, tests (test-first).
-  Route: delegated (writer).
+- [x] P1 Backend: GuardarPauta (crear/actualizar, NOMBRE_MAXIMO 120), EliminarPauta (soft delete),
+  read helper App\Support\CatalogoDePautas (catalogo / pautasDelEstablecimiento / indicadoresDe).
+  Decisions: posicion = order by indicador numero (= catalog order); name trimmed, unique
+  case-insensitively among non-deleted pautas of the establecimiento under a per-establecimiento
+  advisory lock (no DB unique index); update and delete allowed with acompanamientos (each keeps its
+  pauta_snapshot; a deleted pauta cannot start new acompanamientos). RED 27/27 → GREEN; suite 739.
+  Commit 74f41e6. Route: delegated. Review (base 3295513, medium, 810 lines incl. home links
+  2de45f2): 1 lens (reliability), APPROVED and acknowledged (lineage review-e87a7271cbc79211).
+  Reviewed boundary → 74f41e6.
+- [ ] P1.1 Review follow-ups (advisory): R3-001 test indicadoresDe order after an actualizar that
+  reorders posicion (current test can't detect a missing ORDER BY). R3-002 test a name of exactly
+  120 chars is accepted and multibyte length counts characters.
 - [ ] P2 Screens: pautas list + create/edit form (catalog picker). vinkured-ui process.
   Route: delegated (writer).
 - [ ] P3 Pauta view + print-ready layout ("Imprimir o guardar PDF"). vinkured-ui process.
@@ -56,4 +65,4 @@ ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
 - 2026-10-30: continuing on branch feat/observadores (pautas build on it; the user pushes).
 
 ## Next step
-P1.
+P2 + P3 (one writer), with P1.1.
