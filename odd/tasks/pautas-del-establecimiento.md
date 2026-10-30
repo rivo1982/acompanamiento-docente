@@ -46,14 +46,32 @@ ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
   Commit 74f41e6. Route: delegated. Review (base 3295513, medium, 810 lines incl. home links
   2de45f2): 1 lens (reliability), APPROVED and acknowledged (lineage review-e87a7271cbc79211).
   Reviewed boundary → 74f41e6.
-- [ ] P1.1 Review follow-ups (advisory): R3-001 test indicadoresDe order after an actualizar that
-  reorders posicion (current test can't detect a missing ORDER BY). R3-002 test a name of exactly
-  120 chars is accepted and multibyte length counts characters.
-- [ ] P2 Screens: pautas list + create/edit form (catalog picker). vinkured-ui process.
-  Route: delegated (writer).
-- [ ] P3 Pauta view + print-ready layout ("Imprimir o guardar PDF"). vinkured-ui process.
-  Route: delegated (writer).
-- [ ] P4 Demo data (two example pautas) + home link + user visual check.
+- [x] P1.1 Review follow-ups: indicadoresDe order after a reordering actualizar (fails without
+  ORDER BY posicion, proven with a throwaway check); 120 multibyte chars accepted / 121 rejected.
+  Commit 1c17be6. Route: delegated (with P2/P3).
+- [x] P2 Screens: `pautas` list (any funcionario; admin: Nueva/Editar/Eliminar with confirmation),
+  `pautas/nueva` + `pautas/{pauta}/editar` form (name + catalog picker in <details> per pauta base,
+  "Seleccionar todos"/"Quitar todos", live counts with aria-live). RED 17/17 → GREEN.
+  Route: delegated. Parent correction: GuardarPauta copy to infinitive per docs/diseno.md
+  ("Escribir…", "Elegir…").
+- [x] P3 View `pautas/{pauta}`: level-meaning table (NivelLogro::tablaSignificados) + indicators by
+  ámbito with 4 descriptors, "Imprimir o guardar PDF" (window.print()), print: variants. Parent
+  correction: host layout has no print variants → module view adds an inline @media print rule
+  hiding #barra-lateral, the skip link and the layout header (no host edit); proposal for Vinkured:
+  add print:hidden to those layout elements. Test-first (RED → GREEN). Commit fe7acb2 (P2+P3).
+- [x] P4 Demo data: PAUTAS "Observación de aula (demo)" (indicators 1–8) and "Planificación y
+  convivencia (demo)" (12, 13, 14, 46, 47); home card "Pautas" for any funcionario; home copy to
+  infinitive. Test-first (RED → GREEN). Commit 05253f7. Demo reseeded (2 pautas, 13 rows; public 54).
+  Route: inline. Suite 760 passing.
+  Review (base 74f41e6, medium, 1047 lines): 1 lens (reliability), APPROVED and acknowledged
+  (lineage review-f1312a57ad5bbf0f). Reviewed boundary → 05253f7.
+- [ ] P4.1 User visual check at http://localhost:18765/pautas (list, form, view, print preview).
+- [ ] P3.1 Review follow-ups (advisory): R3-001 VerPauta groups by ámbito relying on the relation's
+  orderByPivot — add explicit ordering in the query and a view test where catalog order ≠ posicion
+  order. R3-002 FormularioDePauta: filter non-scalar `indicadores` entries in render() and
+  quitarTodos() like guardar() (tampered payload → 500).
+- needs_brief for the Vinkured team: print/PDF document design "se define aparte" in the brief;
+  print chrome rule above; "Pautas" navigation entry (host-owned layout menu).
 
 ## Acceptance criteria
 - Admin can create, edit and delete pautas; non-admins get 403 on those; data never crosses
@@ -65,4 +83,4 @@ ask-on-risk. Forecast ~900–1200 authored lines → one review slice per task.
 - 2026-10-30: continuing on branch feat/observadores (pautas build on it; the user pushes).
 
 ## Next step
-P2 + P3 (one writer), with P1.1.
+P4.1 user visual check, then P3.1 follow-ups.
