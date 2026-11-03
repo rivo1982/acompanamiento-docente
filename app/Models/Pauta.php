@@ -44,19 +44,22 @@ class Pauta extends Model
     }
 
     /**
-     * Copia congelada del contenido de la pauta, que se guarda en el acompañamiento al iniciarlo.
+     * Copia congelada del contenido de la pauta, que se guarda en el acompañamiento al iniciarlo. `ambito` es el
+     * nombre del ámbito del indicador, para agrupar el resultado como la pauta; los snapshots anteriores no lo
+     * traen, así que quien lo lea debe tolerar su ausencia.
      *
-     * @return array{id: int, nombre: string, indicadores: list<array{id: int, numero: int, nombre: string, niveles: array<string, string>, retro_que_significa: string, retro_para_logrado: string, retro_para_destacado: ?string, fuentes: string}>}
+     * @return array{id: int, nombre: string, indicadores: list<array{id: int, numero: int, nombre: string, ambito: ?string, niveles: array<string, string>, retro_que_significa: string, retro_para_logrado: string, retro_para_destacado: ?string, fuentes: string}>}
      */
     public function toSnapshot(): array
     {
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
-            'indicadores' => $this->indicadores()->get()->map(fn (Indicador $indicador): array => [
+            'indicadores' => $this->indicadores()->with('ambito:id,nombre')->get()->map(fn (Indicador $indicador): array => [
                 'id' => $indicador->id,
                 'numero' => $indicador->numero,
                 'nombre' => $indicador->nombre,
+                'ambito' => $indicador->ambito?->nombre,
                 'niveles' => [
                     'en_inicio' => $indicador->nivel_en_inicio,
                     'en_desarrollo' => $indicador->nivel_en_desarrollo,

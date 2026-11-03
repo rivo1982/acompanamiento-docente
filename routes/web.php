@@ -67,5 +67,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/pautas/nueva', FormularioDePauta::class)->name('pautas.create');
         Route::get('/pautas/{pauta}/editar', FormularioDePauta::class)->name('pautas.edit');
         Route::get('/pautas/{pauta}', VerPauta::class)->name('pautas.show');
+
+        // Resultado de un acompañamiento (T7). Marcador de posición: el aviso al docente (AcompanamientoFinalizado::RUTA)
+        // ya enlaza aquí; A3 lo reemplaza por la pantalla del resultado, con AcompanamientoPolicy::ver.
+        Route::get('/acompanamientos/{acompanamiento}', fn () => abort(404))
+            ->whereNumber('acompanamiento')
+            ->name('acompanamientos.show');
     });
 });

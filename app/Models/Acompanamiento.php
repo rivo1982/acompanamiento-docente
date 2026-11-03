@@ -116,6 +116,15 @@ class Acompanamiento extends Model
     }
 
     /**
+     * Nombre de la asignatura observada, leído del catálogo `asignaturas` del anfitrión (no se guarda). Es un
+     * método y no una relación porque el módulo no tiene un modelo Asignatura.
+     */
+    public function nombreAsignatura(): ?string
+    {
+        return DB::table('asignaturas')->where('id', $this->asignatura_id)->value('nombre');
+    }
+
+    /**
      * @return BelongsTo<Pauta, $this>
      */
     public function pauta(): BelongsTo

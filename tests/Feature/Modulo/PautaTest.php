@@ -117,6 +117,7 @@ it('congela en el snapshot el contenido de la pauta', function () {
             'id' => $indicador->id,
             'numero' => 7,
             'nombre' => 'Clima de aula',
+            'ambito' => $indicador->ambito->nombre,
             'niveles' => [
                 'en_inicio' => $indicador->nivel_en_inicio,
                 'en_desarrollo' => $indicador->nivel_en_desarrollo,
