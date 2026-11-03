@@ -82,9 +82,23 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - [ ] A1.6 Review follow-ups (advisory): prove seeder atomicity (bad numero on a LATER ficha, assert
   rollback); log the exception (not only the message) in avisarAlDocente and consider narrowing the
   catch so DB errors inside an outer transaction are not swallowed.
-- [ ] A2 Observer screens: "Mis acompañamientos" (observer), "Nuevo acompañamiento", scoring form
-  (levels + level-meaning table + personal feedback, Finalizar with confirmation). vinkured-ui.
-  Route: delegated (writer).
+- [x] A2 Observer screens: `acompanamientos` (En curso: Continuar/Descartar with modal; Finalizados;
+  admin "Mostrar: Todos del establecimiento" filter in URL), `acompanamientos/nuevo` (only assigned
+  observable teachers; school pautas with ≥1 indicator; courses of the latest anio_escolar; global
+  asignaturas; pre-select when the teacher has one AsignacionDocente), `acompanamientos/{id}/observar`
+  (indicators by ámbito as fieldsets with 4 radio cards + descriptor, autosave on change, feedback
+  saved on blur, sticky progress/finish bar, finish modal, missing-indicators alert); home card
+  "Acompañamientos" for observers. Parent correction: finish message no longer claims an email was
+  sent ("El resultado ya está disponible para el docente."). RED 24 → GREEN; suite 815. Commit 022727c.
+  Route: delegated. Review (base 849e09a, medium, 1349 lines): APPROVED/acknowledged
+  (review-c6a75b2e2058f984). Reviewed boundary → 022727c.
+  needs_brief: En curso (Neutro) / Finalizado (Éxito) badges; sticky progress bar pattern.
+- [ ] A2.1 Review follow-ups (advisory): confirm the layout renders session('estado') on the list
+  after finishing (else render it); catch AcompanamientoYaFinalizado/AuthorizationException in
+  guardar() (finished in another tab) and redirect to the result; is_string guards on client-writable
+  niveles/retroalimentaciones; map start errors to the right field (pauta/curso/asignatura vs
+  docente) + test foreign/deleted pauta; reset curso/asignatura when switching to a teacher without a
+  single assignment. The 404 placeholder is replaced by A3.
 - [ ] A3 Result view (teacher/observer/admin) with automatic feedback, Felicitaciones, apoyo
   pedagógico fichas (attractive, color-coded by action type, per display default above), ciclo
   sugerido, plan de mejora template, print layout; teacher's list. vinkured-ui. Route: delegated.
@@ -100,4 +114,4 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A2 (writer running), then A3.
+A3 (writer running), then A2.1 + A1.6, then A4.
