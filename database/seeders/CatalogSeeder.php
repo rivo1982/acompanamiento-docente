@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 use JsonException;
 
 /**
- * Carga el catálogo GLOBAL de pautas (pautas base, ámbitos, indicadores) desde catalog.json.
+ * Carga el catálogo GLOBAL de pautas (pautas base, ámbitos, indicadores) desde catalog.json y, al final, las
+ * fichas de apoyo pedagógico de sus indicadores (ApoyoPedagogicoSeeder).
  *
  * Idempotente: las pautas base se identifican por número, los ámbitos por (pauta base, posición)
  * y los indicadores por número. Los ámbitos de una pauta base sembrada que ya no aparecen en el
@@ -31,6 +32,7 @@ class CatalogSeeder extends Seeder
         );
 
         $this->seedCatalog($catalogo);
+        $this->call(ApoyoPedagogicoSeeder::class);
     }
 
     /**

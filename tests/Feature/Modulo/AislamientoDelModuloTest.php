@@ -7,7 +7,6 @@
 
 use App\Enums\EstadoAcompanamiento;
 use App\Enums\NivelLogro;
-use App\Enums\NivelObjetivoApoyo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -144,7 +143,5 @@ it('repite en los CHECK de la base los valores de los enums', function () {
     expect(valoresDelCheck('acompanamientos', 'estado'))
         ->toEqualCanonicalizing(array_column(EstadoAcompanamiento::cases(), 'value'))
         ->and(valoresDelCheck('respuestas_acompanamiento', 'nivel'))
-        ->toEqualCanonicalizing(array_column(NivelLogro::cases(), 'value'))
-        ->and(valoresDelCheck('apoyos_pedagogicos', 'nivel_objetivo'))
-        ->toEqualCanonicalizing(array_column(NivelObjetivoApoyo::cases(), 'value'));
+        ->toEqualCanonicalizing(array_column(NivelLogro::cases(), 'value'));
 });

@@ -7,7 +7,7 @@ use Database\Factories\IndicadorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Indicador numerado del catálogo GLOBAL, con sus cuatro descriptores de nivel y su retroalimentación.
@@ -48,10 +48,12 @@ class Indicador extends Model
     }
 
     /**
-     * @return HasMany<ApoyoPedagogico, $this>
+     * Ficha del anexo de apoyo pedagógico de este indicador.
+     *
+     * @return HasOne<ApoyoPedagogico, $this>
      */
-    public function apoyosPedagogicos(): HasMany
+    public function apoyoPedagogico(): HasOne
     {
-        return $this->hasMany(ApoyoPedagogico::class)->orderBy('posicion');
+        return $this->hasOne(ApoyoPedagogico::class);
     }
 }

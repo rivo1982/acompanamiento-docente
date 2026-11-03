@@ -29,7 +29,7 @@ function indicadorDelCatalogo(int $numero): array
         ->firstWhere('number', $numero);
 }
 
-it('siembra diez pautas base, trece ámbitos y sesenta indicadores numerados', function () {
+it('siembra diez pautas base, trece ámbitos, sesenta indicadores numerados y sus fichas de apoyo', function () {
     $this->seed(CatalogSeeder::class);
 
     expect(PautaBase::count())->toBe(10)
@@ -37,7 +37,7 @@ it('siembra diez pautas base, trece ámbitos y sesenta indicadores numerados', f
         ->and(Indicador::count())->toBe(60)
         ->and(PautaBase::orderBy('numero')->pluck('numero')->all())->toBe(range(1, 10))
         ->and(Indicador::orderBy('numero')->pluck('numero')->all())->toBe(range(1, 60))
-        ->and(ApoyoPedagogico::count())->toBe(0);
+        ->and(ApoyoPedagogico::count())->toBe(60);
 });
 
 it('conserva los ámbitos de la primera pauta en el orden del archivo', function () {

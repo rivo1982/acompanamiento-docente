@@ -68,21 +68,17 @@ it('devuelve el descriptor del indicador para cada nivel', function () {
         ->and($indicador->descripcionNivel(NivelLogro::Destacado))->toBe('Destaque');
 });
 
-it('ordena los apoyos pedagógicos del indicador por posición', function () {
+it('da al indicador su ficha de apoyo pedagógico', function () {
     $indicador = Indicador::factory()->create();
-    $segundo = ApoyoPedagogico::factory()->for($indicador)->create(['posicion' => 2]);
-    $primero = ApoyoPedagogico::factory()->for($indicador)->create(['posicion' => 1]);
+    $ficha = ApoyoPedagogico::factory()->for($indicador)->create();
 
-    expect($indicador->apoyosPedagogicos->pluck('id')->all())->toBe([$primero->id, $segundo->id]);
+    expect($indicador->apoyoPedagogico->id)->toBe($ficha->id);
 });
 
-it('rechaza un nivel objetivo de apoyo fuera de logrado y destacado', function () {
-    $indicador = Indicador::factory()->create();
+it('rechaza en la base una segunda ficha de apoyo para el mismo indicador', function () {
+    $indicador = ApoyoPedagogico::factory()->create()->indicador;
 
-    rejected(fn () => DB::table('apoyos_pedagogicos')->insert([
-        'indicador_id' => $indicador->id, 'posicion' => 1, 'herramienta' => 'H', 'nivel_objetivo' => 'en_inicio',
-        'como_hacerlo' => 'C', 'ejemplo' => 'E', 'duracion' => '5 min', 'senal_de_logro' => 'S',
-    ]), '23514');
+    rejected(fn () => ApoyoPedagogico::factory()->for($indicador)->create(), '23505');
 });
 
 it('no muestra las pautas de otro establecimiento', function () {
