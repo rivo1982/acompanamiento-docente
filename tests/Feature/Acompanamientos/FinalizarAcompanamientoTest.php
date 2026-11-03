@@ -6,6 +6,9 @@ use App\Mail\AcompanamientoFinalizado;
 use App\Models\AsignacionAcompanamiento;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
@@ -64,12 +67,67 @@ it('niega finalizar a otro observador', function () {
     Mail::assertNothingQueued();
 });
 
-it('finaliza sin correo cuando el docente no tiene cuenta', function () {
+it('finaliza sin correo cuando el docente no tiene cuenta y lo registra en el log', function () {
+    Log::spy();
     AsignacionAcompanamiento::factory()->create(['observador_id' => $this->observadorId, 'docente_id' => $this->docenteSinAsignarId]);
     $acompanamiento = iniciarAcompanamiento($this, docenteId: $this->docenteSinAsignarId);
     responderTodo($this, $acompanamiento);
 
     expect(finalizarAcompanamiento($this->observador, $acompanamiento)->estado)->toBe(EstadoAcompanamiento::Finalizado);
+    Mail::assertNothingQueued();
+    Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto === [
+        'acompanamiento_id' => $acompanamiento->id,
+        'docente_id' => $this->docenteSinAsignarId,
+    ]);
+});
+
+it('devuelve el acompañamiento finalizado y registra el error cuando falla el aviso tras confirmar', function () {
+    responderTodo($this, $this->acompanamiento);
+    Log::spy();
+    Mail::shouldReceive('to')->andThrow(new RuntimeException('La cola no responde.'));
+
+    $finalizado = finalizarAcompanamiento($this->observador, $this->acompanamiento);
+
+    expect($finalizado->estado)->toBe(EstadoAcompanamiento::Finalizado)
+        ->and($this->acompanamiento->fresh()->estado)->toBe(EstadoAcompanamiento::Finalizado);
+    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['acompanamiento_id'] === $this->acompanamiento->id);
+});
+
+/**
+ * Finishes the acompañamiento in the database right after the first (pre-lock) "finalizar" check, so the
+ * locked re-read inside the transaction is the one that finds it already finished. $ademas runs then too.
+ */
+function finalizarloEnParalelo(object $test, ?Closure $ademas = null): void
+{
+    $hecho = false;
+    Gate::after(function ($usuario, string $habilidad) use (&$hecho, $test, $ademas): void {
+        if ($hecho || $habilidad !== 'finalizar') {
+            return;
+        }
+
+        $hecho = true;
+        DB::table('acompanamientos')->where('id', $test->acompanamiento->id)->update([
+            'estado' => EstadoAcompanamiento::Finalizado->value, 'finalizado_en' => now(), 'duracion_minutos' => 0,
+        ]);
+        $ademas?->__invoke();
+    });
+}
+
+it('informa al observador que ya estaba finalizado cuando otro intento lo cerró antes del bloqueo', function () {
+    responderTodo($this, $this->acompanamiento);
+    finalizarloEnParalelo($this);
+
+    expect(fn () => finalizarAcompanamiento($this->observador, $this->acompanamiento))->toThrow(AcompanamientoYaFinalizado::class);
+    Mail::assertNothingQueued();
+});
+
+it('autoriza antes de revelar que ya estaba finalizado dentro de la transacción', function () {
+    responderTodo($this, $this->acompanamiento);
+    // Meanwhile the observer stops being a funcionario in ejercicio: they can no longer see it.
+    finalizarloEnParalelo($this, fn () => DB::table('funcionarios')->where('id', $this->observadorId)
+        ->update(['fecha_termino' => now()->subDays(2)->toDateString()]));
+
+    expect(fn () => finalizarAcompanamiento($this->observador, $this->acompanamiento))->toThrow(AuthorizationException::class);
     Mail::assertNothingQueued();
 });
 

@@ -6,6 +6,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 require_once __DIR__.'/helpers.php';
 
@@ -74,5 +75,14 @@ it('rechaza un curso de otro establecimiento y una asignatura inexistente', func
     rechazaElCampo(fn () => iniciarAcompanamiento($this, cursoId: $this->cursoAjenoId), 'curso');
     rechazaElCampo(fn () => iniciarAcompanamiento($this, asignaturaId: $this->asignaturaId + 1000), 'asignatura');
 
+    expect(DB::table('acompanamientos')->count())->toBe(0);
+});
+
+it('toma al observador del usuario dado y no del contexto activo', function () {
+    // Even if authorization were bypassed, the observer must come from the explicit user: here the active
+    // user is the assigned observer, but the given one has no assignment with the docente.
+    Gate::before(fn (): bool => true);
+
+    expect(fn () => iniciarAcompanamiento($this, usuario: $this->otroObservador))->toThrow(AuthorizationException::class);
     expect(DB::table('acompanamientos')->count())->toBe(0);
 });

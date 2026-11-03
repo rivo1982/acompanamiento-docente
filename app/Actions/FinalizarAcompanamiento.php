@@ -10,12 +10,14 @@ use App\Models\Membresia;
 use App\Models\Usuario;
 use App\Support\FormatoDelPanel;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate as GateFacade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Finaliza un acompañamiento en curso y avisa por correo a su docente. Solo su observador
@@ -27,7 +29,9 @@ use Illuminate\Validation\ValidationException;
  * - Tras confirmar la transacción encola UN aviso (AcompanamientoFinalizado) al correo de la cuenta del docente:
  *   el usuario de su membresía con acceso en el establecimiento del acompañamiento. Sin cuenta no hay correo: se
  *   registra en el log y el acompañamiento queda finalizado igual (el docente lo verá al entrar al módulo).
- * - Un segundo intento lanza AcompanamientoYaFinalizado (a quien puede verlo) y no envía nada.
+ * - Un segundo intento lanza AcompanamientoYaFinalizado (a quien puede verlo) y no envía nada; la misma regla se
+ *   repite sobre la fila bloqueada dentro de la transacción.
+ * - Un fallo del aviso tras confirmar se registra (Log::error) y no se propaga: el acompañamiento ya quedó finalizado.
  */
 class FinalizarAcompanamiento
 {
@@ -39,26 +43,15 @@ class FinalizarAcompanamiento
      */
     public function finalizar(Usuario $observador, int $acompanamientoId): Acompanamiento
     {
-        $gate = Gate::forUser($observador);
+        $gate = GateFacade::forUser($observador);
         $acompanamiento = Acompanamiento::query()->findOrFail($acompanamientoId);
 
-        if ($acompanamiento->estaFinalizado()) {
-            // Solo quien puede verlo sabe que ya está cerrado; al resto se le niega como a cualquier otro.
-            $gate->authorize('ver', $acompanamiento);
-
-            throw AcompanamientoYaFinalizado::para($acompanamiento);
-        }
-
-        $gate->authorize('finalizar', $acompanamiento);
+        $this->autorizar($gate, $acompanamiento);
 
         $acompanamiento = DB::transaction(function () use ($gate, $acompanamientoId): Acompanamiento {
+            // Se vuelve a autorizar sobre la fila bloqueada: otro intento pudo cerrarla entretanto.
             $acompanamiento = Acompanamiento::query()->lockForUpdate()->findOrFail($acompanamientoId);
-
-            if ($acompanamiento->estaFinalizado()) {
-                throw AcompanamientoYaFinalizado::para($acompanamiento);
-            }
-
-            $gate->authorize('finalizar', $acompanamiento);
+            $this->autorizar($gate, $acompanamiento);
             $this->exigirRespuestasCompletas($acompanamiento);
             $acompanamiento->finalizar();
 
@@ -68,6 +61,23 @@ class FinalizarAcompanamiento
         $this->avisarAlDocente($acompanamiento);
 
         return $acompanamiento;
+    }
+
+    /**
+     * Autoriza finalizar. Si ya está cerrado, solo quien puede verlo lo sabe; al resto se le niega como a cualquier otro.
+     *
+     * @throws AuthorizationException
+     * @throws AcompanamientoYaFinalizado
+     */
+    private function autorizar(Gate $gate, Acompanamiento $acompanamiento): void
+    {
+        if ($acompanamiento->estaFinalizado()) {
+            $gate->authorize('ver', $acompanamiento);
+
+            throw AcompanamientoYaFinalizado::para($acompanamiento);
+        }
+
+        $gate->authorize('finalizar', $acompanamiento);
     }
 
     /**
@@ -94,7 +104,22 @@ class FinalizarAcompanamiento
         throw ValidationException::withMessages(['respuestas' => $mensaje]);
     }
 
+    /**
+     * El acompañamiento ya quedó finalizado: un fallo del aviso (consulta, ruta o cola) se registra y no se propaga.
+     */
     private function avisarAlDocente(Acompanamiento $acompanamiento): void
+    {
+        try {
+            $this->encolarAviso($acompanamiento);
+        } catch (Throwable $error) {
+            Log::error('Acompañamiento finalizado sin aviso por correo: falló el envío del aviso al docente.', [
+                'acompanamiento_id' => $acompanamiento->getKey(),
+                'error' => $error->getMessage(),
+            ]);
+        }
+    }
+
+    private function encolarAviso(Acompanamiento $acompanamiento): void
     {
         $docente = Funcionario::query()->with('persona')->find($acompanamiento->docente_id);
         $correo = $docente === null ? null : Membresia::query()

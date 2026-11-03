@@ -8,7 +8,7 @@ use App\Models\Curso;
 use App\Models\Funcionario;
 use App\Models\Pauta;
 use App\Models\Usuario;
-use App\Support\RolesDelModulo;
+use App\Support\EstablecimientoActual;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -19,8 +19,9 @@ use Illuminate\Validation\ValidationException;
  * Inicia un acompañamiento de aula en el establecimiento ACTIVO: un observador, para un docente que tiene asignado,
  * con una pauta del establecimiento, un curso y una asignatura (AcompanamientoPolicy::crear).
  *
- * - El observador es el funcionario vigente del usuario que tiene la asignación con ese docente; si el usuario tiene
- *   varios funcionarios asignados, el de menor id (determinista).
+ * - El observador es el funcionario vigente de $observador (su membresía con acceso en el establecimiento activo) que
+ *   tiene la asignación con ese docente; si tiene varios asignados, el de menor id (determinista). Se resuelve desde
+ *   el usuario dado, nunca desde el contexto de la sesión; si no hay ninguno lanza AuthorizationException.
  * - La pauta debe existir en el establecimiento, no estar eliminada y tener al menos un indicador.
  * - El curso debe ser del establecimiento activo; la asignatura, existir en el catálogo `asignaturas`. No se exige
  *   que coincidan con las asignaciones docentes del profesor.
@@ -30,7 +31,7 @@ use Illuminate\Validation\ValidationException;
  */
 class IniciarAcompanamiento
 {
-    public function __construct(private readonly RolesDelModulo $roles) {}
+    public function __construct(private readonly EstablecimientoActual $actual) {}
 
     /**
      * @throws ModelNotFoundException si el docente no es funcionario del establecimiento activo
@@ -43,10 +44,11 @@ class IniciarAcompanamiento
         Gate::forUser($observador)->authorize('crear', [Acompanamiento::class, $docente]);
 
         $this->validar($pautaId, $cursoId, $asignaturaId);
+        $observadorId = $this->observadorAsignado($observador, $docenteId);
 
         return DB::transaction(fn (): Acompanamiento => Acompanamiento::query()->create([
             'pauta_id' => $pautaId,
-            'observador_id' => $this->observadorAsignado($docenteId),
+            'observador_id' => $observadorId,
             'docente_id' => $docenteId,
             'curso_id' => $cursoId,
             'asignatura_id' => $asignaturaId,
@@ -81,13 +83,25 @@ class IniciarAcompanamiento
     }
 
     /**
-     * Funcionario del usuario autenticado que tiene asignado al docente. La política ya garantizó que existe.
+     * Funcionario vigente de $observador en el establecimiento activo que tiene asignado al docente.
+     *
+     * @throws AuthorizationException si no tiene ninguno
      */
-    private function observadorAsignado(int $docenteId): int
+    private function observadorAsignado(Usuario $observador, int $docenteId): int
     {
-        return (int) AsignacionAcompanamiento::query()
-            ->whereIn('observador_id', $this->roles->funcionarios())
+        $personaId = $observador->membresiasConAcceso()
+            ->where('establecimiento_id', $this->actual->id())
+            ->value('persona_id');
+
+        $observadorId = $personaId === null ? null : AsignacionAcompanamiento::query()
+            ->whereIn('observador_id', Funcionario::query()->vigentes()->where('persona_id', $personaId)->select('id'))
             ->where('docente_id', $docenteId)
             ->min('observador_id');
+
+        if ($observadorId === null) {
+            throw new AuthorizationException('El usuario no es un observador asignado a este docente.');
+        }
+
+        return (int) $observadorId;
     }
 }
