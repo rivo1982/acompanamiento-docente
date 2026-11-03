@@ -114,4 +114,7 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A3 (writer running), then A2.1 + A1.6, then A4.
+A3 — paused by the user on 2026-11-03 mid-task: the writer was stopped at the test-first stage; only
+an UNCOMMITTED, untracked tests/Feature/Acompanamientos/PantallaResultadoTest.php exists (RED draft,
+no implementation). On resume: review that draft, then relaunch the A3 writer (same brief), then
+A2.1 + A1.6, then A4. Demo server stopped; restart with `composer demo:serve`.
