@@ -55,10 +55,22 @@ screens, notification or print view.
 ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 
 ## Tasks
-- [ ] A1 Backend: IniciarAcompanamiento, GuardarRespuesta (upsert level + personal feedback),
-  DescartarAcompanamiento, FinalizarAcompanamiento (all indicators answered; queue the teacher email
-  after commit), ámbito in snapshot, Acompanamiento::asignatura(), mail class + template; tests
-  test-first. Route: delegated (writer).
+- [x] A1 Backend: IniciarAcompanamiento / GuardarRespuesta (max 2000) / DescartarAcompanamiento /
+  FinalizarAcompanamiento (all indicators required; mail queued after commit to the teacher's
+  usuario correo via active membership; no account → log warning, no mail); Mailable
+  AcompanamientoFinalizado (RUTA acompanamientos.show, placeholder 404 route until A3); `ambito` in
+  snapshot; Acompanamiento::nombreAsignatura() (no Asignatura model exists). RED 20/20 → GREEN; parent
+  fixed PautaTest exact snapshot assertion; suite 780. Commit 2f48ed2. Route: delegated.
+  Review split (lens budget exceeded by the 60-ficha JSON): slice 05253f7..c2e1356 (data + root
+  redirect + docs) via worktree, APPROVED/acknowledged (review-4d59a15cc7baa96e); slice
+  c2e1356..2f48ed2 APPROVED/acknowledged (review-dfd255be352ea2d5). Reviewed boundary → 2f48ed2.
+- [ ] A1.1 Review follow-ups (advisory): resolve observador_id from the explicit $observador user
+  (not ambient RolesDelModulo context) and fail loudly if none; catch+log failures in
+  avisarAlDocente after commit (finish must not throw once committed); in-transaction recheck order
+  (authorize before revealing finalized state) + test; assert the Log::warning when the teacher has
+  no account; the email link 404 is resolved by A3 (add a test that the linked page responds).
+  Data: A1.5 seeder tests must prove 60 fichas, numeros 1..60 unique, names match catalog, no empty
+  fields.
 - [ ] A1.5 Apoyo pedagógico data: new migration replacing apoyos_pedagogicos with one ficha per
   indicator (6 text fields + contexto), seeder from apoyo_pedagogico.json (idempotent, by indicator
   numero), model + orientaciones accessor, tests. Route: delegated (writer, after A1).
@@ -80,4 +92,4 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A1.
+A1.1 + A1.5 (one writer), then A2.
