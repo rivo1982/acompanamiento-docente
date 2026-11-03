@@ -64,16 +64,24 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   Review split (lens budget exceeded by the 60-ficha JSON): slice 05253f7..c2e1356 (data + root
   redirect + docs) via worktree, APPROVED/acknowledged (review-4d59a15cc7baa96e); slice
   c2e1356..2f48ed2 APPROVED/acknowledged (review-dfd255be352ea2d5). Reviewed boundary → 2f48ed2.
-- [ ] A1.1 Review follow-ups (advisory): resolve observador_id from the explicit $observador user
+- [x] A1.1 Review follow-ups (advisory, DONE in ab1661e except the email-link page test, which moves to A3): resolve observador_id from the explicit $observador user
   (not ambient RolesDelModulo context) and fail loudly if none; catch+log failures in
   avisarAlDocente after commit (finish must not throw once committed); in-transaction recheck order
   (authorize before revealing finalized state) + test; assert the Log::warning when the teacher has
   no account; the email link 404 is resolved by A3 (add a test that the linked page responds).
   Data: A1.5 seeder tests must prove 60 fichas, numeros 1..60 unique, names match catalog, no empty
   fields.
-- [ ] A1.5 Apoyo pedagógico data: new migration replacing apoyos_pedagogicos with one ficha per
-  indicator (6 text fields + contexto), seeder from apoyo_pedagogico.json (idempotent, by indicator
-  numero), model + orientaciones accessor, tests. Route: delegated (writer, after A1).
+- [x] A1.5 Apoyo pedagógico data: migration 2026_11_03_000100 recreates apoyos_pedagogicos as one
+  ficha per indicator (indicador_id unique + contexto + 6 text fields; down() restores old shape);
+  Indicador::apoyoPedagogico() hasOne; ApoyoPedagogicoSeeder (updateOrCreate by numero, chained from
+  CatalogSeeder::run, fails loudly on unknown numero); App\Support\ApoyoPedagogico\Orientaciones
+  (comoUsar, cicloSugerido, fundamentoCiclo, notaDeUso, notaProtocolo, requiereProtocolo,
+  planDeMejora); NivelObjetivoApoyo removed. RED → GREEN; suite 791. Commits ab1661e (A1.1),
+  849e09a (A1.5). Route: delegated. Review (base 2f48ed2, medium, 562 lines): APPROVED/acknowledged
+  (review-90374e304683f08b). Reviewed boundary → 849e09a.
+- [ ] A1.6 Review follow-ups (advisory): prove seeder atomicity (bad numero on a LATER ficha, assert
+  rollback); log the exception (not only the message) in avisarAlDocente and consider narrowing the
+  catch so DB errors inside an outer transaction are not swallowed.
 - [ ] A2 Observer screens: "Mis acompañamientos" (observer), "Nuevo acompañamiento", scoring form
   (levels + level-meaning table + personal feedback, Finalizar with confirmation). vinkured-ui.
   Route: delegated (writer).
@@ -92,4 +100,4 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A1.1 + A1.5 (one writer), then A2.
+A2 (writer running), then A3.
