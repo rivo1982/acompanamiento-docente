@@ -4,9 +4,21 @@
     <x-page-header titulo="Acompañamiento docente" descripcion="Elegir la pantalla con la que se va a trabajar." />
 
     @php($puedeVerPautas = Gate::allows('verCualquiera', App\Models\Pauta::class))
+    {{-- Mismo criterio que AcompanamientoPolicy::crear y "Nuevo acompañamiento": un observador del establecimiento activo. --}}
+    @php($puedeObservar = auth()->user() instanceof App\Models\Usuario && app(App\Support\RolesDelModulo::class)->esObservador(auth()->user()))
 
-    @if ($puedeVerPautas || Gate::any(['gestionar-observadores', 'invitar-funcionarios']))
+    @if ($puedeVerPautas || $puedeObservar || Gate::any(['gestionar-observadores', 'invitar-funcionarios']))
         <nav aria-label="Pantallas del módulo" class="mt-6 grid gap-4 md:grid-cols-2">
+            @if ($puedeObservar)
+                <x-card titulo="Acompañamientos">
+                    <p class="mb-4 text-texto-atenuado text-pretty">Observar clases con una pauta, registrar los niveles y finalizar para avisar al docente.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <x-button :href="route('acompanamientos.index')">Ir a Mis acompañamientos</x-button>
+                        <x-button :href="route('acompanamientos.create')" variante="secundario">Nuevo acompañamiento</x-button>
+                    </div>
+                </x-card>
+            @endif
+
             @if ($puedeVerPautas)
                 <x-card titulo="Pautas">
                     <p class="mb-4 text-texto-atenuado text-pretty">Pautas de observación del establecimiento, para ver, imprimir o guardar en PDF.</p>

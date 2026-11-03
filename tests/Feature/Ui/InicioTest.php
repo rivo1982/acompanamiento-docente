@@ -44,3 +44,20 @@ it('links a teacher only to the rubrics screen', function () {
         ->assertDontSee(route('invitaciones.index'), escape: false)
         ->assertDontSee(route('importaciones.index'), escape: false);
 });
+
+it('links an observer to the observations screen and hides it from a teacher who does not observe', function () {
+    [$observador] = usuarioDelModulo($this->establecimientoId, 'observador');
+    activar($observador, $this->establecimientoId);
+
+    $this->get(route('panel'))
+        ->assertOk()
+        ->assertSee(route('acompanamientos.index'), escape: false);
+
+    [$docente] = usuarioDelModulo($this->establecimientoId, 'docente');
+    app()->forgetScopedInstances();
+    activar($docente, $this->establecimientoId);
+
+    $this->get(route('panel'))
+        ->assertOk()
+        ->assertDontSee(route('acompanamientos.index'), escape: false);
+});

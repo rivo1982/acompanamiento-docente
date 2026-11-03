@@ -1,5 +1,8 @@
 <?php
 
+use App\Livewire\Acompanamientos\Acompanamientos;
+use App\Livewire\Acompanamientos\NuevoAcompanamiento;
+use App\Livewire\Acompanamientos\ObservarAcompanamiento;
 use App\Livewire\Importaciones\CargaMasiva;
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\AceptarInvitacion;
@@ -67,6 +70,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/pautas/nueva', FormularioDePauta::class)->name('pautas.create');
         Route::get('/pautas/{pauta}/editar', FormularioDePauta::class)->name('pautas.edit');
         Route::get('/pautas/{pauta}', VerPauta::class)->name('pautas.show');
+
+        // Acompañamientos de aula (T7): cada componente exige AcompanamientoPolicy al abrir y en cada acción (la lista,
+        // a cualquier funcionario; iniciar, a un observador; observar, solo a su observador mientras sigue en curso).
+        Route::get('/acompanamientos', Acompanamientos::class)->name('acompanamientos.index');
+        Route::get('/acompanamientos/nuevo', NuevoAcompanamiento::class)->name('acompanamientos.create');
+        Route::get('/acompanamientos/{acompanamiento}/observar', ObservarAcompanamiento::class)
+            ->whereNumber('acompanamiento')
+            ->name('acompanamientos.edit');
 
         // Resultado de un acompañamiento (T7). Marcador de posición: el aviso al docente (AcompanamientoFinalizado::RUTA)
         // ya enlaza aquí; A3 lo reemplaza por la pantalla del resultado, con AcompanamientoPolicy::ver.
