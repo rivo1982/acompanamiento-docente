@@ -154,6 +154,7 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
+Slice c5b8c6a..0a1dd36 (5888a67 + 0a1dd36): medium, under_budget (111 lines) → not reviewed yet.
 2026-11-06: user visual check on the demo APPROVED ("está correcto lo que veo"). All tasks A1–A4 and
 their follow-ups done. Remaining: delivery decision (push / PR of feat/observadores) is the user's.
 Demo server: `composer demo:serve` (127.0.0.1:18765).
