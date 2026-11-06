@@ -130,6 +130,24 @@ it('muestra el resultado a su observador y al administrador del módulo', functi
     $this->get(route('acompanamientos.show', $acompanamiento->id))->assertOk();
 });
 
+it('muestra a su observador un acompañamiento en curso con el aviso y el enlace para continuar', function () {
+    $enCurso = iniciarAcompanamiento($this);
+    $finalizado = resultadoFinalizado($this);
+    $continuar = 'href="'.route('acompanamientos.edit', $enCurso->id).'"';
+
+    $this->get(route('acompanamientos.show', $enCurso->id))
+        ->assertOk()
+        ->assertSee('Acompañamiento en curso: el resultado queda disponible para el docente al finalizarlo.')
+        ->assertSee('Continuar observación')
+        ->assertSee($continuar, false);
+
+    $this->get(route('acompanamientos.show', $finalizado->id))
+        ->assertOk()
+        ->assertDontSee('Acompañamiento en curso:')
+        ->assertDontSee('Continuar observación')
+        ->assertDontSee(route('acompanamientos.edit', $finalizado->id), false);
+});
+
 it('no encuentra un acompañamiento de otro establecimiento ni uno inexistente', function () {
     [$administradorB] = usuarioDelModulo($this->b, 'administrador');
     verComo($this, $administradorB, $this->b);
@@ -322,6 +340,33 @@ it('muestra al docente sin resultados un estado vacío', function () {
         ->assertOk()
         ->assertSee('Mis resultados')
         ->assertSee('Aún no hay acompañamientos finalizados de sus clases.');
+});
+
+it('limita mis resultados a los veinte más recientes y lo indica', function () {
+    $finalizados = collect(range(1, 21))->map(fn (int $diasAtras): Acompanamiento => Acompanamiento::factory()->finalizado()->create([
+        'pauta_id' => $this->pauta->id,
+        'observador_id' => $this->observadorId,
+        'docente_id' => $this->docenteId,
+        'curso_id' => $this->cursoId,
+        'asignatura_id' => $this->asignaturaId,
+        'iniciado_en' => now()->subDays($diasAtras)->subHour(),
+        'finalizado_en' => now()->subDays($diasAtras),
+    ]));
+    verComo($this, $this->usuarioDocente);
+    $enlace = fn (Acompanamiento $acompanamiento): string => 'href="'.route('acompanamientos.show', $acompanamiento->id).'"';
+
+    $this->get(route('acompanamientos.index'))
+        ->assertOk()
+        ->assertSee('Se muestran los 20 más recientes.')
+        ->assertSee($enlace($finalizados->first()), false)
+        ->assertSee($enlace($finalizados->get(19)), false)
+        ->assertDontSee($enlace($finalizados->last()), false);
+
+    $finalizados->last()->delete();
+
+    $this->get(route('acompanamientos.index'))
+        ->assertOk()
+        ->assertDontSee('más recientes.');
 });
 
 it('no lista al docente los resultados de otro docente', function () {

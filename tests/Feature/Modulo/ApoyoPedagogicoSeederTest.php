@@ -77,6 +77,16 @@ it('falla en voz alta si una ficha no tiene indicador en el catálogo', function
     expect(ApoyoPedagogico::count())->toBe(60);
 });
 
+it('deshace las fichas ya escritas cuando una ficha posterior no tiene indicador', function () {
+    $this->seed(CatalogSeeder::class);
+    ApoyoPedagogico::query()->delete();
+    $anexo = anexoJson();
+    $anexo['fichas'][array_key_last($anexo['fichas'])]['numero'] = 999;
+
+    expect(fn () => (new ApoyoPedagogicoSeeder)->seedFichas($anexo['fichas']))->toThrow(RuntimeException::class, '999');
+    expect(ApoyoPedagogico::count())->toBe(0);
+});
+
 it('expone las orientaciones generales del anexo', function () {
     $fuente = anexoJson()['orientaciones'];
     $orientaciones = Orientaciones::delAnexo();

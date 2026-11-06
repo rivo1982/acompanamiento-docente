@@ -79,7 +79,7 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   planDeMejora); NivelObjetivoApoyo removed. RED → GREEN; suite 791. Commits ab1661e (A1.1),
   849e09a (A1.5). Route: delegated. Review (base 2f48ed2, medium, 562 lines): APPROVED/acknowledged
   (review-90374e304683f08b). Reviewed boundary → 849e09a.
-- [ ] A1.6 Review follow-ups (advisory): prove seeder atomicity (bad numero on a LATER ficha, assert
+- [x] A1.6 Review follow-ups (advisory): prove seeder atomicity (bad numero on a LATER ficha, assert
   rollback); log the exception (not only the message) in avisarAlDocente and consider narrowing the
   catch so DB errors inside an outer transaction are not swallowed.
 - [x] A2 Observer screens: `acompanamientos` (En curso: Continuar/Descartar with modal; Finalizados;
@@ -93,7 +93,7 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   Route: delegated. Review (base 849e09a, medium, 1349 lines): APPROVED/acknowledged
   (review-c6a75b2e2058f984). Reviewed boundary → 022727c.
   needs_brief: En curso (Neutro) / Finalizado (Éxito) badges; sticky progress bar pattern.
-- [ ] A2.1 Review follow-ups (advisory): confirm the layout renders session('estado') on the list
+- [x] A2.1 Review follow-ups (advisory): confirm the layout renders session('estado') on the list
   after finishing (else render it); catch AcompanamientoYaFinalizado/AuthorizationException in
   guardar() (finished in another tab) and redirect to the result; is_string guards on client-writable
   niveles/retroalimentaciones; map start errors to the right field (pauta/curso/asignatura vs
@@ -112,10 +112,19 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   "Lo observado".
   Commit 578a675. Review (base 022727c, medium, 952 lines, user granted): APPROVED/acknowledged
   (review-70e8a80360097d5a). Reviewed boundary → 578a675.
-- [ ] A3.1 Review follow-ups (advisory): test the observer opening an en-curso acompañamiento (200,
+- [x] A3.1 Review follow-ups (advisory): test the observer opening an en-curso acompañamiento (200,
   banner, "Continuar observación") and that a finished one hides that link; test the 20-row cap of
   "Mis resultados"; paginate it (needs a page-name-aware paginator). Discarded: "null nivel → 500"
   (respuestas_acompanamiento.nivel is NOT NULL + CHECK).
+- [x] Follow-ups A1.6 + A2.1 + A3.1 closed together (one commit, route: delegated): avisarAlDocente
+  logs the exception object (catch kept Throwable: runs after commit, no outer transaction exists;
+  docblock forbids calling finalizar() inside one); seeder already transactional (test proven by
+  temporarily removing the transaction → 59 rows); guardar() redirects to the result when finished
+  in another tab (rethrows real 403); non-string niveles/retroalimentaciones ignored; PautaNoDisponible
+  mapped to `pauta`; curso/asignatura reset on teacher switch; A3.1 tests added (pagination of
+  "Mis resultados" left out). RED observed where behavior changed; suite 844.
+- [ ] A2.2 Follow-up (advisory): confirmarFinalizacion() still returns 403 when finished in another
+  tab; redirect to the result like guardar().
 - [ ] A4 Demo data (one en curso, one finalizado), home card, user visual check.
 
 ## Acceptance criteria
@@ -128,5 +137,5 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A3 done; next A2.1 + A1.6 + A3.1 (advisory follow-ups, one commit), then A4 (demo data + user visual check of the needs_brief items).
+Follow-ups done; next A4 (demo data + user visual check), A2.2 optional, then A4 (demo data + user visual check of the needs_brief items).
 Demo server stopped; restart with `composer demo:serve`.

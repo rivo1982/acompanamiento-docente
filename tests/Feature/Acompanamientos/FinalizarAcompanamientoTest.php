@@ -84,13 +84,15 @@ it('finaliza sin correo cuando el docente no tiene cuenta y lo registra en el lo
 it('devuelve el acompañamiento finalizado y registra el error cuando falla el aviso tras confirmar', function () {
     responderTodo($this, $this->acompanamiento);
     Log::spy();
-    Mail::shouldReceive('to')->andThrow(new RuntimeException('La cola no responde.'));
+    $falla = new RuntimeException('La cola no responde.');
+    Mail::shouldReceive('to')->andThrow($falla);
 
     $finalizado = finalizarAcompanamiento($this->observador, $this->acompanamiento);
 
     expect($finalizado->estado)->toBe(EstadoAcompanamiento::Finalizado)
         ->and($this->acompanamiento->fresh()->estado)->toBe(EstadoAcompanamiento::Finalizado);
-    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['acompanamiento_id'] === $this->acompanamiento->id);
+    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['acompanamiento_id'] === $this->acompanamiento->id
+        && ($contexto['exception'] ?? null) === $falla);
 });
 
 /**

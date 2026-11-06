@@ -231,6 +231,56 @@ it('rechaza un docente no asignado y un curso de otro establecimiento', function
     expect(Acompanamiento::query()->count())->toBe(0);
 });
 
+it('marca en la pauta, no en el docente, una pauta de otro establecimiento o eliminada', function () {
+    [$administradorB] = usuarioDelModulo($this->b, 'administrador');
+    comoUsuario($this, $administradorB, $this->b);
+    $pautaAjena = Pauta::factory()->create();
+    $pautaAjena->indicadores()->attach([$this->ind[1001] => ['posicion' => 1]]);
+    comoUsuario($this, $this->observador);
+
+    $eliminada = Pauta::factory()->create();
+    $eliminada->indicadores()->attach([$this->ind[1001] => ['posicion' => 1]]);
+    $eliminada->delete();
+
+    foreach ([$pautaAjena->id, $eliminada->id] as $pautaId) {
+        Livewire::test(NuevoAcompanamiento::class)
+            ->set('docente', (string) $this->docenteId)
+            ->set('pauta', (string) $pautaId)
+            ->set('curso', (string) $this->cursoId)
+            ->set('asignatura', (string) $this->asignaturaId)
+            ->call('iniciar')
+            ->assertHasErrors(['pauta' => 'La pauta elegida no está disponible.'])
+            ->assertHasNoErrors(['docente', 'curso', 'asignatura'])
+            ->assertNoRedirect();
+    }
+
+    expect(Acompanamiento::query()->count())->toBe(0);
+});
+
+it('marca en la pauta una pauta eliminada justo antes de crear el acompañamiento', function () {
+    $eliminando = false;
+    DB::listen(function ($consulta) use (&$eliminando): void {
+        // The last query of IniciarAcompanamiento before the insert: the observer assignment lookup.
+        if (! $eliminando && str_contains($consulta->sql, 'min("observador_id")')) {
+            $eliminando = true;
+            $this->pauta->delete();
+        }
+    });
+
+    Livewire::test(NuevoAcompanamiento::class)
+        ->set('docente', (string) $this->docenteId)
+        ->set('pauta', (string) $this->pauta->id)
+        ->set('curso', (string) $this->cursoId)
+        ->set('asignatura', (string) $this->asignaturaId)
+        ->call('iniciar')
+        ->assertHasErrors('pauta')
+        ->assertHasNoErrors('docente')
+        ->assertNoRedirect();
+
+    expect($eliminando)->toBeTrue()
+        ->and(Acompanamiento::query()->count())->toBe(0);
+});
+
 it('preselecciona el curso y la asignatura cuando el docente tiene una sola asignación docente', function () {
     DB::table('asignaciones_docentes')->insert([
         'establecimiento_id' => $this->a, 'funcionario_id' => $this->docenteId,
@@ -241,6 +291,27 @@ it('preselecciona el curso y la asignatura cuando el docente tiene una sola asig
         ->set('docente', (string) $this->docenteId)
         ->assertSet('curso', (string) $this->cursoId)
         ->assertSet('asignatura', (string) $this->asignaturaId);
+});
+
+it('limpia el curso y la asignatura al cambiar a un docente sin una sola asignación docente', function () {
+    $otroCursoId = newCurso($this->a);
+    DB::table('asignaciones_docentes')->insert([
+        ['establecimiento_id' => $this->a, 'funcionario_id' => $this->docenteId, 'curso_id' => $this->cursoId, 'asignatura_id' => $this->asignaturaId, 'es_jefatura' => false],
+        ['establecimiento_id' => $this->a, 'funcionario_id' => $this->docenteSinAsignarId, 'curso_id' => $this->cursoId, 'asignatura_id' => $this->asignaturaId, 'es_jefatura' => false],
+        ['establecimiento_id' => $this->a, 'funcionario_id' => $this->docenteSinAsignarId, 'curso_id' => $otroCursoId, 'asignatura_id' => $this->asignaturaId, 'es_jefatura' => false],
+    ]);
+    asignarDocenteAObservador($this->observadorId, $this->docenteSinAsignarId);
+
+    Livewire::test(NuevoAcompanamiento::class)
+        ->set('docente', (string) $this->docenteId)
+        ->assertSet('curso', (string) $this->cursoId)
+        ->set('docente', (string) $this->docenteSinAsignarId)
+        ->assertSet('curso', '')
+        ->assertSet('asignatura', '')
+        ->set('docente', (string) $this->docenteId)
+        ->set('docente', '')
+        ->assertSet('curso', '')
+        ->assertSet('asignatura', '');
 });
 
 it('no deja abrir la pantalla nueva a quien no observa', function () {
@@ -335,6 +406,68 @@ it('finaliza con todos los niveles, avisa al docente y vuelve a la lista', funct
     expect($acompanamiento->fresh()->estado)->toBe(EstadoAcompanamiento::Finalizado)
         ->and(session('estado'))->toBe('Se finalizó el acompañamiento de Beatriz Rojas. El resultado ya está disponible para el docente.');
     Mail::assertQueued(AcompanamientoFinalizado::class, 1);
+});
+
+it('muestra en la lista el mensaje de acompañamiento finalizado', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    responderTodo($this, $acompanamiento);
+
+    Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id])
+        ->call('confirmarFinalizacion')
+        ->call('finalizar')
+        ->assertRedirect(route('acompanamientos.index'));
+
+    $this->get(route('acompanamientos.index'))
+        ->assertOk()
+        ->assertSee('Se finalizó el acompañamiento de Beatriz Rojas. El resultado ya está disponible para el docente.');
+});
+
+it('lleva al resultado al guardar en un acompañamiento que se finalizó en otra pestaña', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    guardarRespuesta($this->observador, $acompanamiento, $this->ind[1001], 'logrado');
+    $pestanaDelNivel = Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id]);
+    $pestanaDeLaRetroalimentacion = Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id]);
+    responderTodo($this, $acompanamiento);
+    finalizarAcompanamiento($this->observador, $acompanamiento);
+    $respuestas = RespuestaAcompanamiento::query()->orderBy('id')->get(['nivel', 'retroalimentacion_personal'])->toArray();
+
+    $pestanaDelNivel->set("niveles.{$this->ind[1001]}", 'destacado')
+        ->assertRedirect(route('acompanamientos.show', $acompanamiento->id));
+    $pestanaDeLaRetroalimentacion->set("retroalimentaciones.{$this->ind[1001]}", 'Comentario tardío.')
+        ->assertRedirect(route('acompanamientos.show', $acompanamiento->id));
+
+    expect(RespuestaAcompanamiento::query()->orderBy('id')->get(['nivel', 'retroalimentacion_personal'])->toArray())->toBe($respuestas);
+});
+
+it('sigue negando guardar a quien ya no observa aunque el acompañamiento siga en curso', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    $componente = Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id]);
+    AsignacionAcompanamiento::query()->delete();
+    Acompanamiento::query()->whereKey($acompanamiento->id)->update(['observador_id' => $this->otroObservadorId]);
+
+    $componente->set("niveles.{$this->ind[1001]}", 'logrado')->assertForbidden();
+
+    expect(RespuestaAcompanamiento::query()->count())->toBe(0);
+});
+
+it('ignora niveles y retroalimentaciones que no son texto sin guardar nada', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    guardarRespuesta($this->observador, $acompanamiento, $this->ind[1001], 'logrado', 'Bien.');
+
+    Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id])
+        ->set("niveles.{$this->ind[1001]}", ['destacado'])
+        ->assertSet("niveles.{$this->ind[1001]}", 'logrado')
+        ->set("retroalimentaciones.{$this->ind[1001]}", ['Otra.'])
+        ->assertSet("retroalimentaciones.{$this->ind[1001]}", 'Bien.')
+        ->set("niveles.{$this->ind[1002]}", ['logrado'])
+        ->assertSet("niveles.{$this->ind[1002]}", '')
+        ->assertSee('No se guardó el indicador 1002.')
+        ->set("retroalimentaciones.{$this->ind[1002]}", ['Otra.'])
+        ->assertSet("retroalimentaciones.{$this->ind[1002]}", '');
+
+    expect(RespuestaAcompanamiento::query()->sole())
+        ->nivel->value->toBe('logrado')
+        ->retroalimentacion_personal->toBe('Bien.');
 });
 
 it('lleva al resultado al abrir un acompañamiento ya finalizado', function () {

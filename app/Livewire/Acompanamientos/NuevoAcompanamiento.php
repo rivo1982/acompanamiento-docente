@@ -3,6 +3,7 @@
 namespace App\Livewire\Acompanamientos;
 
 use App\Actions\IniciarAcompanamiento;
+use App\Exceptions\PautaNoDisponible;
 use App\Models\AnioEscolar;
 use App\Models\AsignacionAcompanamiento;
 use App\Models\AsignacionDocente;
@@ -49,9 +50,14 @@ class NuevoAcompanamiento extends Component
         $this->autorizar();
     }
 
-    /** Preselecciona curso y asignatura cuando el docente tiene una sola asignación docente en los cursos ofrecidos. */
+    /**
+     * Preselecciona curso y asignatura cuando el docente tiene una sola asignación docente en los cursos ofrecidos; si
+     * no, los deja sin elegir para no arrastrar los del docente anterior.
+     */
     public function updatedDocente(): void
     {
+        $this->curso = '';
+        $this->asignatura = '';
         $id = $this->entero($this->docente);
 
         if ($id === null) {
@@ -108,6 +114,12 @@ class NuevoAcompanamiento extends Component
             foreach ($e->errors() as $campo => $errores) {
                 $this->addError($campo, (string) ($errores[0] ?? ''));
             }
+            $this->enfocarPrimerError();
+
+            return;
+        } catch (PautaNoDisponible) {
+            // La pauta se eliminó entre la validación y la creación.
+            $this->addError('pauta', 'La pauta elegida no está disponible.');
             $this->enfocarPrimerError();
 
             return;

@@ -105,7 +105,9 @@ class FinalizarAcompanamiento
     }
 
     /**
-     * El acompañamiento ya quedó finalizado: un fallo del aviso (consulta, ruta o cola) se registra y no se propaga.
+     * El acompañamiento ya quedó finalizado: un fallo del aviso (consulta, ruta o cola) se registra con la excepción
+     * completa y no se propaga. Corre después de confirmar la transacción propia, fuera de toda transacción: no llamar
+     * a finalizar() dentro de otra, porque un error de base de datos capturado aquí la dejaría abortada.
      */
     private function avisarAlDocente(Acompanamiento $acompanamiento): void
     {
@@ -114,7 +116,7 @@ class FinalizarAcompanamiento
         } catch (Throwable $error) {
             Log::error('Acompañamiento finalizado sin aviso por correo: falló el envío del aviso al docente.', [
                 'acompanamiento_id' => $acompanamiento->getKey(),
-                'error' => $error->getMessage(),
+                'exception' => $error,
             ]);
         }
     }

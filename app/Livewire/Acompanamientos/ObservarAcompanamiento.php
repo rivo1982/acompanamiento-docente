@@ -11,6 +11,7 @@ use App\Models\Funcionario;
 use App\Models\RespuestaAcompanamiento;
 use App\Models\Usuario;
 use App\Support\FormatoDelPanel;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -70,12 +71,21 @@ class ObservarAcompanamiento extends Component
     public function updatedNiveles(mixed $valor, mixed $clave): void
     {
         $indicadorId = (int) $clave;
+
+        if (! $this->sonTextos($indicadorId)) {
+            return;
+        }
+
         $this->guardar($indicadorId, "Nivel del indicador {$this->numeroDe($indicadorId)} guardado.");
     }
 
     public function updatedRetroalimentaciones(mixed $valor, mixed $clave): void
     {
         $indicadorId = (int) $clave;
+
+        if (! $this->sonTextos($indicadorId)) {
+            return;
+        }
 
         if (($this->niveles[$indicadorId] ?? '') === '') {
             $this->estadoDeGuardado = "La retroalimentación del indicador {$this->numeroDe($indicadorId)} se guarda al elegir su nivel.";
@@ -175,7 +185,7 @@ class ObservarAcompanamiento extends Component
 
     /**
      * Guarda el nivel y la retroalimentación del indicador. Un error se muestra junto al campo y el nivel vuelve al
-     * último guardado.
+     * último guardado. Si se finalizó entretanto (otra pestaña), lleva a su resultado.
      */
     private function guardar(int $indicadorId, string $exito): void
     {
@@ -204,9 +214,41 @@ class ObservarAcompanamiento extends Component
             $this->estadoDeGuardado = "No se guardó el indicador {$numero}.";
 
             return;
+        } catch (AcompanamientoYaFinalizado|AuthorizationException $e) {
+            if (! $this->acompanamiento($this->acompanamientoId)->estaFinalizado()) {
+                throw $e;
+            }
+
+            $this->redirectRoute('acompanamientos.show', ['acompanamiento' => $this->acompanamientoId]);
+
+            return;
         }
 
         $this->estadoDeGuardado = $exito;
+    }
+
+    /**
+     * Niveles y retroalimentaciones llegan del navegador: si el del indicador no es texto, vuelven al último guardado y
+     * no se guarda nada.
+     */
+    private function sonTextos(int $indicadorId): bool
+    {
+        $nivel = $this->niveles[$indicadorId] ?? '';
+        $retroalimentacion = $this->retroalimentaciones[$indicadorId] ?? '';
+
+        if (is_string($nivel) && is_string($retroalimentacion)) {
+            return true;
+        }
+
+        $guardado = RespuestaAcompanamiento::query()
+            ->where('acompanamiento_id', $this->acompanamientoId)
+            ->where('indicador_id', $indicadorId)
+            ->first();
+        $this->niveles[$indicadorId] = $guardado?->nivel->value ?? '';
+        $this->retroalimentaciones[$indicadorId] = (string) $guardado?->retroalimentacion_personal;
+        $this->estadoDeGuardado = "No se guardó el indicador {$this->numeroDe($indicadorId)}.";
+
+        return false;
     }
 
     private function numeroDe(int $indicadorId): string
