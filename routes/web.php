@@ -3,6 +3,7 @@
 use App\Livewire\Acompanamientos\Acompanamientos;
 use App\Livewire\Acompanamientos\NuevoAcompanamiento;
 use App\Livewire\Acompanamientos\ObservarAcompanamiento;
+use App\Livewire\Acompanamientos\VerAcompanamiento;
 use App\Livewire\Importaciones\CargaMasiva;
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\AceptarInvitacion;
@@ -79,9 +80,9 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('acompanamiento')
             ->name('acompanamientos.edit');
 
-        // Resultado de un acompañamiento (T7). Marcador de posición: el aviso al docente (AcompanamientoFinalizado::RUTA)
-        // ya enlaza aquí; A3 lo reemplaza por la pantalla del resultado, con AcompanamientoPolicy::ver.
-        Route::get('/acompanamientos/{acompanamiento}', fn () => abort(404))
+        // Retroalimentación de un acompañamiento (T7): AcompanamientoPolicy::ver (su observador, su docente una vez
+        // finalizado y el administrador del módulo). El aviso al docente (AcompanamientoFinalizado::RUTA) enlaza aquí.
+        Route::get('/acompanamientos/{acompanamiento}', VerAcompanamiento::class)
             ->whereNumber('acompanamiento')
             ->name('acompanamientos.show');
     });

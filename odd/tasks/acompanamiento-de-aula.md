@@ -99,9 +99,18 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   niveles/retroalimentaciones; map start errors to the right field (pauta/curso/asignatura vs
   docente) + test foreign/deleted pauta; reset curso/asignatura when switching to a teacher without a
   single assignment. The 404 placeholder is replaced by A3.
-- [ ] A3 Result view (teacher/observer/admin) with automatic feedback, Felicitaciones, apoyo
+- [x] A3 Result view (teacher/observer/admin) with automatic feedback, Felicitaciones, apoyo
   pedagógico fichas (attractive, color-coded by action type, per display default above), ciclo
   sugerido, plan de mejora template, print layout; teacher's list. vinkured-ui. Route: delegated.
+  VerAcompanamiento + ResultadoDeAcompanamiento + ver-acompanamiento view (sections by level En inicio
+  → Destacado, ámbito as card label — deviation: not nested by ámbito, to keep the weakest first);
+  "Mis resultados" on the list (20 most recent, not paginated: host-owned x-paginacion supports one
+  page name). Parent fix: renamed test helper textoVisible → textoVisibleDelResultado (global Pest
+  function clashed with PantallaAceptarInvitacionTest). RED 18/19 → GREEN 19/19; suite 834.
+  needs_brief: level colors (Aviso/Neutro/Éxito/Información), ficha part colors, Peligro protocol
+  note, copy "Continuar observación", "Ver retroalimentación", "Volver a acompañamientos",
+  "Lo observado".
+- [ ] A3.1 Follow-up (advisory): paginate "Mis resultados" (needs a page-name-aware paginator).
 - [ ] A4 Demo data (one en curso, one finalizado), home card, user visual check.
 
 ## Acceptance criteria
@@ -114,7 +123,5 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A3 — paused by the user on 2026-11-03 mid-task: the writer was stopped at the test-first stage; only
-an UNCOMMITTED, untracked tests/Feature/Acompanamientos/PantallaResultadoTest.php exists (RED draft,
-no implementation). On resume: review that draft, then relaunch the A3 writer (same brief), then
-A2.1 + A1.6, then A4. Demo server stopped; restart with `composer demo:serve`.
+A3 committed; then A2.1 + A1.6, then A4 (demo data + user visual check of the needs_brief items).
+Demo server stopped; restart with `composer demo:serve`.

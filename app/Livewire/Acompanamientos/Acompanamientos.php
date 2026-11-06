@@ -24,8 +24,10 @@ use Livewire\WithPagination;
  * Pantalla "Mis acompañamientos" (T7; ruta `acompanamientos.index`). Clase nueva del módulo para entregar a Vinkured.
  * Para cualquier funcionario del establecimiento activo: el observador ve los suyos separados en "En curso" (continuar
  * o descartar, con confirmación) y "Finalizados" (enlace al resultado). El administrador del módulo puede además ver
- * todos los del establecimiento (AcompanamientoPolicy::ver), sin acciones sobre los de otros observadores. Un docente
- * que no observa ve un estado vacío (su lista de resultados llega con A3).
+ * todos los del establecimiento (AcompanamientoPolicy::ver), sin acciones sobre los de otros observadores. Arriba,
+ * "Mis resultados" lista al docente (o a quien ya fue observado) sus acompañamientos finalizados, los más recientes
+ * primero y hasta POR_PAGINA; un docente que no observa ve además un estado vacío en lugar de las secciones del
+ * observador.
  *
  * Todo se lee con modelos filtrados por el establecimiento activo: un id de otro establecimiento no aparece y, si
  * llega en una acción, da 404. Descartar lo revisa AcompanamientoPolicy::actualizar (aquí y en la acción).
@@ -111,8 +113,22 @@ class Acompanamientos extends Component
         $finalizados = $consulta(EstadoAcompanamiento::Finalizado)->orderByDesc('finalizado_en')->orderByDesc('id')
             ->paginate(self::POR_PAGINA);
 
+        // Resultados propios: solo finalizados en que el usuario es el docente observado (AcompanamientoPolicy::ver).
+        $consultaResultados = Acompanamiento::query()
+            ->where('estado', EstadoAcompanamiento::Finalizado->value)
+            ->whereIn('docente_id', $propios);
+        $totalResultados = $consultaResultados->clone()->count();
+        $resultados = $consultaResultados
+            ->with(['docente.persona', 'observador.persona', 'curso.grado'])
+            ->orderByDesc('finalizado_en')->orderByDesc('id')
+            ->limit(self::POR_PAGINA)
+            ->get();
+
         $asignaturas = DB::table('asignaturas')
-            ->whereIn('id', $enCurso->pluck('asignatura_id')->merge($finalizados->getCollection()->pluck('asignatura_id'))->unique()->all())
+            ->whereIn('id', $enCurso->pluck('asignatura_id')
+                ->merge($finalizados->getCollection()->pluck('asignatura_id'))
+                ->merge($resultados->pluck('asignatura_id'))
+                ->unique()->all())
             ->pluck('nombre', 'id');
 
         $fila = fn (Acompanamiento $acompanamiento): array => [
@@ -133,6 +149,9 @@ class Acompanamientos extends Component
         $paginaFinalizados = $finalizados->through($fila);
 
         return view('livewire.acompanamientos.acompanamientos', [
+            'mostrarResultados' => $roles->esDocente($usuario) || $totalResultados > 0,
+            'resultados' => $resultados->map($fila)->all(),
+            'totalResultados' => $totalResultados,
             'esObservador' => $esObservador,
             'esAdministrador' => $esAdministrador,
             'deTodos' => $deTodos,
