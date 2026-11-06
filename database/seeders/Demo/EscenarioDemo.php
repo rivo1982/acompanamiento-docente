@@ -2,22 +2,34 @@
 
 namespace Database\Seeders\Demo;
 
+use App\Actions\FinalizarAcompanamiento;
+use App\Actions\GuardarRespuesta;
+use App\Actions\IniciarAcompanamiento;
 use App\Enums\EstadoImportacion;
+use App\Models\Acompanamiento;
+use App\Models\Usuario;
+use App\Support\EstablecimientoActual;
 use App\Support\Invitaciones\TokenDeInvitacion;
 use App\Support\Rut;
+use Closure;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Escenario ficticio del entorno de demostración: "Colegio Demostración", su Administrador, docentes activos,
  * invitaciones en cada estado de la lista (En plazo, Vence hoy, Vencida, Anulada), observadores con sus docentes
- * asignados, dos pautas de ejemplo y un historial de cargas masivas (completada con errores por fila, fallida con
- * error del archivo y pendiente).
+ * asignados, tres pautas de ejemplo, un historial de cargas masivas (completada con errores por fila, fallida con
+ * error del archivo y pendiente) y dos acompañamientos de aula de la observadora habilitada al docente observado: uno
+ * en curso y otro finalizado.
  *
- * Escribe filas directamente (sin enviar correos ni encolar trabajos) y es idempotente: cada fila se identifica por su
- * clave natural y se actualiza si ya existe. Los plazos se calculan desde `now()`, así que las insignias son
+ * Escribe filas directamente (sin enviar correos ni encolar trabajos), salvo los acompañamientos, que se crean con las
+ * acciones del módulo para respetar sus reglas (el servidor fija `iniciado_en`): finalizar avisa por correo al docente
+ * una sola vez. Es idempotente: cada fila se identifica por su clave natural y se actualiza si ya existe; cada
+ * acompañamiento, por su docente y su pauta, y no se vuelve a iniciar ni a finalizar. Los plazos se calculan desde `now()`, así que las insignias son
  * deterministas respecto del momento de la siembra. Los hashes de invitación son SHA-256 de tokens aleatorios que
  * nadie conoce. Quien lo llame debe asegurar antes el esquema (DemoSeeder::asegurarEsquemaDemo()).
  */
@@ -43,6 +55,46 @@ final class EscenarioDemo
     public const PAUTAS = [
         'Observación de aula (demo)' => [1, 2, 3, 4, 5, 6, 7, 8],
         'Planificación y convivencia (demo)' => [12, 13, 14, 46, 47],
+        'Ética y convivencia (demo)' => [42, 43, 44, 45, 46, 47],
+    ];
+
+    /** Observadora habilitada (primera docente) que registra los acompañamientos de demostración. */
+    public const CORREO_OBSERVADOR = 'beatriz.docente@demo.example.cl';
+
+    /** Docente observado en los acompañamientos de demostración (segundo docente, sin rol de observador). */
+    public const CORREO_DOCENTE_OBSERVADO = 'carlos.docente@demo.example.cl';
+
+    public const ASIGNATURA = 'Lenguaje y Comunicación (demo)';
+
+    /**
+     * Acompañamientos de demostración: pauta, si se finaliza y, por número de indicador, el nivel y la retroalimentación
+     * personal. El en curso responde solo una parte de la pauta; el finalizado, toda, con los cuatro niveles y los
+     * descriptores con nota de protocolo (42 y 45).
+     *
+     * @var list<array{pauta: string, finalizar: bool, respuestas: array<int, array{0: string, 1: ?string}>}>
+     */
+    public const ACOMPANAMIENTOS = [
+        [
+            'pauta' => 'Observación de aula (demo)',
+            'finalizar' => false,
+            'respuestas' => [
+                1 => ['logrado', null],
+                2 => ['en_desarrollo', 'Conviene retomar el objetivo de la clase al cierre.'],
+                3 => ['destacado', null],
+            ],
+        ],
+        [
+            'pauta' => 'Ética y convivencia (demo)',
+            'finalizar' => true,
+            'respuestas' => [
+                42 => ['en_inicio', 'Conversemos sobre los límites del rol frente a situaciones personales de los estudiantes.'],
+                43 => ['en_desarrollo', null],
+                44 => ['logrado', null],
+                45 => ['destacado', 'Muy buen manejo del protocolo de uso de dispositivos en la sala.'],
+                46 => ['logrado', 'El conflicto del recreo se resolvió con diálogo y acuerdos claros.'],
+                47 => ['en_desarrollo', null],
+            ],
+        ],
     ];
 
     /** Situación de cada invitación pendiente => datos de la persona invitada. */
@@ -62,7 +114,7 @@ final class EscenarioDemo
     {
         $this->ahora = Carbon::now();
 
-        DB::transaction(function (): void {
+        $establecimientoId = DB::transaction(function (): int {
             $establecimientoId = $this->establecimiento();
             $this->cursos($establecimientoId);
 
@@ -72,7 +124,12 @@ final class EscenarioDemo
             $this->pautas($establecimientoId);
             $this->invitaciones($establecimientoId);
             $this->importaciones($establecimientoId, $membresiaAdministrador);
+
+            return $establecimientoId;
         });
+
+        // Fuera de la transacción: FinalizarAcompanamiento no debe correr dentro de otra (ver su avisarAlDocente).
+        $this->acompanamientos($establecimientoId);
     }
 
     private function establecimiento(): int
@@ -263,6 +320,70 @@ final class EscenarioDemo
                     'updated_at' => $carga['creada'],
                 ],
             );
+        }
+    }
+
+    /**
+     * Acompañamientos de ACOMPANAMIENTOS, creados como la observadora con IniciarAcompanamiento, GuardarRespuesta y
+     * FinalizarAcompanamiento. Si ya existe uno del docente con esa pauta se reutiliza: si sigue en curso se
+     * completan sus respuestas (y se finaliza si corresponde); si ya está finalizado no se toca.
+     */
+    private function acompanamientos(int $establecimientoId): void
+    {
+        $observador = Usuario::query()->where('correo', self::CORREO_OBSERVADOR)->sole();
+        $docenteId = (int) DB::table('funcionarios')
+            ->join('personas', 'personas.id', '=', 'funcionarios.persona_id')
+            ->where('funcionarios.establecimiento_id', $establecimientoId)
+            ->where('personas.correo', self::CORREO_DOCENTE_OBSERVADO)
+            ->value('funcionarios.id');
+        $cursoId = (int) DB::table('cursos')->where('establecimiento_id', $establecimientoId)->where('letra', 'A')->value('id');
+        $asignaturaId = $this->fila('asignaturas', ['nombre' => self::ASIGNATURA], []);
+
+        $this->comoUsuario($observador, $establecimientoId, function () use ($observador, $establecimientoId, $docenteId, $cursoId, $asignaturaId): void {
+            foreach (self::ACOMPANAMIENTOS as $datos) {
+                $pautaId = (int) DB::table('pautas')
+                    ->where('establecimiento_id', $establecimientoId)->where('nombre', $datos['pauta'])->value('id');
+
+                $acompanamiento = Acompanamiento::query()->where('docente_id', $docenteId)->where('pauta_id', $pautaId)->orderBy('id')->first()
+                    ?? app(IniciarAcompanamiento::class)->iniciar($observador, $docenteId, $pautaId, $cursoId, $asignaturaId);
+
+                if ($acompanamiento->estaFinalizado()) {
+                    continue;
+                }
+
+                foreach ($datos['respuestas'] as $numero => [$nivel, $retroalimentacion]) {
+                    $indicadorId = (int) DB::table('indicadores')->where('numero', $numero)->value('id');
+                    app(GuardarRespuesta::class)->guardar($observador, (int) $acompanamiento->getKey(), $indicadorId, $nivel, $retroalimentacion);
+                }
+
+                if ($datos['finalizar']) {
+                    app(FinalizarAcompanamiento::class)->finalizar($observador, (int) $acompanamiento->getKey());
+                }
+            }
+        });
+    }
+
+    /**
+     * Corre $trabajo con $usuario autenticado y $establecimientoId como establecimiento activo, como en una petición,
+     * y deja después la sesión sin usuario ni establecimiento (también si $trabajo lanza).
+     *
+     * @param  Closure(): void  $trabajo
+     */
+    private function comoUsuario(Usuario $usuario, int $establecimientoId, Closure $trabajo): void
+    {
+        app()->forgetScopedInstances();
+        Auth::setUser($usuario);
+
+        try {
+            if (! app(EstablecimientoActual::class)->seleccionar($establecimientoId)) {
+                throw new RuntimeException("The demo user {$usuario->correo} has no active membership in the demo establishment.");
+            }
+
+            $trabajo();
+        } finally {
+            app(EstablecimientoActual::class)->olvidar();
+            Auth::forgetUser();
+            app()->forgetScopedInstances();
         }
     }
 

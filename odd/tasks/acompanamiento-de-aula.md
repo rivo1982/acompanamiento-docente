@@ -123,9 +123,15 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   in another tab (rethrows real 403); non-string niveles/retroalimentaciones ignored; PautaNoDisponible
   mapped to `pauta`; curso/asignatura reset on teacher switch; A3.1 tests added (pagination of
   "Mis resultados" left out). RED observed where behavior changed; suite 844.
+  Commit 4b09156. Review assess (base 578a675): medium, under_budget (280) → pending in slice.
 - [ ] A2.2 Follow-up (advisory): confirmarFinalizacion() still returns 403 when finished in another
   tab; redirect to the result like guardar().
-- [ ] A4 Demo data (one en curso, one finalizado), home card, user visual check.
+- [x] A4 Demo data (one en curso, one finalizado), home card, user visual check.
+  EscenarioDemo seeds, via the domain actions and after its main transaction, one en curso (Carlos,
+  3/8) and one finalizado ("Ética y convivencia (demo)", descriptors 42–47, all 4 levels, protocol
+  note); idempotent (finished one skipped, one email). Home: "Mis resultados" card for docentes
+  (same criterion as Acompanamientos::mostrarResultados). RED → GREEN; suite 849. Route: delegated.
+  needs_brief: ~0 min duration on demo data, teacher home card copy/layout.
 
 ## Acceptance criteria
 - Only an observer assigned to the teacher can start; only its observer can score/finish/discard.
@@ -137,5 +143,5 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-Follow-ups done; next A4 (demo data + user visual check), A2.2 optional, then A4 (demo data + user visual check of the needs_brief items).
+A4 done; next: user visual check on the demo (needs_brief items of A2, A3, A4), A2.2 optional, then A4 (demo data + user visual check of the needs_brief items).
 Demo server stopped; restart with `composer demo:serve`.

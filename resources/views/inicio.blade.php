@@ -6,8 +6,15 @@
     @php($puedeVerPautas = Gate::allows('verCualquiera', App\Models\Pauta::class))
     {{-- Mismo criterio que AcompanamientoPolicy::crear y "Nuevo acompañamiento": un observador del establecimiento activo. --}}
     @php($puedeObservar = auth()->user() instanceof App\Models\Usuario && app(App\Support\RolesDelModulo::class)->esObservador(auth()->user()))
+    {{-- Mismo criterio que "Mis resultados" en Mis acompañamientos: un docente, o quien ya tiene acompañamientos finalizados en que fue observado. --}}
+    @php($tieneResultados = ! $puedeObservar && auth()->user() instanceof App\Models\Usuario
+        && (app(App\Support\RolesDelModulo::class)->esDocente(auth()->user())
+            || App\Models\Acompanamiento::query()
+                ->where('estado', App\Enums\EstadoAcompanamiento::Finalizado->value)
+                ->whereIn('docente_id', app(App\Support\RolesDelModulo::class)->funcionarios())
+                ->exists()))
 
-    @if ($puedeVerPautas || $puedeObservar || Gate::any(['gestionar-observadores', 'invitar-funcionarios']))
+    @if ($puedeVerPautas || $puedeObservar || $tieneResultados || Gate::any(['gestionar-observadores', 'invitar-funcionarios']))
         <nav aria-label="Pantallas del módulo" class="mt-6 grid gap-4 md:grid-cols-2">
             @if ($puedeObservar)
                 <x-card titulo="Acompañamientos">
@@ -16,6 +23,11 @@
                         <x-button :href="route('acompanamientos.index')">Ir a Mis acompañamientos</x-button>
                         <x-button :href="route('acompanamientos.create')" variante="secundario">Nuevo acompañamiento</x-button>
                     </div>
+                </x-card>
+            @elseif ($tieneResultados)
+                <x-card titulo="Mis resultados">
+                    <p class="mb-4 text-texto-atenuado text-pretty">Revisar los acompañamientos de aula finalizados, con los niveles, la retroalimentación y las fichas de apoyo.</p>
+                    <x-button :href="route('acompanamientos.index')">Ver mis resultados</x-button>
                 </x-card>
             @endif
 

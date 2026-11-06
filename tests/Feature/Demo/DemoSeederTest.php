@@ -1,18 +1,27 @@
 <?php
 
+use App\Enums\EstadoAcompanamiento;
+use App\Enums\NivelLogro;
+use App\Livewire\Acompanamientos\Acompanamientos;
+use App\Livewire\Acompanamientos\VerAcompanamiento;
 use App\Livewire\Importaciones\ResultadoDeImportacion;
 use App\Livewire\Invitaciones\InvitacionesPendientes;
 use App\Livewire\Observadores\Observadores;
 use App\Livewire\Pautas\Pautas;
+use App\Mail\AcompanamientoFinalizado;
 use App\Models\Usuario;
+use App\Support\ApoyoPedagogico\Orientaciones;
 use Database\Seeders\CatalogSeeder;
 use Database\Seeders\Demo\EscenarioDemo;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\FuncionesGenericasSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 require_once __DIR__.'/../Plazos/helpers.php';
@@ -37,6 +46,7 @@ function conteosDelEscenario(): array
         'regiones', 'comunas', 'establecimientos', 'anios_escolares', 'niveles_ensenanza', 'grados', 'cursos',
         'personas', 'funcionarios', 'funcionario_funciones', 'usuarios', 'membresias', 'asignaciones_docentes',
         'importaciones_usuarios', 'observadores', 'asignaciones_acompanamiento', 'pautas', 'indicador_pauta',
+        'asignaturas', 'acompanamientos', 'respuestas_acompanamiento',
     ])->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->count()])->all();
 }
 
@@ -146,7 +156,7 @@ it('seeds an enabled observer and observer assignments shown on the observers sc
         ->assertSee('Automático');
 });
 
-it('seeds two example rubrics built from the catalog, shown on the rubrics screen', function () {
+it('seeds the example rubrics built from the catalog, shown on the rubrics screen', function () {
     $establecimientoId = sembrarEscenarioDemo();
     activar(Usuario::query()->where('correo', EscenarioDemo::CORREO_ADMINISTRADOR)->sole(), $establecimientoId);
 
@@ -159,7 +169,72 @@ it('seeds two example rubrics built from the catalog, shown on the rubrics scree
     Livewire::test(Pautas::class)->assertSee(array_keys(EscenarioDemo::PAUTAS));
 });
 
+/**
+ * Demo acompañamientos of the scenario's observer, keyed by estado value.
+ *
+ * @return Collection<string, object>
+ */
+function acompanamientosDemoPorEstado(int $establecimientoId): Collection
+{
+    return DB::table('acompanamientos')->where('establecimiento_id', $establecimientoId)->get()->keyBy('estado');
+}
+
+it('seeds one in-progress and one finished observation of the demo teacher through the domain actions', function () {
+    Mail::fake();
+    $establecimientoId = sembrarEscenarioDemo();
+    $acompanamientos = acompanamientosDemoPorEstado($establecimientoId);
+
+    expect(DB::table('acompanamientos')->where('establecimiento_id', $establecimientoId)->count())->toBe(2)
+        ->and($acompanamientos->keys()->sort()->values()->all())
+        ->toBe([EstadoAcompanamiento::EnCurso->value, EstadoAcompanamiento::Finalizado->value])
+        ->and(Auth::guest())->toBeTrue();
+
+    $observadorId = (int) DB::table('funcionarios')->join('personas', 'personas.id', '=', 'funcionarios.persona_id')
+        ->where('personas.correo', EscenarioDemo::CORREO_OBSERVADOR)->value('funcionarios.id');
+    $docenteId = (int) DB::table('funcionarios')->join('personas', 'personas.id', '=', 'funcionarios.persona_id')
+        ->where('personas.correo', EscenarioDemo::CORREO_DOCENTE_OBSERVADO)->value('funcionarios.id');
+
+    foreach ($acompanamientos as $acompanamiento) {
+        expect((int) $acompanamiento->observador_id)->toBe($observadorId)
+            ->and((int) $acompanamiento->docente_id)->toBe($docenteId)
+            ->and($acompanamiento->iniciado_en)->toBe('2026-10-14 10:00:00');
+    }
+
+    $enCurso = $acompanamientos[EstadoAcompanamiento::EnCurso->value];
+    $indicadoresEnCurso = count(json_decode($enCurso->pauta_snapshot, true)['indicadores']);
+    $respuestasEnCurso = DB::table('respuestas_acompanamiento')->where('acompanamiento_id', $enCurso->id)->count();
+
+    expect($respuestasEnCurso)->toBeGreaterThan(0)->toBeLessThan($indicadoresEnCurso);
+
+    $finalizado = $acompanamientos[EstadoAcompanamiento::Finalizado->value];
+    $snapshot = json_decode($finalizado->pauta_snapshot, true);
+    $respuestas = DB::table('respuestas_acompanamiento')->where('acompanamiento_id', $finalizado->id)->get();
+
+    expect($respuestas)->toHaveCount(count($snapshot['indicadores']))
+        ->and($respuestas->pluck('nivel')->unique()->sort()->values()->all())
+        ->toBe(collect(NivelLogro::cases())->map->value->sort()->values()->all())
+        ->and(array_intersect([42, 45], array_column($snapshot['indicadores'], 'numero')))->not->toBeEmpty()
+        ->and($respuestas->whereNotNull('retroalimentacion_personal')->count())->toBeGreaterThan(0)
+        ->and($finalizado->finalizado_en)->not->toBeNull();
+
+    Mail::assertQueuedCount(1);
+    Mail::assertQueued(AcompanamientoFinalizado::class, fn (AcompanamientoFinalizado $correo): bool => $correo->hasTo(EscenarioDemo::CORREO_DOCENTE_OBSERVADO));
+});
+
+it('shows the finished observation to the observed teacher, with the protocol note', function () {
+    Mail::fake();
+    $establecimientoId = sembrarEscenarioDemo();
+    $finalizadoId = (int) acompanamientosDemoPorEstado($establecimientoId)[EstadoAcompanamiento::Finalizado->value]->id;
+
+    activar(Usuario::query()->where('correo', EscenarioDemo::CORREO_DOCENTE_OBSERVADO)->sole(), $establecimientoId);
+
+    Livewire::test(Acompanamientos::class)->assertSee('Mis resultados (1)');
+    Livewire::test(VerAcompanamiento::class, ['acompanamiento' => $finalizadoId])
+        ->assertSee(Orientaciones::delAnexo()->notaProtocolo());
+});
+
 it('is idempotent: a second run creates no duplicates and refreshes the invitation deadlines', function () {
+    Mail::fake();
     sembrarEscenarioDemo();
     $antes = conteosDelEscenario();
 
@@ -169,4 +244,6 @@ it('is idempotent: a second run creates no duplicates and refreshes the invitati
     expect(conteosDelEscenario())->toBe($antes)
         ->and(DB::table('membresias')->whereNotNull('invitacion_expira_en')->max('invitacion_expira_en'))
         ->toBe('2026-10-25 09:00:00');
+
+    Mail::assertQueuedCount(1);
 });
