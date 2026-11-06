@@ -233,6 +233,20 @@ it('shows the finished observation to the observed teacher, with the protocol no
         ->assertSee(Orientaciones::delAnexo()->notaProtocolo());
 });
 
+it('restores the example rubrics when someone deleted them in the demo, so a re-run can seed its observations', function () {
+    Mail::fake();
+    $establecimientoId = sembrarEscenarioDemo();
+    DB::table('pautas')->where('establecimiento_id', $establecimientoId)
+        ->whereIn('nombre', array_keys(EscenarioDemo::PAUTAS))->update(['deleted_at' => now()]);
+
+    (new EscenarioDemo)->sembrar();
+
+    expect(DB::table('pautas')->where('establecimiento_id', $establecimientoId)
+        ->whereIn('nombre', array_keys(EscenarioDemo::PAUTAS))->whereNotNull('deleted_at')->count())->toBe(0)
+        ->and(DB::table('pautas')->where('establecimiento_id', $establecimientoId)
+            ->whereIn('nombre', array_keys(EscenarioDemo::PAUTAS))->count())->toBe(count(EscenarioDemo::PAUTAS));
+});
+
 it('is idempotent: a second run creates no duplicates and refreshes the invitation deadlines', function () {
     Mail::fake();
     sembrarEscenarioDemo();

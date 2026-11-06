@@ -134,9 +134,12 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   needs_brief: ~0 min duration on demo data, teacher home card copy/layout. Commit c5b8c6a. Review
   (slice 578a675..c5b8c6a, medium, 546 lines, user granted): APPROVED/acknowledged
   (review-55bf5615d5aef342). Reviewed boundary → c5b8c6a.
-- [ ] A4.1 Review follow-ups (advisory): EscenarioDemo::acompanamientos() resolves teacher/course with
+- [x] A4.1 Review follow-ups (advisory, seeder part DONE; race-test seam still open): EscenarioDemo::acompanamientos() resolves teacher/course with
   (int) ->value() (missing row → 0, fails late) — use sole()/firstOrFail; the PautaNoDisponible race
   test keys on a pgsql-quoted SQL fragment — prefer a bound fake/decorated action as the seam.
+  Found while loading the demo: the user had soft-deleted the demo pautas, so the (int)->value() lookup
+  picked a trashed pauta and IniciarAcompanamiento refused it. Fix: pautas() restores deleted_at, lookups
+  use sole()/firstOrFail(). RED → GREEN; suite 850; composer demo:setup OK (1 en curso, 1 finalizado).
 
 ## Acceptance criteria
 - Only an observer assigned to the teacher can start; only its observer can score/finish/discard.

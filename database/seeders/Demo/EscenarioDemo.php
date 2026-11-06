@@ -240,7 +240,8 @@ final class EscenarioDemo
     private function pautas(int $establecimientoId): void
     {
         foreach (self::PAUTAS as $nombre => $numeros) {
-            $pautaId = $this->fila('pautas', ['establecimiento_id' => $establecimientoId, 'nombre' => $nombre], []);
+            // deleted_at => null: si alguien eliminó una pauta de ejemplo al probar la demo, volver a sembrar la restaura.
+            $pautaId = $this->fila('pautas', ['establecimiento_id' => $establecimientoId, 'nombre' => $nombre], ['deleted_at' => null]);
             $indicadores = DB::table('indicadores')->whereIn('numero', $numeros)->orderBy('numero')->pluck('id');
 
             foreach ($indicadores as $indice => $indicadorId) {
@@ -335,14 +336,15 @@ final class EscenarioDemo
             ->join('personas', 'personas.id', '=', 'funcionarios.persona_id')
             ->where('funcionarios.establecimiento_id', $establecimientoId)
             ->where('personas.correo', self::CORREO_DOCENTE_OBSERVADO)
-            ->value('funcionarios.id');
-        $cursoId = (int) DB::table('cursos')->where('establecimiento_id', $establecimientoId)->where('letra', 'A')->value('id');
+            ->sole(['funcionarios.id'])->id;
+        $cursoId = (int) DB::table('cursos')->where('establecimiento_id', $establecimientoId)->where('letra', 'A')
+            ->orderBy('id')->firstOrFail(['id'])->id;
         $asignaturaId = $this->fila('asignaturas', ['nombre' => self::ASIGNATURA], []);
 
         $this->comoUsuario($observador, $establecimientoId, function () use ($observador, $establecimientoId, $docenteId, $cursoId, $asignaturaId): void {
             foreach (self::ACOMPANAMIENTOS as $datos) {
-                $pautaId = (int) DB::table('pautas')
-                    ->where('establecimiento_id', $establecimientoId)->where('nombre', $datos['pauta'])->value('id');
+                $pautaId = (int) DB::table('pautas')->where('establecimiento_id', $establecimientoId)
+                    ->where('nombre', $datos['pauta'])->whereNull('deleted_at')->sole(['id'])->id;
 
                 $acompanamiento = Acompanamiento::query()->where('docente_id', $docenteId)->where('pauta_id', $pautaId)->orderBy('id')->first()
                     ?? app(IniciarAcompanamiento::class)->iniciar($observador, $docenteId, $pautaId, $cursoId, $asignaturaId);
