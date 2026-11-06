@@ -110,7 +110,12 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   needs_brief: level colors (Aviso/Neutro/Éxito/Información), ficha part colors, Peligro protocol
   note, copy "Continuar observación", "Ver retroalimentación", "Volver a acompañamientos",
   "Lo observado".
-- [ ] A3.1 Follow-up (advisory): paginate "Mis resultados" (needs a page-name-aware paginator).
+  Commit 578a675. Review (base 022727c, medium, 952 lines, user granted): APPROVED/acknowledged
+  (review-70e8a80360097d5a). Reviewed boundary → 578a675.
+- [ ] A3.1 Review follow-ups (advisory): test the observer opening an en-curso acompañamiento (200,
+  banner, "Continuar observación") and that a finished one hides that link; test the 20-row cap of
+  "Mis resultados"; paginate it (needs a page-name-aware paginator). Discarded: "null nivel → 500"
+  (respuestas_acompanamiento.nivel is NOT NULL + CHECK).
 - [ ] A4 Demo data (one en curso, one finalizado), home card, user visual check.
 
 ## Acceptance criteria
@@ -123,5 +128,5 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A3 committed; then A2.1 + A1.6, then A4 (demo data + user visual check of the needs_brief items).
+A3 done; next A2.1 + A1.6 + A3.1 (advisory follow-ups, one commit), then A4 (demo data + user visual check of the needs_brief items).
 Demo server stopped; restart with `composer demo:serve`.
