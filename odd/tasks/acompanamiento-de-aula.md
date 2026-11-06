@@ -131,7 +131,12 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   3/8) and one finalizado ("Ética y convivencia (demo)", descriptors 42–47, all 4 levels, protocol
   note); idempotent (finished one skipped, one email). Home: "Mis resultados" card for docentes
   (same criterion as Acompanamientos::mostrarResultados). RED → GREEN; suite 849. Route: delegated.
-  needs_brief: ~0 min duration on demo data, teacher home card copy/layout.
+  needs_brief: ~0 min duration on demo data, teacher home card copy/layout. Commit c5b8c6a. Review
+  (slice 578a675..c5b8c6a, medium, 546 lines, user granted): APPROVED/acknowledged
+  (review-55bf5615d5aef342). Reviewed boundary → c5b8c6a.
+- [ ] A4.1 Review follow-ups (advisory): EscenarioDemo::acompanamientos() resolves teacher/course with
+  (int) ->value() (missing row → 0, fails late) — use sole()/firstOrFail; the PautaNoDisponible race
+  test keys on a pgsql-quoted SQL fragment — prefer a bound fake/decorated action as the seam.
 
 ## Acceptance criteria
 - Only an observer assigned to the teacher can start; only its observer can score/finish/discard.
@@ -143,5 +148,5 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A4 done; next: user visual check on the demo (needs_brief items of A2, A3, A4), A2.2 optional, then A4 (demo data + user visual check of the needs_brief items).
+A4 done; next: user visual check on the demo (needs_brief items of A2, A3, A4), A2.2 and A4.1 optional.
 Demo server stopped; restart with `composer demo:serve`.
