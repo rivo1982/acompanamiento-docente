@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\IniciarAcompanamiento;
 use App\Enums\EstadoAcompanamiento;
+use App\Exceptions\PautaNoDisponible;
 use App\Livewire\Acompanamientos\Acompanamientos;
 use App\Livewire\Acompanamientos\NuevoAcompanamiento;
 use App\Livewire\Acompanamientos\ObservarAcompanamiento;
@@ -10,6 +12,8 @@ use App\Models\AsignacionAcompanamiento;
 use App\Models\Funcionario;
 use App\Models\Pauta;
 use App\Models\RespuestaAcompanamiento;
+use App\Models\Usuario;
+use App\Support\EstablecimientoActual;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -258,12 +262,13 @@ it('marca en la pauta, no en el docente, una pauta de otro establecimiento o eli
 });
 
 it('marca en la pauta una pauta eliminada justo antes de crear el acompañamiento', function () {
-    $eliminando = false;
-    DB::listen(function ($consulta) use (&$eliminando): void {
-        // The last query of IniciarAcompanamiento before the insert: the observer assignment lookup.
-        if (! $eliminando && str_contains($consulta->sql, 'min("observador_id")')) {
-            $eliminando = true;
-            $this->pauta->delete();
+    // Acompanamiento::creating raises PautaNoDisponible when the pauta disappears after validation (covered in
+    // Modulo/AcompanamientoTest); here the action raises it directly so only the screen's mapping is under test.
+    $this->app->bind(IniciarAcompanamiento::class, fn () => new class(app(EstablecimientoActual::class)) extends IniciarAcompanamiento
+    {
+        public function iniciar(Usuario $observador, int $docenteId, int $pautaId, int $cursoId, int $asignaturaId): Acompanamiento
+        {
+            throw new PautaNoDisponible;
         }
     });
 
@@ -273,12 +278,11 @@ it('marca en la pauta una pauta eliminada justo antes de crear el acompañamient
         ->set('curso', (string) $this->cursoId)
         ->set('asignatura', (string) $this->asignaturaId)
         ->call('iniciar')
-        ->assertHasErrors('pauta')
-        ->assertHasNoErrors('docente')
+        ->assertHasErrors(['pauta' => 'La pauta elegida no está disponible.'])
+        ->assertHasNoErrors(['docente', 'curso', 'asignatura'])
         ->assertNoRedirect();
 
-    expect($eliminando)->toBeTrue()
-        ->and(Acompanamiento::query()->count())->toBe(0);
+    expect(Acompanamiento::query()->count())->toBe(0);
 });
 
 it('preselecciona el curso y la asignatura cuando el docente tiene una sola asignación docente', function () {
@@ -437,6 +441,26 @@ it('lleva al resultado al guardar en un acompañamiento que se finalizó en otra
         ->assertRedirect(route('acompanamientos.show', $acompanamiento->id));
 
     expect(RespuestaAcompanamiento::query()->orderBy('id')->get(['nivel', 'retroalimentacion_personal'])->toArray())->toBe($respuestas);
+});
+
+it('lleva al resultado al pedir finalizar un acompañamiento que se finalizó en otra pestaña', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    $otraPestana = Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id]);
+    responderTodo($this, $acompanamiento);
+    finalizarAcompanamiento($this->observador, $acompanamiento);
+
+    $otraPestana->call('confirmarFinalizacion')
+        ->assertRedirect(route('acompanamientos.show', $acompanamiento->id))
+        ->assertSet('confirmando', false);
+});
+
+it('sigue negando pedir finalizar a quien ya no observa aunque el acompañamiento siga en curso', function () {
+    $acompanamiento = iniciarAcompanamiento($this);
+    $componente = Livewire::test(ObservarAcompanamiento::class, ['acompanamiento' => $acompanamiento->id]);
+    AsignacionAcompanamiento::query()->delete();
+    Acompanamiento::query()->whereKey($acompanamiento->id)->update(['observador_id' => $this->otroObservadorId]);
+
+    $componente->call('confirmarFinalizacion')->assertForbidden();
 });
 
 it('sigue negando guardar a quien ya no observa aunque el acompañamiento siga en curso', function () {

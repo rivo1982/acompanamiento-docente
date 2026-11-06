@@ -124,8 +124,9 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   mapped to `pauta`; curso/asignatura reset on teacher switch; A3.1 tests added (pagination of
   "Mis resultados" left out). RED observed where behavior changed; suite 844.
   Commit 4b09156. Review assess (base 578a675): medium, under_budget (280) → pending in slice.
-- [ ] A2.2 Follow-up (advisory): confirmarFinalizacion() still returns 403 when finished in another
-  tab; redirect to the result like guardar().
+- [x] A2.2 Follow-up (advisory): confirmarFinalizacion() still returns 403 when finished in another
+  tab; redirect to the result like guardar(). DONE inline: redirects when finished, rethrows a real 403;
+  RED 1/2 → GREEN.
 - [x] A4 Demo data (one en curso, one finalizado), home card, user visual check.
   EscenarioDemo seeds, via the domain actions and after its main transaction, one en curso (Carlos,
   3/8) and one finalizado ("Ética y convivencia (demo)", descriptors 42–47, all 4 levels, protocol
@@ -134,12 +135,14 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
   needs_brief: ~0 min duration on demo data, teacher home card copy/layout. Commit c5b8c6a. Review
   (slice 578a675..c5b8c6a, medium, 546 lines, user granted): APPROVED/acknowledged
   (review-55bf5615d5aef342). Reviewed boundary → c5b8c6a.
-- [x] A4.1 Review follow-ups (advisory, seeder part DONE; race-test seam still open): EscenarioDemo::acompanamientos() resolves teacher/course with
+- [x] A4.1 Review follow-ups (advisory, DONE): EscenarioDemo::acompanamientos() resolves teacher/course with
   (int) ->value() (missing row → 0, fails late) — use sole()/firstOrFail; the PautaNoDisponible race
   test keys on a pgsql-quoted SQL fragment — prefer a bound fake/decorated action as the seam.
   Found while loading the demo: the user had soft-deleted the demo pautas, so the (int)->value() lookup
   picked a trashed pauta and IniciarAcompanamiento refused it. Fix: pautas() restores deleted_at, lookups
   use sole()/firstOrFail(). RED → GREEN; suite 850; composer demo:setup OK (1 en curso, 1 finalizado).
+  Race test now binds an IniciarAcompanamiento that throws PautaNoDisponible (no SQL matching);
+  proven by temporarily removing the component's catch → test fails. Route: inline (2 small files).
 
 ## Acceptance criteria
 - Only an observer assigned to the teacher can start; only its observer can score/finish/discard.
@@ -151,5 +154,6 @@ ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
 - 2026-11-03: exploration done (data layer complete, no actions/screens). Branch feat/observadores.
 
 ## Next step
-A4 done; next: user visual check on the demo (needs_brief items of A2, A3, A4), A2.2 and A4.1 optional.
-Demo server stopped; restart with `composer demo:serve`.
+2026-11-06: user visual check on the demo APPROVED ("está correcto lo que veo"). All tasks A1–A4 and
+their follow-ups done. Remaining: delivery decision (push / PR of feat/observadores) is the user's.
+Demo server: `composer demo:serve` (127.0.0.1:18765).

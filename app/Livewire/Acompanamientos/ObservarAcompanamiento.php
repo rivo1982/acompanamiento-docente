@@ -96,9 +96,26 @@ class ObservarAcompanamiento extends Component
         $this->guardar($indicadorId, "Retroalimentación del indicador {$this->numeroDe($indicadorId)} guardada.");
     }
 
+    /**
+     * Abre el modal de finalizar. Si se finalizó entretanto (otra pestaña), lleva a su resultado; una negación por
+     * otro motivo se mantiene.
+     */
     public function confirmarFinalizacion(): void
     {
-        Gate::authorize('finalizar', $this->acompanamiento($this->acompanamientoId));
+        $acompanamiento = $this->acompanamiento($this->acompanamientoId);
+
+        try {
+            Gate::authorize('finalizar', $acompanamiento);
+        } catch (AuthorizationException $e) {
+            if (! $acompanamiento->estaFinalizado()) {
+                throw $e;
+            }
+
+            $this->redirectRoute('acompanamientos.show', ['acompanamiento' => $this->acompanamientoId]);
+
+            return;
+        }
+
         $this->resetErrorBag('respuestas');
 
         $this->confirmando = true;
