@@ -53,6 +53,11 @@ screens, notification or print view.
 
 ## Delivery strategy
 ask-on-risk. Forecast ~1500–2000 authored lines → one review slice per task.
+Chain strategy (user, 2026-11-06): stacked-to-main, 7 PRs in order, size:exception on each:
+1 feat/data-model, 2 feat/vinkured-alignment, then observadores slices
+3 feat/observadores-01-observers (..753800b), 4 feat/observadores-02-rubrics (..5708f32),
+5 feat/observadores-03-observation-backend (..b6b8528), 6 feat/observadores-04-observer-screens
+(..2e6f6fb), 7 feat/observadores (..HEAD: result screen, demo, follow-ups).
 
 ## Tasks
 - [x] A1 Backend: IniciarAcompanamiento / GuardarRespuesta (max 2000) / DescartarAcompanamiento /
